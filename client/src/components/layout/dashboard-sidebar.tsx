@@ -440,7 +440,7 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
               {/* Enhanced Sub-navigation */}
               {hasChildren && isParentActive && (
                 <div className="mt-2 ml-6 space-y-1 animate-in slide-in-from-left-2 duration-300">
-                  {item.children.map((child, childIndex) => (
+                  {item.children?.map((child, childIndex) => (
                     <Link
                       key={childIndex}
                       href={child.route}

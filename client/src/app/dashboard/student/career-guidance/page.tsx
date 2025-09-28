@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   GraduationCap,
   Rocket,
@@ -20,95 +21,117 @@ import {
   Award,
   Lightbulb,
   Microscope,
-  Heart
+  Heart,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-
-// Career data based on your specifications [file:1]
-const careerExplorationData = {
-  featuredCareers: [
-    {
-      title: 'Astronaut',
-      description: 'Explore space, conduct scientific research, and push the boundaries of human exploration',
-      icon: '🚀',
-      category: 'Science & Technology',
-      demandLevel: 'High',
-      education: '12th → Engineering/Science → ISRO Selection',
-      famousPersons: ['Rakesh Sharma', 'Kalpana Chawla', 'Sunita Williams'],
-      pathway: 'Focus on Physics, Math → Aerospace Engineering → Test Pilot Training → Astronaut Program',
-      inspiringFact: 'India plans to send its own astronauts to space by 2025!',
-      skills: ['Physics', 'Mathematics', 'Physical Fitness', 'Problem Solving']
-    },
-    {
-      title: 'Doctor',
-      description: 'Save lives, heal people, and make a direct impact on human health and wellbeing',
-      icon: '👩‍⚕️',
-      category: 'Healthcare',
-      demandLevel: 'Very High',
-      education: '12th → NEET → Medical College → Specialization',
-      famousPersons: ['Dr. APJ Abdul Kalam', 'Dr. Devi Shetty', 'Dr. Naresh Trehan'],
-      pathway: 'Biology, Chemistry focus → NEET preparation → MBBS → Practice or Specialization',
-      inspiringFact: 'India needs 2.3 million more doctors - huge opportunity!',
-      skills: ['Biology', 'Chemistry', 'Empathy', 'Critical Thinking']
-    },
-    {
-      title: 'AI Researcher',
-      description: 'Build intelligent machines that can think, learn, and solve complex problems',
-      icon: '🤖',
-      category: 'Technology',
-      demandLevel: 'Extremely High',
-      education: '12th → Engineering/Science → Masters → PhD/Research',
-      famousPersons: ['Geoffrey Hinton', 'Yann LeCun', 'Demis Hassabis'],
-      pathway: 'Math, Computer Science → Engineering → AI Specialization → Research/Industry',
-      inspiringFact: 'AI jobs in India are growing by 60% annually!',
-      skills: ['Mathematics', 'Programming', 'Statistics', 'Creativity']
-    },
-    {
-      title: 'Environmental Scientist',
-      description: 'Protect our planet, solve climate challenges, and ensure a sustainable future',
-      icon: '🌱',
-      category: 'Environment',
-      demandLevel: 'High',
-      education: '12th → Environmental Science/Biology → Research/Field Work',
-      famousPersons: ['Vandana Shiva', 'Sunita Narain', 'Raghunath Anant Mashelkar'],
-      pathway: 'Science subjects → Environmental Studies → Field Research → Conservation Work',
-      inspiringFact: 'Climate action creates 65 million new jobs globally!',
-      skills: ['Biology', 'Chemistry', 'Research', 'Communication']
-    }
-  ],
-  hollandCodeResults: {
-    hasCompletedTest: false,
-    recommendedCareers: [],
-    personalityType: null,
-    completionDate: null
-  },
-  progressStats: {
-    assessmentCompleted: false,
-    careersExplored: 0,
-    pathwaysViewed: 0,
-    totalProgress: 0
-  }
-};
-
-const inspirationalQuotes = [
-  {
-    quote: "The sky is not the limit, your mind is.",
-    author: "Dr. APJ Abdul Kalam"
-  },
-  {
-    quote: "Dream is not that which you see while sleeping, it is something that does not let you sleep.",
-    author: "Dr. APJ Abdul Kalam"
-  },
-  {
-    quote: "Science is a way of thinking much more than it is a body of knowledge.",
-    author: "Carl Sagan"
-  }
-];
+import { apiClient } from '@/lib/api/client';
+import { 
+  FeaturedCareer, 
+  HollandSubmissionResponse, 
+  InspirationalQuote,
+  SuccessStory,
+  CareerProgress 
+} from '@/types/api';
 
 export default function CareerGuidancePage() {
   const { user } = useAuth();
   const [selectedCareer, setSelectedCareer] = useState<number | null>(null);
-  const [currentQuote] = useState(0);
+  const [currentQuote, setCurrentQuote] = useState(0);
+  
+  // Data states
+  const [featuredCareers, setFeaturedCareers] = useState<FeaturedCareer[]>([]);
+  const [hollandResults, setHollandResults] = useState<HollandSubmissionResponse | null>(null);
+  const [careerProgress, setCareerProgress] = useState<CareerProgress | null>(null);
+  const [inspirationalQuotes, setInspirationalQuotes] = useState<InspirationalQuote[]>([
+    {
+      quote: "The sky is not the limit, your mind is.",
+      author: "Dr. APJ Abdul Kalam"
+    },
+    {
+      quote: "Dream is not that which you see while sleeping, it is something that does not let you sleep.",
+      author: "Dr. APJ Abdul Kalam"
+    },
+    {
+      quote: "Science is a way of thinking much more than it is a body of knowledge.",
+      author: "Carl Sagan"
+    }
+  ]);
+  const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
+  
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadCareerGuidanceData = async () => {
+      if (!user?.id) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Load all data in parallel
+        const [
+          featuredCareersResponse,
+          hollandResultsResponse,
+          careerProgressResponse,
+          quotesResponse,
+          successStoriesResponse
+        ] = await Promise.all([
+          apiClient.getFeaturedCareers(4), // Get 4 featured careers
+          apiClient.getHollandResults(user.id).catch(() => ({ data: null, error: null })), // Don't fail if no results
+          apiClient.getCareerProgress().catch(() => ({ data: null, error: null })), // Don't fail if no progress
+          apiClient.getInspirationalQuotes().catch(() => ({ data: null, error: null })), // Don't fail if no quotes
+          apiClient.getSuccessStories().catch(() => ({ data: null, error: null })) // Don't fail if no stories
+        ]);
+
+        // Set featured careers
+        if (featuredCareersResponse.data) {
+          setFeaturedCareers(featuredCareersResponse.data);
+        }
+
+        // Set Holland results if available
+        if (hollandResultsResponse.data && hollandResultsResponse.data.hasCompleted) {
+          setHollandResults(hollandResultsResponse.data);
+        }
+
+        // Set career progress if available
+        if (careerProgressResponse.data) {
+          setCareerProgress(careerProgressResponse.data);
+        }
+
+        // Set inspirational quotes if available (otherwise keep default)
+        if (quotesResponse.data && quotesResponse.data.length > 0) {
+          setInspirationalQuotes(quotesResponse.data);
+        }
+
+        // Set success stories if available
+        if (successStoriesResponse.data) {
+          setSuccessStories(successStoriesResponse.data.slice(0, 3)); // Take first 3
+        }
+
+      } catch (err) {
+        console.error('Error loading career guidance data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load career data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCareerGuidanceData();
+  }, [user?.id]);
+
+  // Auto-rotate quotes every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentQuote((prev) => (prev + 1) % inspirationalQuotes.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [inspirationalQuotes.length]);
 
   const getProgressColor = (level: string) => {
     switch (level) {
@@ -129,6 +152,87 @@ export default function CareerGuidancePage() {
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {/* Hero Section Skeleton */}
+        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white rounded-lg p-6 lg:p-8">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-64 bg-white/20" />
+            <Skeleton className="h-10 w-96 bg-white/20" />
+            <Skeleton className="h-6 w-full bg-white/20" />
+            <Skeleton className="h-12 w-48 bg-white/20" />
+          </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Featured Careers Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <Skeleton className="h-16 w-16 rounded" />
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
+            <h2 className="text-2xl font-bold text-gray-900">Something went wrong</h2>
+            <p className="text-gray-600">{error}</p>
+            <Button onClick={() => window.location.reload()} className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Calculate progress stats
+  const hasCompletedAssessment = hollandResults?.hasCompleted || false;
+  const careersExplored = careerProgress?.progressStats?.careersExplored || 0;
+  const totalProgress = careerProgress?.progressStats?.totalProgress || 0;
+  const pathwaysViewed = careerProgress?.progressStats?.pathwaysViewed || 0;
+
   return (
     <div className="space-y-6">
       {/* Hero Section with Inspiration */}
@@ -143,19 +247,33 @@ export default function CareerGuidancePage() {
               Dream Big, {user?.full_name?.split(' ')[0] || 'Champion'}! ✨
             </h1>
             <p className="text-purple-100 mb-4 text-lg">
-              {inspirationalQuotes[currentQuote].quote}
+              {inspirationalQuotes[currentQuote]?.quote || "Your dreams are the blueprint of your future success."}
             </p>
             <p className="text-purple-200 text-sm mb-6">
-              — {inspirationalQuotes[currentQuote].author}
+              — {inspirationalQuotes[currentQuote]?.author || "Unknown"}
             </p>
             
-            {!careerExplorationData.hollandCodeResults.hasCompletedTest && (
+            {!hasCompletedAssessment && (
               <Link href="/dashboard/student/career-guidance/holland-assessment/take-test">
                 <Button className="bg-white text-purple-600 hover:bg-purple-50 text-lg px-6 py-3">
                   <Play className="mr-2 h-5 w-5" />
                   Discover Your Perfect Career Match!
                 </Button>
               </Link>
+            )}
+
+            {hollandResults && hasCompletedAssessment && (
+              <div className="bg-white/10 rounded-lg p-4">
+                <h3 className="font-bold text-lg mb-2">Your Holland Code: {hollandResults.results.personalityCode}</h3>
+                <p className="text-purple-100 text-sm mb-3">
+                  {hollandResults.results.matchedCareers.length} careers match your personality!
+                </p>
+                <Link href="/dashboard/student/career-guidance/holland-assessment/take-test">
+                  <Button className="bg-white/20 hover:bg-white/30 text-white text-sm">
+                    View Results
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
           <div className="hidden lg:block">
@@ -172,12 +290,15 @@ export default function CareerGuidancePage() {
               <div>
                 <p className="text-indigo-600 text-sm font-medium">Holland Assessment</p>
                 <p className="text-xl font-bold text-indigo-700">
-                  {careerExplorationData.hollandCodeResults.hasCompletedTest ? 'Completed' : 'Pending'}
+                  {hasCompletedAssessment ? 'Completed' : 'Pending'}
                 </p>
+                {hollandResults && (
+                  <p className="text-xs text-indigo-500">Code: {hollandResults.results.personalityCode}</p>
+                )}
               </div>
               <Target className="h-8 w-8 text-indigo-600" />
             </div>
-            {!careerExplorationData.hollandCodeResults.hasCompletedTest && (
+            {!hasCompletedAssessment && (
               <Link href="/dashboard/student/career-guidance/holland-assessment/take-test">
                 <Button variant="ghost" size="sm" className="mt-2 text-indigo-600 hover:bg-indigo-50">
                   Take Test <ArrowRight className="ml-1 h-3 w-3" />
@@ -193,13 +314,13 @@ export default function CareerGuidancePage() {
               <div>
                 <p className="text-emerald-600 text-sm font-medium">Careers Explored</p>
                 <p className="text-xl font-bold text-emerald-700">
-                  {careerExplorationData.progressStats.careersExplored}/20
+                  {careersExplored}/20
                 </p>
               </div>
               <BookOpen className="h-8 w-8 text-emerald-600" />
             </div>
             <Progress 
-              value={(careerExplorationData.progressStats.careersExplored / 20) * 100} 
+              value={(careersExplored / 20) * 100} 
               className="mt-2 h-2"
             />
           </CardContent>
@@ -211,13 +332,13 @@ export default function CareerGuidancePage() {
               <div>
                 <p className="text-orange-600 text-sm font-medium">Dream Progress</p>
                 <p className="text-xl font-bold text-orange-700">
-                  {careerExplorationData.progressStats.totalProgress}%
+                  {totalProgress}%
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />
             </div>
             <Progress 
-              value={careerExplorationData.progressStats.totalProgress} 
+              value={totalProgress} 
               className="mt-2 h-2"
             />
           </CardContent>
@@ -227,14 +348,14 @@ export default function CareerGuidancePage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-600 text-sm font-medium">Mentor Sessions</p>
-                <p className="text-xl font-bold text-purple-700">3 Booked</p>
+                <p className="text-purple-600 text-sm font-medium">Pathways Viewed</p>
+                <p className="text-xl font-bold text-purple-700">{pathwaysViewed}</p>
               </div>
               <Users className="h-8 w-8 text-purple-600" />
             </div>
             <Link href="/dashboard/student/mentoring/sessions/schedule">
               <Button variant="ghost" size="sm" className="mt-2 text-purple-600 hover:bg-purple-50">
-                Book More <ArrowRight className="ml-1 h-3 w-3" />
+                View More <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </Link>
           </CardContent>
@@ -264,85 +385,94 @@ export default function CareerGuidancePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {careerExplorationData.featuredCareers.map((career, index) => (
-              <Card 
-                key={index} 
-                className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                  selectedCareer === index ? 'ring-2 ring-purple-500 bg-purple-50' : ''
-                }`}
-                onClick={() => setSelectedCareer(selectedCareer === index ? null : index)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="text-4xl">{career.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">{career.title}</h3>
-                        <Badge className={`${getProgressColor(career.demandLevel)} text-white`}>
-                          {career.demandLevel}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 mb-3">
-                        {getCategoryIcon(career.category)}
-                        <span className="text-sm text-gray-600">{career.category}</span>
-                      </div>
-                      
-                      <p className="text-gray-700 mb-4">{career.description}</p>
-                      
-                      {selectedCareer === index && (
-                        <div className="space-y-4 border-t pt-4">
-                          <div>
-                            <h4 className="font-semibold text-gray-800 mb-2">🎯 Career Path:</h4>
-                            <p className="text-sm text-gray-600">{career.pathway}</p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-semibold text-gray-800 mb-2">🌟 Famous People:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {career.famousPersons.map((person, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {person}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-semibold text-gray-800 mb-2">💡 Did you know?</h4>
-                            <p className="text-sm text-emerald-600 font-medium">{career.inspiringFact}</p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-semibold text-gray-800 mb-2">🛠️ Key Skills:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {career.skills.map((skill, i) => (
-                                <Badge key={i} className="bg-blue-100 text-blue-800">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div className="flex space-x-3 pt-2">
-                            <Link href={`/dashboard/student/career-guidance/career-details/${career.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                              <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                                <BookOpen className="mr-1 h-3 w-3" />
-                                Learn More
-                              </Button>
-                            </Link>
-                            <Button size="sm" variant="outline">
-                              <Users className="mr-1 h-3 w-3" />
-                              Talk to Mentor
-                            </Button>
-                          </div>
+            {featuredCareers.length > 0 ? (
+              featuredCareers.map((career, index) => (
+                <Card 
+                  key={index} 
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                    selectedCareer === index ? 'ring-2 ring-purple-500 bg-purple-50' : ''
+                  }`}
+                  onClick={() => setSelectedCareer(selectedCareer === index ? null : index)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <div className="text-4xl">{career.icon}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-xl font-bold text-gray-900">{career.title}</h3>
+                          <Badge className={`${getProgressColor(career.demandLevel)} text-white`}>
+                            {career.demandLevel}
+                          </Badge>
                         </div>
-                      )}
+                        
+                        <div className="flex items-center space-x-2 mb-3">
+                          {getCategoryIcon(career.category)}
+                          <span className="text-sm text-gray-600">{career.category}</span>
+                        </div>
+                        
+                        <p className="text-gray-700 mb-4">{career.description}</p>
+                        
+                        {selectedCareer === index && (
+                          <div className="space-y-4 border-t pt-4">
+                            <div>
+                              <h4 className="font-semibold text-gray-800 mb-2">🎯 Career Path:</h4>
+                              <p className="text-sm text-gray-600">{career.pathway}</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-semibold text-gray-800 mb-2">🌟 Famous People:</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {career.famousPersons.map((person, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {person}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-semibold text-gray-800 mb-2">💡 Did you know?</h4>
+                              <p className="text-sm text-emerald-600 font-medium">{career.inspiringFact}</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-semibold text-gray-800 mb-2">🛠️ Key Skills:</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {career.skills.map((skill, i) => (
+                                  <Badge key={i} className="bg-blue-100 text-blue-800">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex space-x-3 pt-2">
+                              <Link href={`/dashboard/student/career-guidance/career-details/${career.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                                <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                                  <BookOpen className="mr-1 h-3 w-3" />
+                                  Learn More
+                                </Button>
+                              </Link>
+                              <Button size="sm" variant="outline">
+                                <Users className="mr-1 h-3 w-3" />
+                                Talk to Mentor
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              // Fallback when no featured careers from API
+              <div className="col-span-2 text-center py-8">
+                <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Featured Careers Available</h3>
+                <p className="text-gray-500">Check back later for exciting career opportunities!</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -361,7 +491,7 @@ export default function CareerGuidancePage() {
             <Link href="/dashboard/student/career-guidance/holland-assessment/take-test">
               <Button className="bg-white text-indigo-600 hover:bg-indigo-50 w-full">
                 <Play className="mr-2 h-4 w-4" />
-                Start Assessment
+                {hasCompletedAssessment ? 'View Results' : 'Start Assessment'}
               </Button>
             </Link>
           </CardContent>
@@ -408,7 +538,7 @@ export default function CareerGuidancePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Award className="h-6 w-6 text-gold-500" />
+            <Award className="h-6 w-6 text-yellow-500" />
             <span>Success Stories from Rural Students</span>
           </CardTitle>
           <CardDescription>
@@ -417,32 +547,47 @@ export default function CareerGuidancePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="text-3xl mb-3">🚀</div>
-              <h4 className="font-bold text-gray-900 mb-2">Priya from Uttarakhand</h4>
-              <p className="text-sm text-gray-600 mb-3">
-                From a government school to ISRO scientist. "The career guidance helped me see beyond my village."
-              </p>
-              <Badge className="bg-blue-100 text-blue-800">ISRO Scientist</Badge>
-            </div>
-            
-            <div className="p-4 bg-emerald-50 rounded-lg">
-              <div className="text-3xl mb-3">👩‍⚕️</div>
-              <h4 className="font-bold text-gray-900 mb-2">Rahul from Himachal</h4>
-              <p className="text-sm text-gray-600 mb-3">
-                "I never knew I could become a doctor. The Holland test showed me my potential."
-              </p>
-              <Badge className="bg-emerald-100 text-emerald-800">AIIMS Doctor</Badge>
-            </div>
-            
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <div className="text-3xl mb-3">🤖</div>
-              <h4 className="font-bold text-gray-900 mb-2">Anita from Rajasthan</h4>
-              <p className="text-sm text-gray-600 mb-3">
-                "Rural background became my strength in AI research. Mentorship changed everything."
-              </p>
-              <Badge className="bg-purple-100 text-purple-800">AI Researcher</Badge>
-            </div>
+            {successStories.length > 0 ? (
+              successStories.map((story, index) => (
+                <div key={story.id} className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border">
+                  <div className="text-3xl mb-3">🚀</div>
+                  <h4 className="font-bold text-gray-900 mb-2">{story.name}</h4>
+                  <p className="text-sm text-gray-600 mb-3">{story.location}</p>
+                  <p className="text-sm text-gray-700 mb-3 italic">"{story.quote}"</p>
+                  <Badge className="bg-blue-100 text-blue-800">{story.currentRole}</Badge>
+                </div>
+              ))
+            ) : (
+              // Fallback success stories
+              <>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="text-3xl mb-3">🚀</div>
+                  <h4 className="font-bold text-gray-900 mb-2">Priya from Uttarakhand</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    From a government school to ISRO scientist. "The career guidance helped me see beyond my village."
+                  </p>
+                  <Badge className="bg-blue-100 text-blue-800">ISRO Scientist</Badge>
+                </div>
+                
+                <div className="p-4 bg-emerald-50 rounded-lg">
+                  <div className="text-3xl mb-3">👩‍⚕️</div>
+                  <h4 className="font-bold text-gray-900 mb-2">Rahul from Himachal</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    "I never knew I could become a doctor. The Holland test showed me my potential."
+                  </p>
+                  <Badge className="bg-emerald-100 text-emerald-800">AIIMS Doctor</Badge>
+                </div>
+                
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="text-3xl mb-3">🤖</div>
+                  <h4 className="font-bold text-gray-900 mb-2">Anita from Rajasthan</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    "Rural background became my strength in AI research. Mentorship changed everything."
+                  </p>
+                  <Badge className="bg-purple-100 text-purple-800">AI Researcher</Badge>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -120,3 +120,412 @@ export interface APIResponse<T = any> {
   error?: string;
   message?: string;
 }
+
+export interface StudentProfile {
+  name: string;
+  class: string;
+  school: string;
+  profileImage?: string;
+}
+
+export interface ProfileStats {
+  completedAssignments: number;
+  totalAssignments: number;
+  upcomingTests: number;
+  mentoringSessionsAttended: number;
+}
+
+export interface RecentActivity {
+  type: 'assignment' | 'session' | 'test' | 'project';
+  title: string;
+  status: 'completed' | 'upcoming' | 'pending' | 'in-progress';
+  date: string;
+}
+
+export interface UpcomingSession {
+  id: string;
+  date: string;
+  time: string;
+  mentor: string;
+  subject: string;
+  type: 'Individual' | 'Group';
+}
+
+export interface StudentDashboardData {
+  student: StudentProfile;
+  profileStats: ProfileStats;
+  recentActivities: RecentActivity[];
+  upcomingSessions: UpcomingSession[];
+}
+
+
+// ===== HOLLAND CODE ASSESSMENT TYPES =====
+export type CategoryName = 'Realistic' | 'Investigative' | 'Artistic' | 'Social' | 'Enterprising' | 'Conventional';
+
+export interface HollandQuestion {
+  id: number;
+  text: string;
+  category: CategoryName;
+  options: string[];
+}
+
+// Response wrapper from your backend
+export interface HollandQuestionsResponse {
+  questions: HollandQuestion[];
+  totalQuestions: number;
+  message: string;
+}
+
+export interface HollandResults {
+  scores: Record<CategoryName, number>;
+  topCategories: [CategoryName, number][];
+  personalityCode: string;
+  matchedCareers: string[];
+  completionTime: number;
+}
+
+export interface HollandSubmissionResponse {
+  hasCompleted: boolean;
+  results: HollandResults;
+  completionDate: string;
+  message: string;
+}
+
+export interface HollandSubmission {
+  studentId: string;
+  answers: { [questionId: number]: number };
+}
+
+export interface AssessmentStatus {
+  hasCompleted: boolean;
+  results?: HollandResults;
+  completionDate?: string;
+}
+
+
+// ===== CAREER TYPES =====
+// Add these to your existing types/api.ts file
+
+// ===== DREAM EXPLORER TYPES =====
+export type DemandLevel = 'Extremely High' | 'Very High' | 'Growing Fast' | 'Growing' | 'High' | 'Medium' | 'Low';
+export type DifficultyLevel = 'Extremely Hard' | 'Hard' | 'Medium' | 'Easy';
+export type CareerCategory = 
+  | 'Space & Exploration' 
+  | 'Healthcare & Medicine' 
+  | 'Technology & Innovation' 
+  | 'Environment & Sustainability'
+  | 'Engineering'
+  | 'Arts & Entertainment'
+  | 'Business & Finance'
+  | 'Education'
+  | 'Sports';
+
+export interface RealityCheck {
+  pros: string[];
+  cons: string[];
+  workEnvironment: string;
+  typicalDay: string;
+}
+
+export interface SuccessStory {
+  id: string;
+  name: string;
+  location: string;
+  journey: string;
+  quote: string;
+  currentRole: string;
+}
+
+export interface DayInLife {
+  morning: string;
+  afternoon: string;
+  evening: string;
+  challenges: string;
+}
+
+export interface CareerPathway {
+  id: string;
+  route: string;
+  steps: string[];
+  duration: string;
+  difficulty: DifficultyLevel;
+}
+
+export interface DreamCareer {
+  id: string;
+  title: string;
+  slug: string;
+  emoji: string;
+  description: string;
+  category: string;
+  salaryRange: string;
+  demandLevel: string;
+  educationLevel: string;
+  skills: string[];
+  
+  // Direct properties (not nested in realityCheck)
+  workEnvironment: string;
+  typicalDay: string;
+  pros: string[];
+  cons: string[];
+  
+  famousPersons: string[];
+  pathway: string;
+  inspiringFact: string;
+  localConnection: string;
+  nextSteps: string[];
+  
+  successStories: SuccessStory[];
+  dayInLife: DayInLife;
+  pathways: CareerPathway[];
+  isFeatured: boolean;
+}
+
+// Update SuccessStory to match backend
+export interface SuccessStory {
+  id: string;
+  name: string;
+  location: string;
+  background: string;
+  journey: string;
+  inspiration: string;
+  currentRole: string;
+  achievement: string;
+  quote: string;
+}
+
+// Keep the same DayInLife and CareerPathwayRoute interfaces
+export interface DayInLife {
+  morning: string;
+  afternoon: string;
+  evening: string;
+  challenges: string;
+}
+
+
+export interface InspirationalQuote {
+  id?: string;
+  quote: string;
+  author: string;
+}
+
+export interface FeaturedCareer {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  category: CareerCategory;
+  demandLevel: DemandLevel;
+  salaryRange: string;
+  famousPersons: string[];
+  pathway: string;
+  inspiringFact: string;
+  skills: string[];
+}
+
+export interface CareerProgress {
+  progressStats: {
+    careersExplored: number;
+    pathwaysViewed: number;
+    totalProgress: number;
+    assessmentCompleted: boolean;
+  };
+}
+
+export interface SearchCareersResponse {
+  careers: DreamCareer[];
+  total: number;
+  hasMore: boolean;
+}
+
+// Icon component type for category icons
+export type IconComponent = React.ComponentType<{ className?: string }>;
+
+// ===== CAREER PATHWAYS =====
+// ===== CAREER PATHWAY/MAP TYPES =====
+
+export interface PathwayStage {
+  id: string;
+  title: string;
+  duration: string;
+  description: string;
+  requirements: string[];
+  keySubjects: string[];
+  examinations: string[];
+  skillsToGain: string[];
+  nextOptions: string[];
+}
+
+export interface AlternativeRoute {
+  id: string;
+  routeName: string;
+  description: string;
+  duration: string;
+  advantages: string[];
+  challenges: string[];
+}
+
+export interface LocalOpportunity {
+  type: string;
+  institution: string;
+  location: string;
+  programs: string[];
+  admissionCriteria: string;
+}
+
+export interface Milestone {
+  stage: string;
+  achievement: string;
+  timeframe: string;
+  importance: string;
+}
+
+export interface CareerPathwayMap {
+  id: string;
+  careerTitle: string;
+  category: string;
+  estimatedDuration: string;
+  difficultyLevel: string;
+  stages: PathwayStage[];
+  alternativeRoutes: AlternativeRoute[];
+  localOpportunities: LocalOpportunity[];
+  milestones: Milestone[];
+}
+
+export interface UserProgress {
+  currentStage: number;
+  completedStages: number[];
+  careerPathway: string;
+  studentId: string;
+  lastUpdated: string;
+}
+
+export type StageStatus = 'completed' | 'current' | 'upcoming';
+
+
+// ===== CAREER GUIDANCE HUB =====
+export interface CareerProgress {
+  hollandCodeResults: {
+    hasCompletedTest: boolean;
+    recommendedCareers: string[];
+    personalityType?: string;
+    completionDate?: string;
+  };
+  progressStats: {
+    assessmentCompleted: boolean;
+    careersExplored: number;
+    pathwaysViewed: number;
+    totalProgress: number;
+  };
+}
+
+export interface InspirationalQuote {
+  quote: string;
+  author: string;
+}
+
+// ===== DASHBOARD DATA TYPES =====
+export interface QuickAction {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  actionUrl: string;
+  icon: string;
+}
+
+export interface NotificationDto {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface WeeklyAnalytics {
+  weeklyStats: {
+    assignments: { completed: number; total: number };
+    sessions: { attended: number; scheduled: number };
+    testsCompleted: number;
+    studyHours: number;
+  };
+}
+
+export interface CareerPathwayMapDto {
+  id: string;
+  careerTitle: string;
+  category: string;
+  estimatedDuration: string;
+  difficultyLevel: string;
+  stages: PathwayStageDto[];
+  alternativeRoutes: AlternativeRouteDto[];
+  localOpportunities: LocalOpportunityDto[];
+  isRecommended: boolean;
+  matchPercentage?: number;
+}
+
+export interface PathwayStageDto {
+  id: string;
+  title: string;
+  duration: string;
+  description: string;
+  requirements: string[];
+  keySubjects: string[];
+  examinations: string[];
+  skillsToGain: string[];
+  nextOptions: string[];
+}
+
+export interface AlternativeRouteDto {
+  id: string;
+  routeName: string;
+  description: string;
+  duration: string;
+  advantages: string[];
+  challenges: string[];
+}
+
+export interface LocalOpportunityDto {
+  type: string;
+  institution: string;
+  location: string;
+  programs: string[];
+  admissionCriteria: string;
+  website?: string;
+  contact?: string;
+  feesRange?: string;
+  placementRate?: number;
+}
+
+export interface UpdateProgressDto {
+  careerSlug: string;
+  stageIndex: number;
+  completed: boolean;
+  notes?: string;
+}
+
+export interface CareerProgressDto {
+  hollandCodeResults: {
+    hasCompletedTest: boolean;
+    recommendedCareers: string[];
+    personalityType?: string;
+    completionDate?: string;
+  };
+  progressStats: {
+    assessmentCompleted: boolean;
+    careersExplored: number;
+    pathwaysViewed: number;
+    totalProgress: number;
+  };
+}
+
+export interface InspirationalQuoteDto {
+  id: string;
+  text: string;
+  author: string;
+  category?: string;
+}
+
+// Career Map Stage Status
+export type CareerMapStageStatus = 'completed' | 'current' | 'upcoming';

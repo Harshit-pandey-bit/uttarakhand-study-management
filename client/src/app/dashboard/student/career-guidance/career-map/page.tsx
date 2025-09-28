@@ -5,284 +5,127 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   MapPin,
   Target,
   Clock,
-  BookOpen,
-  GraduationCap,
   Users,
   Award,
   TrendingUp,
   CheckCircle,
-  ArrowDown,
   ArrowRight,
-  Calendar,
   Brain,
   Rocket,
-  Heart
+  Heart,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-
-// Add proper type definitions
-type StageStatus = 'completed' | 'current' | 'upcoming';
-
-interface UserProgress {
-  currentStage: number;
-  completedStages: number[];
-  careerPathway: string;
-}
-
-// This would come from API: GET /api/career-pathways
-interface CareerPathway {
-  id: string;
-  careerTitle: string;
-  category: string;
-  estimatedDuration: string;
-  difficultyLevel: string;
-  stages: PathwayStage[];
-  alternativeRoutes: AlternativeRoute[];
-  localOpportunities: LocalOpportunity[];
-  milestones: Milestone[];
-}
-
-interface PathwayStage {
-  id: string;
-  title: string;
-  duration: string;
-  description: string;
-  requirements: string[];
-  keySubjects: string[];
-  examinations: string[];
-  skillsToGain: string[];
-  nextOptions: string[];
-}
-
-interface AlternativeRoute {
-  id: string;
-  routeName: string;
-  description: string;
-  duration: string;
-  advantages: string[];
-  challenges: string[];
-}
-
-interface LocalOpportunity {
-  type: string;
-  institution: string;
-  location: string;
-  programs: string[];
-  admissionCriteria: string;
-}
-
-interface Milestone {
-  stage: string;
-  achievement: string;
-  timeframe: string;
-  importance: string;
-}
-
-// Mock data - would come from API endpoints
-const careerPathways: CareerPathway[] = [
-  {
-    id: 'astronaut',
-    careerTitle: 'Astronaut',
-    category: 'Space & Exploration',
-    estimatedDuration: '12-15 years',
-    difficultyLevel: 'Extremely Challenging',
-    stages: [
-      {
-        id: 'stage1',
-        title: '10th-12th Grade Foundation',
-        duration: '2 years',
-        description: 'Build strong foundation in Physics, Chemistry, and Mathematics',
-        requirements: ['Complete 10th with 80%+ marks', 'Choose Science stream with PCM'],
-        keySubjects: ['Physics', 'Chemistry', 'Mathematics', 'English'],
-        examinations: ['12th Board Exams', 'JEE Main preparation'],
-        skillsToGain: ['Analytical thinking', 'Problem-solving', 'Mathematical skills'],
-        nextOptions: ['Engineering entrance preparation', 'Direct admission to engineering colleges']
-      },
-      {
-        id: 'stage2', 
-        title: 'Engineering Degree',
-        duration: '4 years',
-        description: 'Pursue Aerospace Engineering or related engineering field',
-        requirements: ['12th pass with 75%+ in PCM', 'Clear JEE/NEET for top colleges'],
-        keySubjects: ['Aerospace Engineering', 'Mechanical Engineering', 'Electronics'],
-        examinations: ['JEE Main', 'JEE Advanced', 'University entrance exams'],
-        skillsToGain: ['Engineering fundamentals', 'Technical design', 'Project management'],
-        nextOptions: ['Masters degree', 'Job in aerospace industry', 'Research programs']
-      },
-      {
-        id: 'stage3',
-        title: 'Pilot Training / Advanced Studies',
-        duration: '3-5 years', 
-        description: 'Become a test pilot through Air Force or pursue advanced aerospace studies',
-        requirements: ['Engineering degree', 'Physical fitness standards', 'Clear defense exams'],
-        keySubjects: ['Flight operations', 'Aircraft systems', 'Aerodynamics'],
-        examinations: ['AFCAT', 'NDA', 'CDS'],
-        skillsToGain: ['Pilot skills', 'Leadership', 'Decision-making under pressure'],
-        nextOptions: ['Test pilot career', 'Air Force service', 'Commercial aviation']
-      },
-      {
-        id: 'stage4',
-        title: 'Astronaut Selection & Training',
-        duration: '2-3 years',
-        description: 'Apply to ISRO Human Spaceflight Program and complete astronaut training',
-        requirements: ['Test pilot experience', 'Excellent physical/mental health', 'Leadership experience'],
-        keySubjects: ['Space systems', 'Life support', 'Mission operations'],
-        examinations: ['ISRO astronaut selection', 'Medical tests', 'Psychological evaluation'],
-        skillsToGain: ['Space operations', 'Emergency procedures', 'Team coordination'],
-        nextOptions: ['Space missions', 'Ground support', 'Training other astronauts']
-      }
-    ],
-    alternativeRoutes: [
-      {
-        id: 'route1',
-        routeName: 'NASA Route (Study Abroad)',
-        description: 'Pursue higher education in USA and apply to NASA programs',
-        duration: '15-20 years',
-        advantages: ['Access to NASA programs', 'Advanced space technology', 'International experience'],
-        challenges: ['Very expensive', 'Complex visa process', 'Extremely competitive']
-      },
-      {
-        id: 'route2',
-        routeName: 'Scientist-Astronaut Route',
-        description: 'Focus on space science research and apply as mission specialist',
-        duration: '10-12 years',
-        advantages: ['Strong scientific background', 'Research experience', 'Multiple career options'],
-        challenges: ['Requires PhD', 'Limited mission opportunities', 'Long research periods']
-      }
-    ],
-    localOpportunities: [
-      {
-        type: 'Engineering Colleges',
-        institution: 'IIT Roorkee',
-        location: 'Roorkee, Uttarakhand',
-        programs: ['Aerospace Engineering', 'Mechanical Engineering'],
-        admissionCriteria: 'JEE Advanced qualification'
-      },
-      {
-        type: 'Defense Training',
-        institution: 'Indian Military Academy',
-        location: 'Dehradun, Uttarakhand',
-        programs: ['Officer Training', 'Leadership Development'],
-        admissionCriteria: 'CDS examination'
-      }
-    ],
-    milestones: [
-      { stage: '12th Grade', achievement: 'Science stream completion with 80%+', timeframe: 'Age 17-18', importance: 'Foundation for engineering entrance' },
-      { stage: 'Engineering', achievement: 'B.Tech degree from recognized college', timeframe: 'Age 21-22', importance: 'Technical qualification requirement' },
-      { stage: 'Pilot Training', achievement: 'Test pilot certification', timeframe: 'Age 25-28', importance: 'Essential for astronaut selection' },
-      { stage: 'Space Program', achievement: 'ISRO astronaut selection', timeframe: 'Age 30-35', importance: 'Achievement of dream career' }
-    ]
-  },
-  {
-    id: 'doctor',
-    careerTitle: 'Doctor',
-    category: 'Healthcare & Medicine',
-    estimatedDuration: '11-15 years',
-    difficultyLevel: 'Very Challenging',
-    stages: [
-      {
-        id: 'stage1',
-        title: '10th-12th Grade Foundation',
-        duration: '2 years',
-        description: 'Focus on Biology, Chemistry, and Physics for medical entrance',
-        requirements: ['Complete 10th with 85%+ marks', 'Choose Science with PCB/PCMB'],
-        keySubjects: ['Biology', 'Chemistry', 'Physics', 'English'],
-        examinations: ['12th Board Exams', 'NEET preparation'],
-        skillsToGain: ['Scientific thinking', 'Memorization techniques', 'Time management'],
-        nextOptions: ['NEET preparation', 'Medical college applications', 'Alternative courses']
-      },
-      {
-        id: 'stage2',
-        title: 'MBBS Degree',
-        duration: '5.5 years',
-        description: 'Complete Bachelor of Medicine and Bachelor of Surgery',
-        requirements: ['NEET qualification', 'Medical college admission', 'Good academic performance'],
-        keySubjects: ['Anatomy', 'Physiology', 'Pathology', 'Pharmacology', 'Clinical Medicine'],
-        examinations: ['University exams', 'MBBS final exams', 'Internship evaluations'],
-        skillsToGain: ['Medical knowledge', 'Patient care', 'Diagnostic skills', 'Communication'],
-        nextOptions: ['General practice', 'Specialization', 'Research', 'Public health']
-      },
-      {
-        id: 'stage3',
-        title: 'Internship & Practice',
-        duration: '1-2 years',
-        description: 'Gain practical experience in hospitals and clinics',
-        requirements: ['MBBS completion', 'Medical registration', 'Hospital posting'],
-        keySubjects: ['Clinical practice', 'Emergency medicine', 'Patient management'],
-        examinations: ['Medical licensing exams', 'Specialization entrance (if pursuing)'],
-        skillsToGain: ['Practical experience', 'Emergency handling', 'Team work'],
-        nextOptions: ['Independent practice', 'Hospital job', 'Specialization courses']
-      }
-    ],
-    alternativeRoutes: [
-      {
-        id: 'route1',
-        routeName: 'AIIMS Route',
-        description: 'Target top medical colleges like AIIMS for best opportunities',
-        duration: '11-13 years',
-        advantages: ['Best medical education', 'Research opportunities', 'Prestigious career'],
-        challenges: ['Extremely competitive', 'High study pressure', 'Limited seats']
-      },
-      {
-        id: 'route2',
-        routeName: 'Alternative Medicine Route',
-        description: 'Pursue AYUSH courses (Ayurveda, Homeopathy, Unani)',
-        duration: '8-10 years',
-        advantages: ['Lower competition', 'Growing demand', 'Holistic approach'],
-        challenges: ['Limited modern medicine scope', 'Social perception', 'Lower initial income']
-      }
-    ],
-    localOpportunities: [
-      {
-        type: 'Medical Colleges',
-        institution: 'AIIMS Rishikesh',
-        location: 'Rishikesh, Uttarakhand',
-        programs: ['MBBS', 'Nursing', 'Allied Health Sciences'],
-        admissionCriteria: 'NEET qualification with top ranks'
-      },
-      {
-        type: 'Government Medical College',
-        institution: 'Government Medical College, Haldwani',
-        location: 'Haldwani, Uttarakhand',
-        programs: ['MBBS', 'Post-graduate specializations'],
-        admissionCriteria: 'NEET with state quota consideration'
-      }
-    ],
-    milestones: [
-      { stage: '12th Grade', achievement: 'PCB completion with 90%+', timeframe: 'Age 17-18', importance: 'NEET eligibility requirement' },
-      { stage: 'NEET', achievement: 'Medical entrance qualification', timeframe: 'Age 18-19', importance: 'Gateway to medical colleges' },
-      { stage: 'MBBS', achievement: 'Medical degree completion', timeframe: 'Age 24-25', importance: 'Licensed to practice medicine' },
-      { stage: 'Specialization', achievement: 'Post-graduate medical degree', timeframe: 'Age 27-30', importance: 'Advanced medical expertise' }
-    ]
-  }
-];
+import { apiClient } from '@/lib/api/client';
+import {
+  CareerPathwayMapDto,
+  CareerProgressDto,
+  CareerMapStageStatus,
+  PathwayStageDto,
+  AlternativeRouteDto,
+  LocalOpportunityDto,
+  UpdateProgressDto,
+  InspirationalQuote
+} from '@/types/api';
 
 export default function CareerMap() {
   const { user } = useAuth();
-  const [selectedPathway, setSelectedPathway] = useState<string>('astronaut');
+  const [selectedPathway, setSelectedPathway] = useState<string>('');
   const [activeStage, setActiveStage] = useState<number>(0);
-  const [userProgress, setUserProgress] = useState<UserProgress>({
-    currentStage: 0, // 10th grade student
-    completedStages: [], // No stages completed yet
-    careerPathway: 'astronaut'
-  });
+  
+  // Data states
+  const [careerPathways, setCareerPathways] = useState<CareerPathwayMapDto[]>([]);
+  const [careerProgress, setCareerProgress] = useState<CareerProgressDto | null>(null);
+  const [localOpportunities, setLocalOpportunities] = useState<LocalOpportunityDto[]>([]);
+  const [inspirationalQuotes, setInspirationalQuotes] = useState<InspirationalQuote[]>([]);
+  
+  // Loading states
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stageUpdateLoading, setStageUpdateLoading] = useState<boolean>(false);
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadCareerPathwayData = async (): Promise<void> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Load basic data first
+        const pathwaysResponse = await apiClient.getCareerPathways();
+        const opportunitiesResponse = await apiClient.getCareerLocalOpportunities('Uttarakhand');
+        const quotesResponse = await apiClient.getInspirationalQuotes('career', 3);
+
+        // Set pathways
+        if (pathwaysResponse.error) {
+          throw new Error(pathwaysResponse.error);
+        }
+        if (pathwaysResponse.data) {
+          setCareerPathways(pathwaysResponse.data);
+          // Set first pathway as default if none selected
+          if (pathwaysResponse.data.length > 0 && !selectedPathway) {
+            setSelectedPathway(pathwaysResponse.data[0].id);
+          }
+        }
+
+        // Set local opportunities
+        if (opportunitiesResponse.data && !opportunitiesResponse.error) {
+          setLocalOpportunities(opportunitiesResponse.data);
+        }
+
+        // Set quotes
+        if (quotesResponse.data && !quotesResponse.error) {
+          setInspirationalQuotes(quotesResponse.data);
+        }
+
+        // Load user progress separately if authenticated
+        if (user?.role === 'student') {
+          try {
+            const progressResponse = await apiClient.getMyCareerProgress();
+            if (progressResponse.data && !progressResponse.error) {
+              setCareerProgress(progressResponse.data);
+            }
+          } catch (progressError) {
+            console.warn('Could not load user progress:', progressError);
+            // Don't throw error for progress - it's optional
+          }
+        }
+
+      } catch (err: unknown) {
+        console.error('Error loading career pathway data:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load career pathway data';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCareerPathwayData();
+  }, [user]); // Only depend on user, not selectedPathway to prevent infinite loops
 
   const pathway = careerPathways.find(p => p.id === selectedPathway);
 
-  // Fixed function with proper type handling
-  const getStageStatus = (stageIndex: number): StageStatus => {
-    if (userProgress.completedStages.includes(stageIndex)) return 'completed';
-    if (stageIndex === userProgress.currentStage) return 'current';
+  // Local progress management (for demo purposes or non-authenticated users)
+  const [localProgress, setLocalProgress] = useState({
+    currentStage: 0,
+    completedStages: [] as number[]
+  });
+
+  const getStageStatus = (stageIndex: number): CareerMapStageStatus => {
+    // Use local demo progress for now
+    if (localProgress.completedStages.includes(stageIndex)) return 'completed';
+    if (stageIndex === localProgress.currentStage) return 'current';
     return 'upcoming';
   };
 
-  const getStageStatusColor = (status: StageStatus) => {
+  const getStageStatusColor = (status: CareerMapStageStatus): string => {
     switch (status) {
       case 'completed': return 'bg-green-500';
       case 'current': return 'bg-blue-500'; 
@@ -290,17 +133,17 @@ export default function CareerMap() {
     }
   };
 
-  const getStageIcon = (status: StageStatus, index: number) => {
+  const getStageIcon = (status: CareerMapStageStatus, index: number) => {
     if (status === 'completed') return <CheckCircle className="h-6 w-6" />;
     return <span className="text-white font-bold">{index + 1}</span>;
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Extremely Challenging': return 'bg-red-100 text-red-800';
-      case 'Very Challenging': return 'bg-orange-100 text-orange-800';
-      case 'Challenging': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-green-100 text-green-800';
+  const getDifficultyColor = (difficulty: string): string => {
+    switch (difficulty.toLowerCase()) {
+      case 'advanced': return 'bg-red-100 text-red-800';
+      case 'intermediate': return 'bg-orange-100 text-orange-800';
+      case 'beginner': return 'bg-green-100 text-green-800';
+      default: return 'bg-yellow-100 text-yellow-800';
     }
   };
 
@@ -309,11 +152,161 @@ export default function CareerMap() {
       case 'Space & Exploration': return <Rocket className="h-5 w-5" />;
       case 'Healthcare & Medicine': return <Heart className="h-5 w-5" />;
       case 'Technology & Innovation': return <Brain className="h-5 w-5" />;
+      case 'Technology': return <Brain className="h-5 w-5" />;
+      case 'Healthcare': return <Heart className="h-5 w-5" />;
       default: return <Target className="h-5 w-5" />;
     }
   };
 
-  if (!pathway) return null;
+  const handleStageUpdate = async (stageIndex: number) => {
+    setActiveStage(stageIndex);
+    
+    // Update local progress for demo
+    setLocalProgress(prev => ({
+      ...prev,
+      currentStage: stageIndex
+    }));
+
+    // If user is authenticated, optionally update progress in backend
+    if (user?.role === 'student' && pathway) {
+      try {
+        setStageUpdateLoading(true);
+        
+        const progressData: UpdateProgressDto = {
+          careerSlug: pathway.careerTitle.toLowerCase().replace(/\s+/g, '-'),
+          stageIndex: stageIndex,
+          completed: false
+        };
+        
+        const response = await apiClient.updateMyCareerProgress(progressData);
+        if (response.data) {
+          setCareerProgress(response.data);
+        }
+      } catch (error) {
+        console.warn('Failed to update backend progress:', error);
+      } finally {
+        setStageUpdateLoading(false);
+      }
+    }
+  };
+
+  const handlePathwayChange = (pathwayId: string) => {
+    setSelectedPathway(pathwayId);
+    setActiveStage(0);
+    setLocalProgress({
+      currentStage: 0,
+      completedStages: []
+    });
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <Card className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <Skeleton className="h-8 w-64 bg-white/20" />
+                <Skeleton className="h-12 w-80 bg-white/20" />
+                <Skeleton className="h-6 w-96 bg-white/20" />
+                <div className="flex space-x-4">
+                  <Skeleton className="h-6 w-32 bg-white/20" />
+                  <Skeleton className="h-6 w-32 bg-white/20" />
+                  <Skeleton className="h-6 w-32 bg-white/20" />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Career Selection Skeleton */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex space-x-3">
+              {Array.from({ length: 3 }, (_, i) => (
+                <Skeleton key={i} className="h-10 w-32" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Main Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <div key={i} className="flex items-start space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="space-y-6">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-32 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
+            <h2 className="text-2xl font-bold text-gray-900">Something went wrong</h2>
+            <p className="text-gray-600">{error}</p>
+            <Button onClick={() => window.location.reload()} className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!pathway) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <MapPin className="h-16 w-16 text-gray-400 mx-auto" />
+            <h2 className="text-2xl font-bold text-gray-900">No Career Pathways Available</h2>
+            <p className="text-gray-600">Please check back later for career pathway information.</p>
+            <Link href="/dashboard/student/career-guidance/dream-explorer">
+              <Button>
+                <Rocket className="mr-2 h-4 w-4" />
+                Explore Careers
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -328,7 +321,7 @@ export default function CareerMap() {
               </div>
               <h1 className="text-3xl font-bold mb-2">Path to Becoming a {pathway.careerTitle}</h1>
               <p className="text-blue-100 mb-4">
-                Step-by-step roadmap from 10th grade to your dream career
+                Step-by-step roadmap from your current stage to your dream career
               </p>
               <div className="flex items-center space-x-4">
                 <Badge className="bg-white/20 text-white">
@@ -342,6 +335,11 @@ export default function CareerMap() {
                   <Clock className="h-3 w-3 mr-1" />
                   {pathway.estimatedDuration}
                 </Badge>
+                {pathway.matchPercentage && (
+                  <Badge className="bg-green-500 text-white">
+                    {pathway.matchPercentage}% Match
+                  </Badge>
+                )}
               </div>
             </div>
             <div className="hidden md:block text-6xl opacity-20">
@@ -359,11 +357,14 @@ export default function CareerMap() {
               <Button
                 key={career.id}
                 variant={selectedPathway === career.id ? "default" : "outline"}
-                onClick={() => setSelectedPathway(career.id)}
+                onClick={() => handlePathwayChange(career.id)}
                 className="flex items-center space-x-2"
               >
                 {getCategoryIcon(career.category)}
                 <span>{career.careerTitle}</span>
+                {career.isRecommended && (
+                  <Badge className="ml-1 bg-green-500 text-xs">★</Badge>
+                )}
               </Button>
             ))}
           </div>
@@ -401,13 +402,13 @@ export default function CareerMap() {
                           isActive ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
                         } ${status === 'current' ? 'border-green-500' : 
                              status === 'completed' ? 'border-green-300' : ''}`}
-                        onClick={() => setActiveStage(index)}
+                        onClick={() => handleStageUpdate(index)}
                       >
                         <CardContent className="p-6">
                           <div className="flex items-start space-x-4">
                             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                               getStageStatusColor(status)
-                            }`}>
+                            } ${stageUpdateLoading && isActive ? 'animate-pulse' : ''}`}>
                               {getStageIcon(status, index)}
                             </div>
                             
@@ -468,6 +469,17 @@ export default function CareerMap() {
                                       ))}
                                     </div>
                                   </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-gray-800 mb-2">🚀 Next Options:</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {stage.nextOptions.map((option, optionIndex) => (
+                                        <Badge key={optionIndex} variant="secondary" className="text-xs">
+                                          {option}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -495,26 +507,47 @@ export default function CareerMap() {
 
         {/* Sidebar Information */}
         <div className="space-y-6">
-          {/* Milestones */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Award className="h-6 w-6 text-gold-600" />
-                <span>Key Milestones</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {pathway.milestones.map((milestone, index) => (
-                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                    <div className="font-semibold text-gray-800">{milestone.stage}</div>
-                    <div className="text-sm text-gray-600">{milestone.achievement}</div>
-                    <div className="text-xs text-blue-600">{milestone.timeframe}</div>
+          {/* Progress Summary */}
+          {careerProgress && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Award className="h-6 w-6 text-gold-600" />
+                  <span>Your Progress</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Overall Progress</span>
+                      <span>{careerProgress.progressStats.totalProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${careerProgress.progressStats.totalProgress}%` }}
+                      ></div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {careerProgress.progressStats.careersExplored}
+                      </div>
+                      <div className="text-xs text-gray-600">Careers Explored</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {careerProgress.progressStats.pathwaysViewed}
+                      </div>
+                      <div className="text-xs text-gray-600">Pathways Viewed</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Local Opportunities */}
           <Card>
@@ -526,12 +559,15 @@ export default function CareerMap() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {pathway.localOpportunities.map((opportunity, index) => (
+                {(pathway.localOpportunities.length > 0 ? pathway.localOpportunities : localOpportunities.slice(0, 3)).map((opportunity, index) => (
                   <div key={index} className="bg-green-50 rounded-lg p-3">
                     <div className="font-semibold text-green-800">{opportunity.institution}</div>
                     <div className="text-sm text-green-600">{opportunity.location}</div>
                     <div className="text-xs text-gray-600 mt-1">{opportunity.programs.join(', ')}</div>
                     <div className="text-xs text-blue-600 mt-1">{opportunity.admissionCriteria}</div>
+                    {opportunity.feesRange && (
+                      <div className="text-xs text-purple-600 mt-1">Fees: {opportunity.feesRange}</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -539,63 +575,85 @@ export default function CareerMap() {
           </Card>
 
           {/* Alternative Routes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
-                <span>Alternative Paths</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="0">
-                <TabsList className="grid w-full grid-cols-2">
+          {pathway.alternativeRoutes && pathway.alternativeRoutes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-6 w-6 text-purple-600" />
+                  <span>Alternative Paths</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="0">
+                  <TabsList className="grid w-full grid-cols-2">
+                    {pathway.alternativeRoutes.map((route, index) => (
+                      <TabsTrigger key={index} value={index.toString()}>
+                        Route {index + 1}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
                   {pathway.alternativeRoutes.map((route, index) => (
-                    <TabsTrigger key={index} value={index.toString()}>
-                      Route {index + 1}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {pathway.alternativeRoutes.map((route, index) => (
-                  <TabsContent key={index} value={index.toString()}>
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-purple-800">{route.routeName}</h4>
-                      <p className="text-sm text-gray-600">{route.description}</p>
-                      <Badge variant="outline">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {route.duration}
-                      </Badge>
-                      
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="bg-green-50 p-2 rounded">
-                          <div className="text-xs font-semibold text-green-800 mb-1">Advantages:</div>
-                          <ul className="text-xs text-green-700 space-y-1">
-                            {route.advantages.map((adv, advIndex) => (
-                              <li key={advIndex} className="flex items-start space-x-1">
-                                <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5"></div>
-                                <span>{adv}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                    <TabsContent key={index} value={index.toString()}>
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-purple-800">{route.routeName}</h4>
+                        <p className="text-sm text-gray-600">{route.description}</p>
+                        <Badge variant="outline">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {route.duration}
+                        </Badge>
                         
-                        <div className="bg-orange-50 p-2 rounded">
-                          <div className="text-xs font-semibold text-orange-800 mb-1">Challenges:</div>
-                          <ul className="text-xs text-orange-700 space-y-1">
-                            {route.challenges.map((challenge, challengeIndex) => (
-                              <li key={challengeIndex} className="flex items-start space-x-1">
-                                <div className="w-1 h-1 bg-orange-500 rounded-full mt-1.5"></div>
-                                <span>{challenge}</span>
-                              </li>
-                            ))}
-                          </ul>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div className="bg-green-50 p-2 rounded">
+                            <div className="text-xs font-semibold text-green-800 mb-1">Advantages:</div>
+                            <ul className="text-xs text-green-700 space-y-1">
+                              {route.advantages.map((adv, advIndex) => (
+                                <li key={advIndex} className="flex items-start space-x-1">
+                                  <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5"></div>
+                                  <span>{adv}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div className="bg-orange-50 p-2 rounded">
+                            <div className="text-xs font-semibold text-orange-800 mb-1">Challenges:</div>
+                            <ul className="text-xs text-orange-700 space-y-1">
+                              {route.challenges.map((challenge, challengeIndex) => (
+                                <li key={challengeIndex} className="flex items-start space-x-1">
+                                  <div className="w-1 h-1 bg-orange-500 rounded-full mt-1.5"></div>
+                                  <span>{challenge}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Inspirational Quote */}
+          {inspirationalQuotes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Award className="h-6 w-6 text-yellow-600" />
+                  <span>Daily Inspiration</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <blockquote className="border-l-4 border-yellow-500 pl-4 italic text-gray-700">
+                  "{inspirationalQuotes[0].quote}"
+                  <footer className="text-sm text-gray-500 mt-2">
+                    — {inspirationalQuotes[0].author}
+                  </footer>
+                </blockquote>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

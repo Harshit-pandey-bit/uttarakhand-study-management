@@ -7,241 +7,233 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Target,
-  ArrowRight,
-  ArrowLeft,
-  CheckCircle,
-  Clock,
-  Brain,
-  Users,
-  Hammer,
-  Lightbulb,
-  Heart,
-  Briefcase,
-  RotateCcw
+import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Target, 
+  ArrowRight, 
+  ArrowLeft, 
+  CheckCircle, 
+  Clock, 
+  Brain, 
+  Users, 
+  Hammer, 
+  Lightbulb, 
+  Heart, 
+  Briefcase, 
+  RotateCcw,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-
-type CategoryName = 'Realistic' | 'Investigative' | 'Artistic' | 'Social' | 'Enterprising' | 'Conventional';
-
-interface CategoryScore {
-  category: CategoryName;
-  score: number;
-}
-
-interface AssessmentResults {
-  scores: Record<CategoryName, number>;
-  topCategories: [CategoryName, number][];
-  personalityCode: string;
-  matchedCareers: string[];
-  completionTime: number;
-}
-
-type CareerMatchKey = 'RI' | 'IR' | 'SI' | 'IS' | 'AI' | 'IA' | 'SE' | 'ES' | 'EC' | 'CE' | 'RC' | 'CR';
-
-interface HollandQuestion {
-  id: number;
-  text: string;
-  category: CategoryName;
-  options: string[];
-}
-
-// Holland Code RIASEC Questions based on specifications [file:1]
-const hollandQuestions: HollandQuestion[] = [
-  // Realistic (R) - Hands-on, practical, mechanical
-  { id: 1, text: "I enjoy building things with my hands", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 2, text: "I like working with tools and machinery", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 3, text: "I prefer outdoor activities over indoor activities", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 4, text: "I enjoy repairing electronic equipment", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 5, text: "I like to work with my hands rather than my mind", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 6, text: "I enjoy physical activities and sports", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 7, text: "I like working with plants and animals", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 8, text: "I prefer practical solutions to theoretical ones", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 9, text: "I like to see immediate results from my work", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 10, text: "I enjoy working in a workshop or laboratory", category: "Realistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-
-  // Investigative (I) - Research, analysis, scientific
-  { id: 11, text: "I love solving complex math problems", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 12, text: "I enjoy conducting scientific experiments", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 13, text: "I like to analyze data and find patterns", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 14, text: "I enjoy reading scientific articles and journals", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 15, text: "I like to understand how things work", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 16, text: "I enjoy working independently on research projects", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 17, text: "I like to question everything and think critically", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 18, text: "I enjoy learning about new scientific discoveries", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 19, text: "I like to solve puzzles and brain teasers", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 20, text: "I prefer working with ideas rather than people", category: "Investigative", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-
-  // Artistic (A) - Creative, expressive, innovative
-  { id: 21, text: "I enjoy creative writing and storytelling", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 22, text: "I like to draw, paint, or design things", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 23, text: "I enjoy music and performing arts", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 24, text: "I like to express myself through art", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 25, text: "I enjoy decorating spaces and rooms", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 26, text: "I like to think of new and better ways to do things", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 27, text: "I enjoy photography and videography", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 28, text: "I like to attend cultural events and art exhibitions", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 29, text: "I enjoy reading fiction and poetry", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 30, text: "I like to work in unstructured environments", category: "Artistic", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-
-  // Social (S) - Helping, teaching, caring
-  { id: 31, text: "I enjoy helping people with their problems", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 32, text: "I like to teach and explain things to others", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 33, text: "I enjoy working as part of a team", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 34, text: "I like to counsel and guide people", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 35, text: "I enjoy organizing community events", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 36, text: "I like to work with children and young people", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 37, text: "I enjoy providing support to people in need", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 38, text: "I like to participate in group discussions", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 39, text: "I enjoy volunteering for social causes", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 40, text: "I prefer cooperative work over competitive work", category: "Social", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-
-  // Enterprising (E) - Leadership, business, persuasion
-  { id: 41, text: "I enjoy leading a team or group", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 42, text: "I like to start new projects and ventures", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 43, text: "I enjoy selling products or ideas to people", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 44, text: "I like to take risks and face challenges", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 45, text: "I enjoy public speaking and presentations", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 46, text: "I like to persuade and influence others", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 47, text: "I enjoy managing and supervising others", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 48, text: "I like to make important decisions", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 49, text: "I enjoy networking and meeting new people", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 50, text: "I like to organize and plan events", category: "Enterprising", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-
-  // Conventional (C) - Organizing, detail-oriented, structured
-  { id: 51, text: "I enjoy organizing files and keeping records", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 52, text: "I like to follow established procedures and rules", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 53, text: "I enjoy working with numbers and calculations", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 54, text: "I like to keep my workspace neat and organized", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 55, text: "I enjoy proofreading and checking for errors", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 56, text: "I like to work on detailed projects", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 57, text: "I enjoy using computers and office equipment", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 58, text: "I like to collect and classify information", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 59, text: "I prefer structured work environments", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] },
-  { id: 60, text: "I enjoy creating schedules and timelines", category: "Conventional", options: ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"] }
-];
-
-// Career matches based on RIASEC combinations [file:1]
-const careerMatches: Record<CareerMatchKey, string[]> = {
-  'RI': ['ISRO Scientist', 'Aerospace Engineer', 'Research Engineer', 'Mechanical Engineer'],
-  'IR': ['Data Scientist', 'Medical Researcher', 'AI Researcher', 'Biomedical Engineer'],
-  'SI': ['Doctor', 'Teacher', 'Social Worker', 'Counselor'],
-  'IS': ['Psychologist', 'Research Professor', 'Clinical Researcher', 'Therapist'],
-  'AI': ['Artist', 'Designer', 'Musician', 'Writer'],
-  'IA': ['Architect', 'Game Designer', 'Creative Director', 'Innovation Manager'],
-  'SE': ['HR Manager', 'Training Specialist', 'Event Manager', 'Team Leader'],
-  'ES': ['Sales Manager', 'Marketing Director', 'Business Development', 'Entrepreneur'],
-  'EC': ['Business Analyst', 'Project Manager', 'Operations Manager', 'CEO'],
-  'CE': ['Financial Analyst', 'Bank Manager', 'Accounting Manager', 'Investment Advisor'],
-  'RC': ['Quality Controller', 'Lab Technician', 'Production Manager', 'Engineer'],
-  'CR': ['Computer Programmer', 'Database Administrator', 'System Analyst', 'IT Support']
-};
+import { apiClient } from '@/lib/api/client';
+import { 
+  HollandQuestion, 
+  HollandResults, 
+  CategoryName,
+  HollandSubmission,
+  HollandQuestionsResponse, 
+  HollandSubmissionResponse
+} from '@/types/api';
 
 const categoryInfo: Record<CategoryName, { icon: any; color: string; description: string }> = {
-  Realistic: { icon: Hammer, color: 'bg-orange-500', description: 'Hands-on, practical, love building and creating' },
-  Investigative: { icon: Brain, color: 'bg-purple-500', description: 'Analytical, curious, love solving problems' },
-  Artistic: { icon: Lightbulb, color: 'bg-pink-500', description: 'Creative, expressive, love art and innovation' },
-  Social: { icon: Heart, color: 'bg-red-500', description: 'Caring, helpful, love working with people' },
-  Enterprising: { icon: Users, color: 'bg-blue-500', description: 'Leadership, business-minded, love leading teams' },
-  Conventional: { icon: Briefcase, color: 'bg-green-500', description: 'Organized, detail-oriented, love structured work' }
+  'Realistic': { 
+    icon: Hammer, 
+    color: 'bg-orange-500', 
+    description: 'Hands-on, practical, love building and creating' 
+  },
+  'Investigative': { 
+    icon: Brain, 
+    color: 'bg-purple-500', 
+    description: 'Analytical, curious, love solving problems' 
+  },
+  'Artistic': { 
+    icon: Lightbulb, 
+    color: 'bg-pink-500', 
+    description: 'Creative, expressive, love art and innovation' 
+  },
+  'Social': { 
+    icon: Heart, 
+    color: 'bg-red-500', 
+    description: 'Caring, helpful, love working with people' 
+  },
+  'Enterprising': { 
+    icon: Users, 
+    color: 'bg-blue-500', 
+    description: 'Leadership, business-minded, love leading teams' 
+  },
+  'Conventional': { 
+    icon: Briefcase, 
+    color: 'bg-green-500', 
+    description: 'Organized, detail-oriented, love structured work' 
+  }
 };
 
 export default function HollandAssessmentTest() {
   const { user } = useAuth();
   const router = useRouter();
+  
+  // Assessment state
+  const [questions, setQuestions] = useState<HollandQuestion[]>([]);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [timeStarted, setTimeStarted] = useState<Date | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [results, setResults] = useState<AssessmentResults | null>(null);
+  const [results, setResults] = useState<HollandResults | null>(null);
+  const [completionDate, setCompletionDate] = useState<string | null>(null);
+  
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [retaking, setRetaking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Check for existing results first
   useEffect(() => {
-    setTimeStarted(new Date());
-  }, []);
+    const checkExistingResults = async () => {
+      if (!user?.id) return;
 
-  const getScoreValue = (responseIndex: number) => {
-    // Convert response to score: Strongly Agree=4, Agree=3, Neutral=2, Disagree=1, Strongly Disagree=0
-    return [4, 3, 2, 1, 0][responseIndex] || 0;
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Check if user already has results
+        const resultResponse = await apiClient.getHollandResults(user.id);
+        
+        if (resultResponse.data && resultResponse.data.hasCompleted) {
+          // User has already taken the test
+          setResults(resultResponse.data.results);
+          setCompletionDate(resultResponse.data.completionDate);
+          setIsCompleted(true);
+          setLoading(false);
+          return;
+        }
+        
+        // If no existing results, load questions for new test
+        await loadQuestions();
+        
+      } catch (err) {
+        console.error('Error checking existing results:', err);
+        // If checking fails, still try to load questions
+        await loadQuestions();
+      }
+    };
+
+    checkExistingResults();
+  }, [user?.id]);
+
+  // Load questions from API
+  const loadQuestions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiClient.getHollandQuestions();
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      if (response.data) {
+        // Extract questions from the wrapper response
+        setQuestions(response.data.questions);
+        setTotalQuestions(response.data.totalQuestions);
+        setTimeStarted(new Date());
+        console.log(response.data.message); // Log success message
+      } else {
+        throw new Error('No questions received');
+      }
+    } catch (err) {
+      console.error('Error loading questions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load questions');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAnswer = (responseIndex: number) => {
-    const newAnswers = { ...answers, [currentQuestion]: responseIndex };
+    const newAnswers = { ...answers, [questions[currentQuestion].id]: responseIndex };
     setAnswers(newAnswers);
 
     // Auto-advance to next question
-    if (currentQuestion < hollandQuestions.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setTimeout(() => {
         setCurrentQuestion(currentQuestion + 1);
       }, 500);
     } else {
-      // Calculate results
-      calculateResults(newAnswers);
+      // Submit results to API
+      submitResults(newAnswers);
     }
   };
 
-  const calculateResults = (finalAnswers: { [key: number]: number }) => {
-    const categoryScores: Record<CategoryName, number> = {
-      Realistic: 0,
-      Investigative: 0,
-      Artistic: 0,
-      Social: 0,
-      Enterprising: 0,
-      Conventional: 0
-    };
+  const submitResults = async (finalAnswers: { [key: number]: number }) => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return;
+    }
 
-    // Calculate scores for each category
-    hollandQuestions.forEach((question, index) => {
-      const answer = finalAnswers[index];
-      if (answer !== undefined) {
-        const score = getScoreValue(answer);
-        categoryScores[question.category] += score;
-      }
-    });
-
-    // Sort categories by score with proper typing
-    const sortedCategories = (Object.entries(categoryScores) as [CategoryName, number][])
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3);
-
-    // Get top 2 letters for career matching
-    const topTwoLetters = sortedCategories.slice(0, 2)
-      .map(([category]) => category[0])
-      .join('') as CareerMatchKey;
-
-    // Helper function to get careers safely
-    const getMatchedCareers = (code: string): string[] => {
-      const primaryMatch = careerMatches[code as CareerMatchKey];
-      if (primaryMatch) return primaryMatch;
+    try {
+      setSubmitting(true);
       
-      // Try reversed combination
-      const reversedCode = code.split('').reverse().join('') as CareerMatchKey;
-      const reversedMatch = careerMatches[reversedCode];
-      if (reversedMatch) return reversedMatch;
-      
-      // Fallback based on primary letter
-      const fallbackCareers: Record<string, string[]> = {
-        'R': ['Engineer', 'Technician', 'Mechanic', 'Scientist'],
-        'I': ['Researcher', 'Analyst', 'Scientist', 'Doctor'],
-        'A': ['Artist', 'Designer', 'Writer', 'Creative Director'],
-        'S': ['Teacher', 'Counselor', 'Social Worker', 'Therapist'],
-        'E': ['Manager', 'Entrepreneur', 'Sales Person', 'Leader'],
-        'C': ['Accountant', 'Administrator', 'Analyst', 'Coordinator']
+      const submission: HollandSubmission = {
+        studentId: user.id,
+        answers: finalAnswers
       };
+
+      const response = await apiClient.submitHollandAssessment(submission);
       
-      return fallbackCareers[code[0]] || ['Explore various career options based on your interests'];
-    };
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-    const results: AssessmentResults = {
-      scores: categoryScores,
-      topCategories: sortedCategories,
-      personalityCode: topTwoLetters,
-      matchedCareers: getMatchedCareers(topTwoLetters),
-      completionTime: timeStarted ? Math.round((new Date().getTime() - timeStarted.getTime()) / 60000) : 0
-    };
+      if (response.data?.results) {
+        setResults(response.data.results);
+        setCompletionDate(response.data.completionDate);
+        setIsCompleted(true);
+      } else {
+        throw new Error('No results received');
+      }
+    } catch (err) {
+      console.error('Error submitting assessment:', err);
+      setError(err instanceof Error ? err.message : 'Failed to submit assessment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    setResults(results);
-    setIsCompleted(true);
+  const handleRetake = async () => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return;
+    }
+
+    try {
+      setRetaking(true);
+      setError(null);
+
+      // Call the retake endpoint to allow the user to retake
+      const response = await apiClient.allowHollandRetake(user.id);
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      // Reset state to start fresh
+      setIsCompleted(false);
+      setResults(null);
+      setCompletionDate(null);
+      setCurrentQuestion(0);
+      setAnswers({});
+      
+      // Load questions for retake
+      await loadQuestions();
+      
+    } catch (err) {
+      console.error('Error setting up retake:', err);
+      setError(err instanceof Error ? err.message : 'Failed to set up retake');
+    } finally {
+      setRetaking(false);
+    }
   };
 
   const goToPrevious = () => {
@@ -251,22 +243,72 @@ export default function HollandAssessmentTest() {
   };
 
   const goToNext = () => {
-    if (currentQuestion < hollandQuestions.length - 1 && answers[currentQuestion] !== undefined) {
+    const currentQuestionId = questions[currentQuestion]?.id;
+    if (currentQuestion < questions.length - 1 && answers[currentQuestionId] !== undefined) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
 
-  const restartTest = () => {
-    setCurrentQuestion(0);
-    setAnswers({});
-    setTimeStarted(new Date());
-    setIsCompleted(false);
-    setResults(null);
-  };
+  const progressPercentage = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
-  const progressPercentage = ((currentQuestion + 1) / hollandQuestions.length) * 100;
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-64 bg-white/20" />
+              <Skeleton className="h-6 w-48 bg-white/20" />
+              <Skeleton className="h-2 w-full bg-white/20" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="min-h-[400px]">
+          <CardHeader>
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-w-2xl mx-auto">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
+            <h2 className="text-2xl font-bold text-gray-900">Something went wrong</h2>
+            <p className="text-gray-600">{error}</p>
+            <Button onClick={() => window.location.reload()} className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Results view (for both completed and existing results)
   if (isCompleted && results) {
+    // Convert completion time from seconds to minutes
+    const completionMinutes = Math.round(results.completionTime / 60);
+    
     return (
       <div className="space-y-6">
         {/* Results Header */}
@@ -276,18 +318,19 @@ export default function HollandAssessmentTest() {
               <div>
                 <div className="flex items-center space-x-2 mb-2">
                   <CheckCircle className="h-8 w-8" />
-                  <span className="text-xl font-bold">Assessment Complete! 🎉</span>
+                  <span className="text-xl font-bold">Assessment Complete!</span>
                 </div>
-                <h1 className="text-3xl font-bold mb-2">
-                  Your Personality Code: {results.personalityCode}
-                </h1>
+                <h1 className="text-3xl font-bold mb-2">Your Personality Code: {results.personalityCode}</h1>
                 <p className="text-green-100 mb-4">
-                  Completed in {results.completionTime} minutes by {user?.full_name}
+                  Completed in {completionMinutes} minutes by {user?.full_name}
                 </p>
+                {completionDate && (
+                  <p className="text-green-200 text-sm">
+                    Completed on {new Date(completionDate).toLocaleString()}
+                  </p>
+                )}
               </div>
-              <div className="hidden md:block text-6xl opacity-20">
-                🎯
-              </div>
+              <div className="hidden md:block text-6xl opacity-20">🎯</div>
             </div>
           </CardContent>
         </Card>
@@ -305,13 +348,16 @@ export default function HollandAssessmentTest() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {results.topCategories.map(([category, score]: [CategoryName, number], index: number) => {
-                const categoryData = categoryInfo[category];
+              {results.topCategories.map(([category, score], index) => {
+                const categoryData = categoryInfo[category as CategoryName];
                 const IconComponent = categoryData.icon;
-                const percentage = (score / 40) * 100; // Max score per category is 40
-                
+                const percentage = (score / 50) * 100; // Using 50 as max based on your response
+
                 return (
-                  <Card key={category} className={`${index === 0 ? 'ring-2 ring-blue-500' : ''} relative`}>
+                  <Card 
+                    key={category} 
+                    className={index === 0 ? 'ring-2 ring-blue-500 relative' : ''}
+                  >
                     <CardContent className="p-6">
                       {index === 0 && (
                         <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white">
@@ -324,7 +370,7 @@ export default function HollandAssessmentTest() {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold">{Math.round(percentage)}%</div>
-                          <div className="text-sm text-gray-500">Score: {score}/40</div>
+                          <div className="text-sm text-gray-500">Score: {score}/50</div>
                         </div>
                       </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">{category}</h3>
@@ -352,7 +398,10 @@ export default function HollandAssessmentTest() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {results.matchedCareers.map((career: string, index: number) => (
-                <Card key={index} className="bg-purple-50 border-purple-200 hover:bg-purple-100 transition-colors">
+                <Card 
+                  key={index} 
+                  className="bg-purple-50 border-purple-200 hover:bg-purple-100 transition-colors"
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">
@@ -391,12 +440,17 @@ export default function HollandAssessmentTest() {
                 Talk to Career Mentor
               </Button>
               <Button 
-                onClick={restartTest}
-                variant="outline"
+                onClick={handleRetake} 
+                variant="outline" 
                 size="lg"
+                disabled={retaking}
               >
-                <RotateCcw className="mr-2 h-5 w-5" />
-                Retake Test
+                {retaking ? (
+                  <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-5 w-5" />
+                )}
+                {retaking ? 'Setting up...' : 'Retake Test'}
               </Button>
             </div>
           </CardContent>
@@ -404,6 +458,28 @@ export default function HollandAssessmentTest() {
       </div>
     );
   }
+
+  // Assessment view
+  if (questions.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <Brain className="h-16 w-16 text-gray-400 mx-auto" />
+            <h2 className="text-2xl font-bold text-gray-900">No questions available</h2>
+            <p className="text-gray-600">Unable to load assessment questions.</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const currentQuestionData = questions[currentQuestion];
+  const currentQuestionId = currentQuestionData?.id;
 
   return (
     <div className="space-y-6">
@@ -418,7 +494,7 @@ export default function HollandAssessmentTest() {
               </div>
               <h1 className="text-2xl font-bold mb-2">Discover Your Perfect Career Match!</h1>
               <p className="text-indigo-100">
-                Question {currentQuestion + 1} of {hollandQuestions.length} • {Math.round(progressPercentage)}% Complete
+                Question {currentQuestion + 1} of {totalQuestions || questions.length} • {Math.round(progressPercentage)}% Complete
               </p>
             </div>
             <div className="hidden md:block">
@@ -428,8 +504,12 @@ export default function HollandAssessmentTest() {
               </div>
             </div>
           </div>
-          
-          <Progress value={progressPercentage} className="mt-4 h-3 bg-indigo-800" />
+          <div className="relative w-full h-3 bg-indigo-800 rounded-full overflow-hidden">
+            <div
+                className="h-full bg-indigo-400 transition-all"
+                style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -438,45 +518,48 @@ export default function HollandAssessmentTest() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <Badge variant="outline" className="text-sm">
-              {hollandQuestions[currentQuestion].category} Type
+              {currentQuestionData?.category} Type
             </Badge>
             <div className="flex items-center space-x-1 text-sm text-gray-500">
               <Clock className="h-4 w-4" />
-              <span>{timeStarted ? Math.round((new Date().getTime() - timeStarted.getTime()) / 60000) : 0} min</span>
+              <span>
+                {timeStarted ? Math.round((new Date().getTime() - timeStarted.getTime()) / 60000) : 0} min
+              </span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {hollandQuestions[currentQuestion].text}
+              {currentQuestionData?.text}
             </h2>
-            <p className="text-gray-600">
-              How much do you agree with this statement?
-            </p>
+            <p className="text-gray-600">How much do you agree with this statement?</p>
           </div>
 
           {/* Answer Options */}
           <div className="space-y-3 max-w-2xl mx-auto">
-            {hollandQuestions[currentQuestion].options.map((option, index) => (
+            {currentQuestionData?.options.map((option, index) => (
               <Button
                 key={index}
                 onClick={() => handleAnswer(index)}
-                variant={answers[currentQuestion] === index ? "default" : "outline"}
+                variant={answers[currentQuestionId] === index ? 'default' : 'outline'}
                 className={`w-full py-4 text-left justify-start transition-all duration-200 ${
-                  answers[currentQuestion] === index 
-                    ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'hover:bg-blue-50 hover:border-blue-300'
+                  answers[currentQuestionId] === index
+                    ? 'bg-gray-900 text-white border-gray-900' // selected = black/near-black
+                    : 'hover:bg-gray-100 hover:border-gray-400' // hover = neutral grays
                 }`}
+                disabled={submitting}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    answers[currentQuestion] === index 
-                      ? 'bg-white border-white' 
-                      : 'border-gray-300'
-                  }`}>
-                    {answers[currentQuestion] === index && (
-                      <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      answers[currentQuestionId] === index
+                        ? 'bg-white border-white'
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    {answers[currentQuestionId] === index && (
+                      <CheckCircle className="h-4 w-4 text-gray-900" />
                     )}
                   </div>
                   <span className="text-lg">{option}</span>
@@ -492,8 +575,8 @@ export default function HollandAssessmentTest() {
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
             <Button 
-              onClick={goToPrevious}
-              disabled={currentQuestion === 0}
+              onClick={goToPrevious} 
+              disabled={currentQuestion === 0 || submitting} 
               variant="outline"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -501,12 +584,12 @@ export default function HollandAssessmentTest() {
             </Button>
             
             <div className="text-sm text-gray-600">
-              Question {currentQuestion + 1} of {hollandQuestions.length}
+              Question {currentQuestion + 1} of {totalQuestions || questions.length}
             </div>
             
             <Button 
-              onClick={goToNext}
-              disabled={currentQuestion === hollandQuestions.length - 1 || answers[currentQuestion] === undefined}
+              onClick={goToNext} 
+              disabled={currentQuestion === questions.length - 1 || answers[currentQuestionId] === undefined || submitting} 
               variant="outline"
             >
               Next
@@ -520,9 +603,19 @@ export default function HollandAssessmentTest() {
       <Alert>
         <Lightbulb className="h-4 w-4" />
         <AlertDescription>
-          <strong>Tip:</strong> Answer honestly based on your true preferences. There are no right or wrong answers - this test helps find careers that match your personality!
+          <strong>Tip:</strong> Answer honestly based on your true preferences. 
+          There are no right or wrong answers - this test helps find careers that match your personality!
         </AlertDescription>
       </Alert>
+      
+      {submitting && (
+        <div className="text-center">
+          <div className="inline-flex items-center space-x-2 text-blue-600">
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            <span>Processing your results...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
