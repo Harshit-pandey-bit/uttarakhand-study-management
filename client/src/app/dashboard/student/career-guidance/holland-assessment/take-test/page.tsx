@@ -429,7 +429,8 @@ export default function HollandAssessmentTest() {
             </div>
           </div>
           
-          <Progress value={progressPercentage} className="mt-4 h-3 bg-indigo-800" />
+          {/* FIXED: Progress bar with white fill color for visibility */}
+          <Progress value={progressPercentage} className="mt-4 h-3 bg-indigo-800 [&>div]:bg-white" />
         </CardContent>
       </Card>
 
@@ -456,7 +457,7 @@ export default function HollandAssessmentTest() {
             </p>
           </div>
 
-          {/* Answer Options */}
+          {/* FIXED: Answer Options with black borders */}
           <div className="space-y-3 max-w-2xl mx-auto">
             {hollandQuestions[currentQuestion].options.map((option, index) => (
               <Button
@@ -465,15 +466,15 @@ export default function HollandAssessmentTest() {
                 variant={answers[currentQuestion] === index ? "default" : "outline"}
                 className={`w-full py-4 text-left justify-start transition-all duration-200 ${
                   answers[currentQuestion] === index 
-                    ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'hover:bg-blue-50 hover:border-blue-300'
+                    ? 'bg-blue-600 text-white border-black' 
+                    : 'hover:bg-blue-50 border-black hover:border-black'
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     answers[currentQuestion] === index 
                       ? 'bg-white border-white' 
-                      : 'border-gray-300'
+                      : 'border-black'
                   }`}>
                     {answers[currentQuestion] === index && (
                       <CheckCircle className="h-4 w-4 text-blue-600" />
