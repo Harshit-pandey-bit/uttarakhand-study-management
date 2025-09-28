@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -21,10 +21,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router]);
 
-  // Detect mobile/desktop
+  // Detect mobile/desktop and set initial sidebar state
   useEffect(() => {
     const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
     };
     
     checkDevice();
@@ -53,29 +59,39 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Desktop Header */}
-      <DashboardHeader 
-        user={user} 
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-        isMobile={isMobile}
-      />
+    <div className="h-screen bg-gray-50 overflow-hidden">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
+        <DashboardHeader 
+          user={user} 
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+          isMobile={isMobile}
+        />
+      </div>
 
-      <div className="flex">
-        {/* Desktop Sidebar */}
-        {!isMobile && (
+      {/* Layout Container */}
+      <div className="flex h-full pt-16">
+        
+        {/* Sidebar - Desktop: relative positioning, Mobile: fixed overlay */}
+        <div className={`${
+          isMobile 
+            ? `fixed inset-y-0 left-0 z-40 w-72 transform transition-transform duration-300 ease-in-out ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              } bg-white shadow-lg pt-16`
+            : `flex-shrink-0 transition-all duration-300 ${
+                sidebarOpen ? 'w-72' : 'w-0 overflow-hidden'
+              }`
+        }`}>
           <DashboardSidebar 
             userRole={user.role}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
           />
-        )}
+        </div>
 
-        {/* Main Content */}
-        <main className={`flex-1 transition-all duration-300 ${
-          !isMobile && sidebarOpen ? 'ml-64' : 'ml-0'
-        } ${isMobile ? 'pb-20' : 'pb-4'}`}>
-          <div className="p-4 lg:p-6">
+        {/* Main Content - Takes remaining space and scrolls independently */}
+        <main className="flex-1 overflow-y-auto bg-gray-50">
+          <div className={`p-4 lg:p-6 min-h-full ${isMobile ? 'pb-24' : ''}`}>
             {children}
           </div>
         </main>
@@ -83,7 +99,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <MobileNavigation userRole={user.role} />
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200">
+          <MobileNavigation userRole={user.role} />
+        </div>
+      )}
+
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
     </div>
   );
