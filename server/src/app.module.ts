@@ -7,6 +7,10 @@ import { AppService } from './app.service';
 //import { AuthModule } from './auth/auth.module';
 import { AuthModule } from './auth/auth.module';
 import { StudentsModule } from './students/students.module';
+import { AssessmentModule } from './assessment/assessment.module';
+import { AssignmentsModule } from './assignments/assignments.module';
+import { CareersModule } from './careers/careers.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -17,6 +21,10 @@ import { StudentsModule } from './students/students.module';
     }),
     AuthModule,
     StudentsModule,
+    AssessmentModule,
+    AssignmentsModule,
+    CareersModule,
+    DashboardModule,
     
     // Feature modules
     //AuthModule,
