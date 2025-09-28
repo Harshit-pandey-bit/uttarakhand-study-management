@@ -19,7 +19,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 backdrop-blur-md bg-white/95">
+      <header className="shadow-sm border-b border-gray-200 sticky top-0 z-50 backdrop-blur-md bg-white/95">
         <div className="w-full px-6">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3 group cursor-pointer">
