@@ -71,7 +71,7 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             route: '/dashboard/student/career-guidance',
             children: [
               { icon: GraduationCap, label: 'Career Hub', route: '/dashboard/student/career-guidance' },
-              { icon: GraduationCap, label: 'Holland Assessment', route: '/dashboard/student/career-guidance/holland-assessment' },
+              { icon: GraduationCap, label: 'Holland Assessment', route: '/dashboard/student/career-guidance/holland-assessment/take-test' },
               { icon: GraduationCap, label: 'Dream Explorer', route: '/dashboard/student/career-guidance/dream-explorer' },
               { icon: GraduationCap, label: 'Career Map', route: '/dashboard/student/career-guidance/career-map' },
             ]
