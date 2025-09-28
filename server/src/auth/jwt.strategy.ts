@@ -137,10 +137,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     try {
-      // Query our custom app_users table to get user data
-      console.log('🔍 Querying app_users table for user:', payload.sub);
+      // Query our custom users table to get user data
+      console.log('🔍 Querying users table for user:', payload.sub);
       const { data: user, error } = await this.supabase
-        .from('app_users')
+        .from('users')
         .select('id, email, role')
         .eq('id', payload.sub)
         .single();
@@ -151,7 +151,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
 
       if (!user) {
-        console.log('❌ User not found in app_users table');
+        console.log('❌ User not found in users table');
         throw new UnauthorizedException('User not found in application database');
       }
 

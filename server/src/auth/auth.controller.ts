@@ -1,6 +1,6 @@
 // server/src/auth/auth.controller.ts
 
-import { Controller, Post, Get, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request, HttpCode, HttpStatus, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -15,6 +15,7 @@ import {
   HeiAdminRegisterDto,
   SchoolAdminRegisterDto 
 } from './dto/auth.dto';
+import { Response } from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -65,7 +66,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response,): Promise<AuthResponseDto> {
+
+    const data = await this.authService.login(loginDto);
+
+    // The controller's job is to set the token in a secure, httpOnly cookie.
+    response.cookie('access_token', data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     return this.authService.login(loginDto);
   }
 
@@ -75,7 +88,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
   async getProfile(@Request() req) {
-    return this.authService.getUserProfile(req.user.sub);
+    return this.authService.getUserProfile(req.user.id);
   }
 
   // Helper endpoints for dropdowns

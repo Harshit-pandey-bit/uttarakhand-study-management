@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -14,28 +14,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { GraduationCap, Eye, EyeOff, X, Users, BookOpen, Award, Sparkles, ArrowRight, CheckCircle, User, Mail, Lock } from 'lucide-react';
 import { UserRole } from '@/types/auth';
-
-// Dummy data for dropdowns
-const dummySchools = [
-  { id: 'SCH001', name: 'Govt Senior Secondary School Dehradun' },
-  { id: 'SCH002', name: 'Govt High School Rishikesh' },
-  { id: 'SCH003', name: 'Rajkiya Inter College Haridwar' },
-  { id: 'SCH004', name: 'Government School Nainital' }
-];
-
-const dummyHEIs = [
-  { id: 'HEI001', name: 'Indian Institute of Technology Roorkee' },
-  { id: 'HEI002', name: 'Doon University Dehradun' },
-  { id: 'HEI003', name: 'Gurukula Kangri Vishwavidyalaya' },
-  { id: 'HEI004', name: 'Uttarakhand Technical University' }
-];
+import { apiClient } from '@/lib/api/client';
+import { School, HEI } from '@/types/api';
 
 const classLevels = ['6th', '7th', '8th', '9th', '10th', '11th', '12th'];
-
-const subjects = [
-  'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'Hindi', 
-  'Social Science', 'Computer Science', 'Sanskrit', 'Physical Education'
-];
 
 const qualifications = [
   'Bachelor of Education (B.Ed)', 'Master of Education (M.Ed)', 
@@ -48,11 +30,6 @@ const designations = [
   'Professor', 'Assistant Professor', 'Associate Professor', 'Lecturer'
 ];
 
-const careerSuggestions = [
-  'Astronaut', 'Doctor', 'Engineer', 'Scientist', 'Teacher', 'AI Researcher',
-  'Environmental Scientist', 'Data Scientist', 'Software Developer'
-];
-
 const responsibilities = [
   'Academic Administration', 'Student Affairs', 'Infrastructure Management',
   'Staff Management', 'Partnership Coordination', 'Finance Management'
@@ -61,9 +38,9 @@ const responsibilities = [
 const roleDisplayNames = {
   'student': 'Student',
   'teacher': 'Teacher',
-  'hei-mentor': 'HEI Mentor', 
-  'hei-admin': 'HEI Admin',
-  'school-admin': 'School Admin'
+  'hei_mentor': 'HEI Mentor', 
+  'hei_admin': 'HEI Admin',
+  'school_admin': 'School Admin'
 };
 
 // Features for left panel
@@ -98,12 +75,43 @@ export default function RegisterPage() {
     phone: '',
     // Role-specific fields will be added dynamically
   });
+
+  const [schools, setSchools] = useState<School[]>([]);
+  const [heis, setHEIs] = useState<HEI[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [careerSuggestions, setCareerSuggestions] = useState<string[]>([]);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [schoolsRes, heisRes, subjectsRes, careerRes] = await Promise.all([
+          apiClient.getSchools(),
+          apiClient.getHEIs(),
+          apiClient.getSubjects(),
+          apiClient.getCareerSuggestions(),
+        ]);
+
+        if (schoolsRes.data) setSchools(schoolsRes.data);
+        if (heisRes.data) setHEIs(heisRes.data);
+        if (subjectsRes.data) setSubjects(subjectsRes.data);
+        if (careerRes.data) setCareerSuggestions(careerRes.data);
+      } catch (error) {
+        console.error('Failed to load dropdown data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleCommonFieldChange = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -129,8 +137,8 @@ export default function RegisterPage() {
       return false;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long (matching backend validation)');
       return false;
     }
 
@@ -138,7 +146,7 @@ export default function RegisterPage() {
   };
 
   const validateStep2 = () => {
-    // Updated validation for simplified fields
+    // Role-specific validation matching your backend DTOs
     switch (formData.role) {
       case 'student':
         if (!formData.school_id || !formData.class_level) {
@@ -148,14 +156,14 @@ export default function RegisterPage() {
         break;
       case 'teacher':
         if (!formData.school_id || !formData.qualification || 
-            !formData.experience_years || !formData.primary_subject) {
+            !formData.experience_years || !formData.subjects?.length) {
           setError('Please fill in all required fields');
           return false;
         }
         break;
       case 'hei-mentor':
         if (!formData.hei_id || !formData.designation || !formData.department ||
-            !formData.qualification || !formData.experience_years || !formData.primary_expertise) {
+            !formData.qualification || !formData.experience_years || !formData.expertise?.length) {
           setError('Please fill in all required fields');
           return false;
         }
@@ -193,14 +201,23 @@ export default function RegisterPage() {
       return;
     }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // In real app, this would create the user account
-    console.log('Registration data:', formData);
-    
-    // Redirect to login with success message
-    router.push('/auth/login?registered=true');
+    try {
+      const response = await apiClient.register(formData);
+      
+      if (response.error) {
+        setError(response.error);
+        setLoading(false);
+        return;
+      }
+
+      if (response.data) {
+        // Redirect to login with success message
+        router.push('/auth/login?message=' + encodeURIComponent(response.data.message || 'Registration successful!'));
+      }
+      
+    } catch (error) {
+      setError('Registration failed. Please try again.');
+    }
     
     setLoading(false);
   };
@@ -217,7 +234,7 @@ export default function RegisterPage() {
                   <SelectValue placeholder="Select your school" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 shadow-xl">
-                  {dummySchools.map(school => (
+                  {schools.map(school => (
                     <SelectItem key={school.id} value={school.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
                       {school.name}
                     </SelectItem>
@@ -292,7 +309,7 @@ export default function RegisterPage() {
                   <SelectValue placeholder="Select your school" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 shadow-xl">
-                  {dummySchools.map(school => (
+                  {schools.map(school => (
                     <SelectItem key={school.id} value={school.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
                       {school.name}
                     </SelectItem>
@@ -372,7 +389,7 @@ export default function RegisterPage() {
           </div>
         );
 
-      case 'hei-mentor':
+      case 'hei_mentor':
         return (
           <div className="space-y-5">
             <div className="space-y-2">
@@ -382,7 +399,7 @@ export default function RegisterPage() {
                   <SelectValue placeholder="Select your institution" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 shadow-xl">
-                  {dummyHEIs.map(hei => (
+                  {heis.map(hei => (
                     <SelectItem key={hei.id} value={hei.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
                       {hei.name}
                     </SelectItem>
@@ -497,7 +514,7 @@ export default function RegisterPage() {
           </div>
         );
 
-      case 'hei-admin':
+      case 'hei_admin':
         return (
           <div className="space-y-5">
             <div className="space-y-2">
@@ -507,7 +524,7 @@ export default function RegisterPage() {
                   <SelectValue placeholder="Select your institution" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 shadow-xl">
-                  {dummyHEIs.map(hei => (
+                  {heis.map(hei => (
                     <SelectItem key={hei.id} value={hei.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
                       {hei.name}
                     </SelectItem>
@@ -584,7 +601,7 @@ export default function RegisterPage() {
           </div>
         );
 
-      case 'school-admin':
+      case 'school_admin':
         return (
           <div className="space-y-5">
             <div className="space-y-2">
@@ -594,7 +611,7 @@ export default function RegisterPage() {
                   <SelectValue placeholder="Select your school" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 shadow-xl">
-                  {dummySchools.map(school => (
+                  {schools.map(school => (
                     <SelectItem key={school.id} value={school.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
                       {school.name}
                     </SelectItem>
@@ -665,6 +682,11 @@ export default function RegisterPage() {
         return null;
     }
   };
+
+  console.log("Schools: ")
+  console.log(schools)
+  console.log("HEIs: ")
+  console.log(heis)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex">
