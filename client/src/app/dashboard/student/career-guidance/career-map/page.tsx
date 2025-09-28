@@ -372,7 +372,7 @@ export default function CareerMap() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Pathway Timeline */}
+        {/* Main Pathway Timeline - FIXED: Symmetric Journey Stages */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -384,49 +384,67 @@ export default function CareerMap() {
                 Click on each stage to explore detailed requirements and next steps
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+            <CardContent className="p-6">
+              <div className="space-y-8">
                 {pathway.stages.map((stage, index) => {
                   const status = getStageStatus(index);
                   const isActive = activeStage === index;
                   
                   return (
                     <div key={stage.id} className="relative">
-                      {/* Connection Line */}
+                      {/* Connection Line - FIXED: Centered and symmetric */}
                       {index < pathway.stages.length - 1 && (
-                        <div className="absolute left-6 top-16 w-0.5 h-20 bg-gray-300"></div>
+                        <div className="absolute left-6 top-16 w-0.5 h-24 bg-gray-300 z-0"></div>
                       )}
                       
                       <Card 
-                        className={`cursor-pointer transition-all duration-200 ${
+                        className={`cursor-pointer transition-all duration-200 relative z-10 ${
                           isActive ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
                         } ${status === 'current' ? 'border-green-500' : 
                              status === 'completed' ? 'border-green-300' : ''}`}
                         onClick={() => handleStageUpdate(index)}
                       >
                         <CardContent className="p-6">
-                          <div className="flex items-start space-x-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          <div className="flex items-start space-x-6">
+                            {/* Stage Circle - FIXED: Consistent positioning */}
+                            <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
                               getStageStatusColor(status)
-                            } ${stageUpdateLoading && isActive ? 'animate-pulse' : ''}`}>
+                            } ${stageUpdateLoading && isActive ? 'animate-pulse' : ''} shadow-lg`}>
                               {getStageIcon(status, index)}
                             </div>
                             
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
+                            {/* Stage Content - FIXED: Proper spacing and alignment */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-xl font-bold text-gray-900">{stage.title}</h3>
-                                <Badge variant="outline">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {stage.duration}
-                                </Badge>
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline" className="flex items-center space-x-1">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{stage.duration}</span>
+                                  </Badge>
+                                  {status === 'current' && (
+                                    <Badge className="bg-green-100 text-green-800">
+                                      Current Stage
+                                    </Badge>
+                                  )}
+                                  {status === 'completed' && (
+                                    <Badge className="bg-blue-100 text-blue-800">
+                                      Completed
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                               
-                              <p className="text-gray-600 mb-4">{stage.description}</p>
+                              <p className="text-gray-600 mb-4 leading-relaxed">{stage.description}</p>
                               
+                              {/* Expanded Details - FIXED: Better spacing and symmetry */}
                               {isActive && (
-                                <div className="space-y-4 border-t pt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6 mt-4">
                                   <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">📚 Key Subjects:</h4>
+                                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                                      <span className="mr-2">📚</span>
+                                      Key Subjects:
+                                    </h4>
                                     <div className="flex flex-wrap gap-2">
                                       {stage.keySubjects.map((subject, subIndex) => (
                                         <Badge key={subIndex} className="bg-blue-100 text-blue-800">
@@ -437,19 +455,10 @@ export default function CareerMap() {
                                   </div>
                                   
                                   <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">✅ Requirements:</h4>
-                                    <ul className="space-y-1">
-                                      {stage.requirements.map((req, reqIndex) => (
-                                        <li key={reqIndex} className="flex items-center space-x-2 text-sm">
-                                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                          <span>{req}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                  
-                                  <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">🎯 Skills to Gain:</h4>
+                                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                                      <span className="mr-2">🎯</span>
+                                      Skills to Gain:
+                                    </h4>
                                     <div className="flex flex-wrap gap-2">
                                       {stage.skillsToGain.map((skill, skillIndex) => (
                                         <Badge key={skillIndex} variant="outline" className="text-xs">
@@ -460,7 +469,25 @@ export default function CareerMap() {
                                   </div>
 
                                   <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">📝 Important Exams:</h4>
+                                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                                      <span className="mr-2">✅</span>
+                                      Requirements:
+                                    </h4>
+                                    <ul className="space-y-2">
+                                      {stage.requirements.map((req, reqIndex) => (
+                                        <li key={reqIndex} className="flex items-start space-x-2 text-sm">
+                                          <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                                          <span>{req}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                                      <span className="mr-2">📝</span>
+                                      Important Exams:
+                                    </h4>
                                     <div className="flex flex-wrap gap-2">
                                       {stage.examinations.map((exam, examIndex) => (
                                         <Badge key={examIndex} className="bg-red-100 text-red-800 text-xs">
@@ -470,8 +497,11 @@ export default function CareerMap() {
                                     </div>
                                   </div>
 
-                                  <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">🚀 Next Options:</h4>
+                                  <div className="md:col-span-2">
+                                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
+                                      <span className="mr-2">🚀</span>
+                                      Next Options:
+                                    </h4>
                                     <div className="flex flex-wrap gap-2">
                                       {stage.nextOptions.map((option, optionIndex) => (
                                         <Badge key={optionIndex} variant="secondary" className="text-xs">
@@ -483,17 +513,6 @@ export default function CareerMap() {
                                 </div>
                               )}
                             </div>
-                            
-                            {status === 'current' && (
-                              <Badge className="bg-green-100 text-green-800">
-                                Current Stage
-                              </Badge>
-                            )}
-                            {status === 'completed' && (
-                              <Badge className="bg-blue-100 text-blue-800">
-                                Completed
-                              </Badge>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -574,7 +593,7 @@ export default function CareerMap() {
             </CardContent>
           </Card>
 
-          {/* Alternative Routes */}
+          {/* Alternative Routes - FIXED: Support for up to 4 routes */}
           {pathway.alternativeRoutes && pathway.alternativeRoutes.length > 0 && (
             <Card>
               <CardHeader>
@@ -585,42 +604,48 @@ export default function CareerMap() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="0">
-                  <TabsList className="grid w-full grid-cols-2">
-                    {pathway.alternativeRoutes.map((route, index) => (
-                      <TabsTrigger key={index} value={index.toString()}>
+                  {/* FIXED: Dynamic grid layout for up to 4 routes */}
+                  <TabsList className={`grid w-full ${
+                    pathway.alternativeRoutes.length === 1 ? 'grid-cols-1' :
+                    pathway.alternativeRoutes.length === 2 ? 'grid-cols-2' :
+                    pathway.alternativeRoutes.length === 3 ? 'grid-cols-3' :
+                    'grid-cols-2'
+                  }`}>
+                    {pathway.alternativeRoutes.slice(0, 4).map((route, index) => (
+                      <TabsTrigger key={index} value={index.toString()} className="text-xs">
                         Route {index + 1}
                       </TabsTrigger>
                     ))}
                   </TabsList>
-                  {pathway.alternativeRoutes.map((route, index) => (
+                  {pathway.alternativeRoutes.slice(0, 4).map((route, index) => (
                     <TabsContent key={index} value={index.toString()}>
                       <div className="space-y-3">
                         <h4 className="font-semibold text-purple-800">{route.routeName}</h4>
                         <p className="text-sm text-gray-600">{route.description}</p>
-                        <Badge variant="outline">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {route.duration}
+                        <Badge variant="outline" className="flex items-center space-x-1 w-fit">
+                          <Clock className="h-3 w-3" />
+                          <span>{route.duration}</span>
                         </Badge>
                         
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="bg-green-50 p-2 rounded">
-                            <div className="text-xs font-semibold text-green-800 mb-1">Advantages:</div>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div className="bg-green-50 p-3 rounded">
+                            <div className="text-xs font-semibold text-green-800 mb-2">Advantages:</div>
                             <ul className="text-xs text-green-700 space-y-1">
                               {route.advantages.map((adv, advIndex) => (
-                                <li key={advIndex} className="flex items-start space-x-1">
-                                  <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5"></div>
+                                <li key={advIndex} className="flex items-start space-x-2">
+                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
                                   <span>{adv}</span>
                                 </li>
                               ))}
                             </ul>
                           </div>
                           
-                          <div className="bg-orange-50 p-2 rounded">
-                            <div className="text-xs font-semibold text-orange-800 mb-1">Challenges:</div>
+                          <div className="bg-orange-50 p-3 rounded">
+                            <div className="text-xs font-semibold text-orange-800 mb-2">Challenges:</div>
                             <ul className="text-xs text-orange-700 space-y-1">
                               {route.challenges.map((challenge, challengeIndex) => (
-                                <li key={challengeIndex} className="flex items-start space-x-1">
-                                  <div className="w-1 h-1 bg-orange-500 rounded-full mt-1.5"></div>
+                                <li key={challengeIndex} className="flex items-start space-x-2">
+                                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-1.5 flex-shrink-0"></div>
                                   <span>{challenge}</span>
                                 </li>
                               ))}
