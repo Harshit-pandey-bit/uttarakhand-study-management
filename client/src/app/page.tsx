@@ -1,103 +1,320 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  GraduationCap, 
+  Users, 
+  BookOpen, 
+  Microscope,
+  ArrowRight,
+  CheckCircle,
+  Star
+} from 'lucide-react';
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="w-full px-6">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <GraduationCap className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">EduBridge</h1>
+                <p className="text-sm text-gray-500">Government School Mentoring</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Link href="/auth/login">
+                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                  Login
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <Badge className="mb-4 bg-blue-100 text-blue-800 border-blue-200">
+              Bridging Rural Education with Higher Learning
+            </Badge>
+            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+              Empowering Rural Students Through{' '}
+              <span className="text-blue-600">Virtual Mentoring</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              Connect government schools with Higher Education Institutions for AI-assisted learning, 
+              career guidance, and STEM education. Building tomorrow's innovators today.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <Link href="/auth/register">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
+                  Start Your Journey <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="border-gray-300 px-8 py-3">
+                Watch Demo
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Key Features */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Transforming Rural Education
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Comprehensive platform designed to bridge the educational gap between rural government schools and premier institutions
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <FeatureCard
+              icon={<Users className="h-8 w-8 text-blue-600" />}
+              title="Virtual Mentoring"
+              description="One-on-one and group sessions with HEI mentors for personalized guidance"
+            />
+            <FeatureCard
+              icon={<BookOpen className="h-8 w-8 text-emerald-600" />}
+              title="AI-Powered Learning"
+              description="NCERT-aligned assignments generated by AI for enhanced learning outcomes"
+            />
+            <FeatureCard
+              icon={<GraduationCap className="h-8 w-8 text-purple-600" />}
+              title="Career Guidance"
+              description="Holland Code assessments and dream career pathways for future planning"
+            />
+            <FeatureCard
+              icon={<Microscope className="h-8 w-8 text-teal-600" />}
+              title="STEM Tools"
+              description="Interactive tools like Scratch, GeoGebra, and TinkerCAD for hands-on learning"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* User Roles */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Built for Every Stakeholder
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Comprehensive dashboards and tools designed for students, teachers, mentors, and administrators
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <UserRoleCard
+              role="Students"
+              color="indigo"
+              features={[
+                "Interactive career guidance",
+                "Virtual mentoring sessions", 
+                "STEM tools integration",
+                "Project-based learning"
+              ]}
+            />
+            <UserRoleCard
+              role="Teachers" 
+              color="purple"
+              features={[
+                "AI assignment generator",
+                "Professional development",
+                "Student progress tracking",
+                "HEI collaboration tools"
+              ]}
+            />
+            <UserRoleCard
+              role="HEI Mentors"
+              color="teal"
+              features={[
+                "Multi-school management",
+                "Advanced scheduling",
+                "Content creation tools",
+                "Impact analytics"
+              ]}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4">
+            Ready to Transform Rural Education?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Join students, teachers, and mentors making a difference in government school education
+          </p>
+          
+          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <Link href="/auth/register">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-3">
+                Get Started
+              </Button>
+            </Link>
+            <Button size="lg" variant="outline" className="text-blue-600 border-white hover:bg-blue-600 hover:text-white px-8 py-3">
+                Contact Us
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <GraduationCap className="h-8 w-8 text-blue-400" />
+                <span className="text-xl font-bold">EduBridge</span>
+              </div>
+              <p className="text-gray-400">
+                Empowering rural education through technology and mentorship.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Platform</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="#" className="hover:text-white">For Students</Link></li>
+                <li><Link href="#" className="hover:text-white">For Teachers</Link></li>
+                <li><Link href="#" className="hover:text-white">For Mentors</Link></li>
+                <li><Link href="#" className="hover:text-white">For Institutions</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Resources</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="#" className="hover:text-white">Documentation</Link></li>
+                <li><Link href="#" className="hover:text-white">Training Materials</Link></li>
+                <li><Link href="#" className="hover:text-white">Success Stories</Link></li>
+                <li><Link href="#" className="hover:text-white">Support</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Connect</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="#" className="hover:text-white">About Us</Link></li>
+                <li><Link href="#" className="hover:text-white">Partnership</Link></li>
+                <li><Link href="#" className="hover:text-white">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-white">Terms of Service</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
+            <p>&copy; 2025 EduBridge - Government School Mentoring Platform. All rights reserved.</p>
+          </div>
+        </div>
       </footer>
     </div>
+  );
+}
+
+// Supporting Components
+function FeatureCard({ icon, title, description }: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Card className="bg-white shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+      <CardContent className="p-6 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-gray-50 rounded-full flex items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UserRoleCard({ role, color, features }: {
+  role: string;
+  color: string;
+  features: string[];
+}) {
+  const colorClasses = {
+    indigo: 'bg-indigo-600 text-indigo-600 border-indigo-200 bg-indigo-50',
+    purple: 'bg-purple-600 text-purple-600 border-purple-200 bg-purple-50', 
+    teal: 'bg-teal-600 text-teal-600 border-teal-200 bg-teal-50'
+  };
+
+  return (
+    <Card className="bg-white shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+      <CardHeader>
+        <div className={`w-12 h-12 ${colorClasses[color as keyof typeof colorClasses].split(' ')[3]} rounded-lg flex items-center justify-center mb-3`}>
+          <Users className={`h-6 w-6 ${colorClasses[color as keyof typeof colorClasses].split(' ')[1]}`} />
+        </div>
+        <CardTitle className="text-xl text-gray-900">{role}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-3">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              <span className="text-gray-700">{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TestimonialCard({ name, role, quote, rating }: {
+  name: string;
+  role: string; 
+  quote: string;
+  rating: number;
+}) {
+  return (
+    <Card className="bg-white shadow-lg border border-gray-200">
+      <CardContent className="p-6">
+        <div className="flex mb-4">
+          {[...Array(rating)].map((_, i) => (
+            <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+          ))}
+        </div>
+        <blockquote className="text-gray-700 mb-4 italic">"{quote}"</blockquote>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+            <span className="text-sm font-medium text-gray-600">
+              {name.split(' ').map(n => n[0]).join('')}
+            </span>
+          </div>
+          <div>
+            <div className="font-medium text-gray-900">{name}</div>
+            <div className="text-sm text-gray-500">{role}</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
