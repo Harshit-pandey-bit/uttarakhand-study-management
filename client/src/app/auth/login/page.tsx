@@ -75,37 +75,41 @@ export default function LoginPage() {
       return;
     }
 
-    // Simulate authentication with dummy data
-    const user = dummyUsers.find(
-      u => u.email === formData.email && 
-           u.password === formData.password && 
-           u.role === formData.role
-    );
+    try {
+      const response = await apiClient.login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    if (user) {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Store user data (in real app, this would be JWT tokens)
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      // Redirect to appropriate dashboard
-      switch (user.role) {
-        case 'student':
-          router.push('/dashboard/student');
-          break;
-        case 'teacher':
-          router.push('/dashboard/teacher');
-          break;
-        case 'hei-mentor':
-          router.push('/dashboard/hei-mentor');
-          break;
-        case 'hei-admin':
-          router.push('/dashboard/hei-admin');
-          break;
-        case 'school-admin':
-          router.push('/dashboard/school-admin');
-          break;
+      if (response.error) {
+        setError(response.error);
+        setLoading(false);
+        return;
+      }
+
+      if (response.data?.user) {
+        const user = response.data.user;
+        
+        // Redirect based on role matching your backend structure
+        switch (user.role) {
+          case 'student':
+            router.push('/dashboard/student');
+            break;
+          case 'teacher':
+            router.push('/dashboard/teacher');
+            break;
+          case 'hei-mentor':
+            router.push('/dashboard/hei-mentor');
+            break;
+          case 'hei-admin':
+            router.push('/dashboard/hei-admin');
+            break;
+          case 'school-admin':
+            router.push('/dashboard/school-admin');
+            break;
+          default:
+            router.push('/dashboard');
+        }
       }
     } catch (error) {
       setError('Login failed. Please try again.');
