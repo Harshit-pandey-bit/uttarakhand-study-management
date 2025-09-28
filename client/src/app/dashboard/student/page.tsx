@@ -106,7 +106,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 p-6 space-y-8">
-      {/* Welcome Section - Keep existing animations */}
+      {/* SMALLER Welcome Section with NO EMOJI ANIMATION */}
       <div className="relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 rounded-3xl"></div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
@@ -117,38 +117,54 @@ export default function StudentDashboard() {
         <div className="absolute bottom-20 right-32 w-1 h-1 bg-pink-300/60 rounded-full animate-bounce animation-delay-1500"></div>
         <div className="absolute top-32 right-20 w-1.5 h-1.5 bg-cyan-300/60 rounded-full animate-bounce animation-delay-3000"></div>
         
-        <div className="relative z-10 p-8 lg:p-12 text-white">
-          <div className="flex items-center justify-between">
-            <div className="space-y-6">
-              <div className="flex items-center space-x-3 mb-2 group-hover:scale-105 transition-transform duration-500">
+        {/* REDUCED CONTAINER SIZE - Less padding and height */}
+        <div className="relative z-10 p-8 lg:p-12 text-white min-h-[320px] flex items-center">
+          <div className="flex items-center justify-between w-full">
+            {/* Main Content Area */}
+            <div className="space-y-6 flex-1">
+              <div className="flex items-center space-x-3 mb-4 group-hover:scale-105 transition-transform duration-500">
                 <Sparkles className="h-6 w-6 text-yellow-300 animate-pulse group-hover:animate-spin" />
-                <span className="text-blue-200 font-medium group-hover:text-blue-100 transition-colors duration-300">Welcome back!</span>
+                <span className="text-blue-200 font-semibold text-lg group-hover:text-blue-100 transition-colors duration-300">Welcome back!</span>
               </div>
               
               <div className="group-hover:translate-x-2 transition-transform duration-700">
-                <h1 className="text-4xl lg:text-5xl font-bold mb-3 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent hover:from-yellow-200 hover:via-white hover:to-blue-200 transition-all duration-700">
-                  {greeting}, {user?.full_name || studentDashboardData.student.name}! 👋
+                {/* REDUCED GREETING AND USER NAME SIZE */}
+                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent hover:from-yellow-200 hover:via-white hover:to-blue-200 transition-all duration-700 leading-tight">
+                  {greeting}, {user?.full_name || studentDashboardData.student.name}!
+                  {/* LARGE COLORFUL STATIC EMOJI - NO ANIMATION */}
+                  <span className="inline-block ml-3 text-yellow-400 drop-shadow-lg text-4xl lg:text-5xl xl:text-6xl" 
+                        style={{ 
+                          textShadow: '0 0 15px rgba(255, 255, 0, 0.4), 0 0 30px rgba(255, 165, 0, 0.2)',
+                          filter: 'brightness(1.2) saturate(1.3)',
+                          fontSize: 'inherit'
+                        }}>
+                    👋
+                  </span>
                 </h1>
-                <div className="flex items-center space-x-2 text-blue-100 mb-6 group-hover:text-blue-50 transition-colors duration-300">
-                  <GraduationCap className="h-5 w-5 group-hover:rotate-12 transition-transform duration-500" />
-                  <span className="text-lg font-medium">
+                
+                {/* School Info */}
+                <div className="flex items-center space-x-3 text-blue-100 mb-6 group-hover:text-blue-50 transition-colors duration-300">
+                  <GraduationCap className="h-6 w-6 group-hover:rotate-12 transition-transform duration-500" />
+                  <span className="text-xl font-semibold">
                     {studentDashboardData.student.class} • {studentDashboardData.student.school}
                   </span>
                 </div>
               </div>
 
+              {/* Progress Pills */}
               <div className="flex flex-wrap gap-3 group-hover:translate-y-1 transition-transform duration-500">
-                <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/20 hover:bg-white/30 hover:scale-105 transition-all duration-300 group cursor-pointer">
-                  <TrendingUp className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="font-semibold">{completionPercentage}% Assignment Progress</span>
+                <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/20 hover:bg-white/30 hover:scale-105 transition-all duration-300 group cursor-pointer">
+                  <TrendingUp className="w-5 h-5 text-emerald-300 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-semibold text-lg">{completionPercentage}% Assignment Progress</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/20 hover:bg-white/30 hover:scale-105 transition-all duration-300 group cursor-pointer">
-                  <Users className="w-4 h-4 text-purple-300 group-hover:scale-110 transition-transform duration-200" />
-                  <span className="font-semibold">{studentDashboardData.profileStats.mentoringSessionsAttended} Sessions Attended</span>
+                <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/20 hover:bg-white/30 hover:scale-105 transition-all duration-300 group cursor-pointer">
+                  <Users className="w-5 h-5 text-purple-300 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-semibold text-lg">{studentDashboardData.profileStats.mentoringSessionsAttended} Sessions Attended</span>
                 </div>
               </div>
             </div>
             
+            {/* Right Icon */}
             <div className="hidden lg:block relative group-hover:scale-110 group-hover:rotate-6 transition-all duration-700">
               <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl hover:shadow-4xl hover:bg-white/20 transition-all duration-500">
                 <GraduationCap className="h-16 w-16 text-white drop-shadow-lg hover:scale-110 hover:rotate-12 transition-all duration-300" />
@@ -184,7 +200,15 @@ export default function StudentDashboard() {
                 </p>
               </div>
             </div>
-            <Progress value={completionPercentage} className="h-3 rounded-full group-hover:h-4 transition-all duration-300" />
+            
+            {/* GREEN PROGRESS BAR */}
+            <div className="w-full bg-gray-200 rounded-full h-3 group-hover:h-4 transition-all duration-300">
+              <div 
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500 shadow-sm"
+                style={{ width: `${completionPercentage}%` }}
+              ></div>
+            </div>
+            
             <p className="text-xs text-emerald-600 mt-2 font-medium group-hover:font-semibold transition-all duration-200">{completionPercentage}% Complete</p>
             
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-2xl"></div>
