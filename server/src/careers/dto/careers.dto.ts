@@ -224,28 +224,37 @@ export class AlternativeRouteDto {
   challenges: string[];
 }
 
+// server/src/careers/dto/careers.dto.ts - UPDATE LocalOpportunityDto
+
 export class LocalOpportunityDto {
-  @ApiProperty({ example: 'University' })
+  @ApiProperty({ example: 'college' })
   type: string;
 
-  @ApiProperty({ example: 'IIT Roorkee' })
+  @ApiProperty({ example: 'Government College Dehradun' })
   institution: string;
 
-  @ApiProperty({ example: 'Roorkee' })
+  @ApiProperty({ example: 'Dehradun, Uttarakhand' })
   location: string;
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({ type: [String], example: ['B.Tech Computer Science', 'B.Tech Civil'] })
   programs: string[];
 
-  @ApiProperty({ example: 'JEE Advanced qualified' })
+  @ApiProperty({ example: 'JEE Main score required, minimum 75% in 12th' })
   admissionCriteria: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ example: 'https://gcd.ac.in', required: false })
   website?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ example: 'admissions@gcd.ac.in, +91-135-123456', required: false })
   contact?: string;
+
+  @ApiProperty({ example: '₹50,000 - ₹1,00,000 per year', required: false })
+  feesRange?: string;
+
+  @ApiProperty({ example: 85.5, required: false })
+  placementRate?: number;
 }
+
 
 export class PathwayMilestoneDto {
   @ApiProperty({ example: 'Graduation' })
@@ -335,3 +344,82 @@ export class StudentActivityDto {
   @ApiProperty({ required: false })
   metadata?: object;
 }
+
+export class CareerPathwayMapDto {
+  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
+  id: string;
+
+  @ApiProperty({ example: 'Software Engineer' })
+  careerTitle: string;
+
+  @ApiProperty({ example: 'Technology' })
+  category: string;
+
+  @ApiProperty({ example: '4-6 years' })
+  estimatedDuration: string;
+
+  @ApiProperty({ example: 'intermediate', enum: ['beginner', 'intermediate', 'advanced'] })
+  difficultyLevel: string;
+
+  @ApiProperty({ type: [PathwayStageDto] })
+  stages: PathwayStageDto[];
+
+  @ApiProperty({ type: [AlternativeRouteDto] })
+  alternativeRoutes: AlternativeRouteDto[];
+
+  @ApiProperty({ type: [LocalOpportunityDto] })
+  localOpportunities: LocalOpportunityDto[];
+
+  @ApiProperty({ example: false })
+  isRecommended: boolean;
+
+  @ApiProperty({ example: 85 })
+  matchPercentage?: number;
+}
+
+export class CareerPathwayOverviewDto {
+  @ApiProperty({ example: 'Software Engineer' })
+  title: string;
+
+  @ApiProperty({ example: 'Technology' })
+  category: string;
+
+  @ApiProperty({ example: '💻' })
+  icon: string;
+
+  @ApiProperty({ example: '4-6 years' })
+  duration: string;
+
+  @ApiProperty({ example: 'intermediate' })
+  difficulty: string;
+
+  @ApiProperty({ example: 85 })
+  matchPercentage?: number;
+
+  @ApiProperty({ example: 'High demand, great salary prospects' })
+  summary: string;
+
+  @ApiProperty({ type: [String] })
+  keySkills: string[];
+}
+
+export class UpdateProgressDto {
+  @ApiProperty({ example: 'software-engineer' })
+  @IsString()
+  careerSlug: string;
+
+  @ApiProperty({ example: 2 })
+  @IsNumber()
+  stageIndex: number;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  completed: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+

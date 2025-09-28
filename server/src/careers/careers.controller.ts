@@ -13,6 +13,9 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
+  ValidationPipe,
+  Body,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +26,7 @@ import {
   ApiQuery,
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CareersService } from './careers.service';
@@ -34,6 +38,10 @@ import {
   InspirationalQuoteDto,
   CareerProgressDto,
   DemandLevel,
+  LocalOpportunityDto,
+  UpdateProgressDto,
+  CareerPathwayOverviewDto,
+  CareerPathwayMapDto,
 } from './dto/careers.dto';
 
 @ApiTags('Career Explorer')
@@ -44,7 +52,7 @@ export class CareersController {
   constructor(private readonly careersService: CareersService) {}
 
   // =============================================
-  // PUBLIC CAREER DISCOVERY ENDPOINTS
+  // SPECIFIC ROUTES FIRST (BEFORE :slug)
   // =============================================
 
   @Get('featured')
@@ -157,7 +165,196 @@ export class CareersController {
   }
 
   // =============================================
-  // CAREER DETAILS ENDPOINTS
+  // CAREER PATHWAYS ENDPOINTS 
+  // =============================================
+
+  @Get('pathways')
+  @ApiOperation({
+    summary: 'Get all career pathways for roadmap view',
+    description: 'Retrieve comprehensive career pathways with stages, alternatives, and local opportunities'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Career pathways retrieved successfully',
+    type: [CareerPathwayMapDto]
+  })
+  async getCareerPathways(): Promise<CareerPathwayMapDto[]> {
+    this.logger.log('Getting all career pathways');
+    return this.careersService.getCareerPathways();
+  }
+
+  @Get('pathways/recommended')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get recommended career pathways based on user profile',
+    description: 'Get personalized career pathways based on Holland Code test results and interests'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recommended pathways retrieved successfully',
+    type: [CareerPathwayMapDto]
+  })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  async getRecommendedCareerPathways(@Request() req): Promise<CareerPathwayMapDto[]> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Getting recommended pathways for student: ${studentId}`);
+
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
+    }
+
+    return this.careersService.getRecommendedCareerPathways(studentId);
+  }
+
+  @Get('pathways/overview')
+  @ApiOperation({
+    summary: 'Get career pathway overview',
+    description: 'Get simplified overview of all career pathways for quick browsing'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pathway overview retrieved successfully',
+    type: [CareerPathwayOverviewDto]
+  })
+  async getCareerPathwayOverview(): Promise<CareerPathwayOverviewDto[]> {
+    this.logger.log('Getting career pathway overview');
+    return this.careersService.getCareerPathwayOverview();
+  }
+
+  @Get('local-opportunities')
+  @ApiOperation({
+    summary: 'Get local educational opportunities',
+    description: 'Get local institutions and opportunities filtered by location'
+  })
+  @ApiQuery({ name: 'location', type: 'string', required: false, example: 'Dehradun' })
+  @ApiQuery({ name: 'type', type: 'string', required: false, example: 'college' })
+  @ApiResponse({
+    status: 200,
+    description: 'Local opportunities retrieved successfully',
+    type: [LocalOpportunityDto]
+  })
+  async getLocalOpportunities(
+    @Query('location') location?: string,
+    @Query('type') type?: string
+  ): Promise<LocalOpportunityDto[]> {
+    this.logger.log(`Getting local opportunities for location: ${location}, type: ${type}`);
+    
+    // Now properly using service method instead of direct Supabase query
+    return this.careersService.getLocalOpportunities(location, type);
+  }
+
+  @Get('analytics/popular')
+  @ApiOperation({
+    summary: 'Get popular careers',
+    description: 'Get most viewed/explored careers (public analytics)'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Popular careers retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        popularCareers: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', example: 'Software Engineer' },
+              slug: { type: 'string', example: 'software-engineer' },
+              viewCount: { type: 'number', example: 1250 },
+              category: { type: 'string', example: 'Technology' }
+            }
+          }
+        }
+      }
+    }
+  })
+  async getPopularCareers(): Promise<{ popularCareers: any[] }> {
+    this.logger.log('Getting popular careers analytics');
+
+    // Mock implementation - in production, implement real analytics
+    const popularCareers = [
+      { title: 'Software Engineer', slug: 'software-engineer', viewCount: 1250, category: 'Technology' },
+      { title: 'Doctor', slug: 'doctor', viewCount: 980, category: 'Healthcare' },
+      { title: 'Teacher', slug: 'teacher', viewCount: 750, category: 'Education' }
+    ];
+
+    return { popularCareers };
+  }
+
+  @Get('stories/featured')
+  @ApiOperation({
+    summary: 'Get featured success stories',
+    description: 'Retrieve inspiring success stories from various careers'
+  })
+  @ApiQuery({ name: 'limit', type: 'number', required: false, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Success stories retrieved successfully',
+    type: [SuccessStoryDto]
+  })
+  async getFeaturedSuccessStories(
+    @Query('limit') limit: number = 10
+  ): Promise<SuccessStoryDto[]> {
+    this.logger.log('Getting featured success stories');
+    return this.careersService.getSuccessStories(undefined, true, limit);
+  }
+
+  // =============================================
+  // AUTHENTICATED USER ENDPOINTS (SPECIFIC PATHS)
+  // =============================================
+
+  @Get('my/progress')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get personal career progress',
+    description: 'Retrieve student career exploration progress and Holland test results'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Career progress retrieved successfully',
+    type: CareerProgressDto
+  })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  async getMyCareerProgress(@Request() req): Promise<CareerProgressDto> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Getting career progress for student: ${studentId}`);
+
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
+    }
+
+    return this.careersService.getStudentCareerProgress(studentId);
+  }
+
+  @Get('my/favorites')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get favorite careers',
+    description: 'Retrieve student favorite/bookmarked careers'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Favorite careers retrieved successfully',
+    type: [CareerDto]
+  })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  async getMyFavorites(@Request() req): Promise<CareerDto[]> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Getting favorites for student: ${studentId}`);
+
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
+    }
+
+    return this.careersService.getStudentFavorites(studentId);
+  }
+
+  // =============================================
+  // DYNAMIC ROUTES WITH PARAMETERS (AFTER SPECIFIC ROUTES)
   // =============================================
 
   @Get(':slug')
@@ -207,28 +404,6 @@ export class CareersController {
     return this.careersService.getCareerPathway(slug, studentId);
   }
 
-  // =============================================
-  // SUCCESS STORIES ENDPOINTS
-  // =============================================
-
-  @Get('stories/featured')
-  @ApiOperation({
-    summary: 'Get featured success stories',
-    description: 'Retrieve inspiring success stories from various careers'
-  })
-  @ApiQuery({ name: 'limit', type: 'number', required: false, example: 10 })
-  @ApiResponse({
-    status: 200,
-    description: 'Success stories retrieved successfully',
-    type: [SuccessStoryDto]
-  })
-  async getFeaturedSuccessStories(
-    @Query('limit') limit: number = 10
-  ): Promise<SuccessStoryDto[]> {
-    this.logger.log('Getting featured success stories');
-    return this.careersService.getSuccessStories(undefined, true, limit);
-  }
-
   @Get(':slug/stories')
   @ApiOperation({
     summary: 'Get career-specific success stories',
@@ -250,55 +425,93 @@ export class CareersController {
   }
 
   // =============================================
-  // AUTHENTICATED USER ENDPOINTS
+  // POST/PUT/DELETE ROUTES
   // =============================================
 
-  @Get('my/progress')
+  @Put('my/progress')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get personal career progress',
-    description: 'Retrieve student career exploration progress and Holland test results'
+    summary: 'Update career exploration progress',
+    description: 'Update student progress on career pathway stages'
   })
+  @ApiBody({ type: UpdateProgressDto })
   @ApiResponse({
     status: 200,
-    description: 'Career progress retrieved successfully',
+    description: 'Progress updated successfully',
     type: CareerProgressDto
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
-  async getMyCareerProgress(@Request() req): Promise<CareerProgressDto> {
+  async updateCareerProgress(
+    @Request() req,
+    @Body(ValidationPipe) progressData: UpdateProgressDto
+  ): Promise<CareerProgressDto> {
     const studentId = req.user?.sub || req.user?.id;
-    this.logger.log(`Getting career progress for student: ${studentId}`);
+    this.logger.log(`Updating career progress for student: ${studentId}`);
 
     if (req.user?.role !== 'student') {
       throw new BadRequestException('This endpoint is only for students');
     }
 
-    return this.careersService.getStudentCareerProgress(studentId);
+    return this.careersService.updateCareerProgress(studentId, progressData);
   }
 
-  @Get('my/favorites')
+  @Post('my/progress/stage')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get favorite careers',
-    description: 'Retrieve student favorite/bookmarked careers'
+    summary: 'Mark pathway stage as completed',
+    description: 'Mark a specific stage in career pathway as completed'
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        careerSlug: { type: 'string', example: 'software-engineer' },
+        stageIndex: { type: 'number', example: 1 },
+        completed: { type: 'boolean', example: true },
+        notes: { type: 'string', example: 'Completed 10th grade with science stream' }
+      }
+    }
   })
   @ApiResponse({
     status: 200,
-    description: 'Favorite careers retrieved successfully',
-    type: [CareerDto]
+    description: 'Stage completion updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Stage marked as completed' },
+        progressUpdated: { type: 'number', example: 75 }
+      }
+    }
   })
-  @ApiUnauthorizedResponse({ description: 'Authentication required' })
-  async getMyFavorites(@Request() req): Promise<CareerDto[]> {
+  async markStageCompleted(
+    @Request() req,
+    @Body() stageData: { careerSlug: string; stageIndex: number; completed: boolean; notes?: string }
+  ): Promise<{ success: boolean; message: string; progressUpdated: number }> {
     const studentId = req.user?.sub || req.user?.id;
-    this.logger.log(`Getting favorites for student: ${studentId}`);
+    this.logger.log(`Marking stage ${stageData.stageIndex} as completed for ${stageData.careerSlug}`);
 
     if (req.user?.role !== 'student') {
       throw new BadRequestException('This endpoint is only for students');
     }
 
-    return this.careersService.getStudentFavorites(studentId);
+    const progressData: UpdateProgressDto = {
+      careerSlug: stageData.careerSlug,
+      stageIndex: stageData.stageIndex,
+      completed: stageData.completed,
+      notes: stageData.notes
+    };
+
+    const updatedProgress = await this.careersService.updateCareerProgress(studentId, progressData);
+
+    return {
+      success: true,
+      message: stageData.completed ? 'Stage marked as completed' : 'Stage marked as incomplete',
+      progressUpdated: updatedProgress.progressStats.totalProgress
+    };
   }
 
   @Post(':slug/favorite')
@@ -369,48 +582,5 @@ export class CareersController {
     }
 
     return this.careersService.removeFromFavorites(studentId, slug);
-  }
-
-  // =============================================
-  // ANALYTICS ENDPOINTS (Optional)
-  // =============================================
-
-  @Get('analytics/popular')
-  @ApiOperation({
-    summary: 'Get popular careers',
-    description: 'Get most viewed/explored careers (public analytics)'
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Popular careers retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        popularCareers: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              title: { type: 'string', example: 'Software Engineer' },
-              slug: { type: 'string', example: 'software-engineer' },
-              viewCount: { type: 'number', example: 1250 },
-              category: { type: 'string', example: 'Technology' }
-            }
-          }
-        }
-      }
-    }
-  })
-  async getPopularCareers(): Promise<{ popularCareers: any[] }> {
-    this.logger.log('Getting popular careers analytics');
-
-    // Mock implementation - in production, implement real analytics
-    const popularCareers = [
-      { title: 'Software Engineer', slug: 'software-engineer', viewCount: 1250, category: 'Technology' },
-      { title: 'Doctor', slug: 'doctor', viewCount: 980, category: 'Healthcare' },
-      { title: 'Teacher', slug: 'teacher', viewCount: 750, category: 'Education' }
-    ];
-
-    return { popularCareers };
   }
 }

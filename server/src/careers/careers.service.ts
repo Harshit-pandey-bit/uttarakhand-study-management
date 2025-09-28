@@ -18,6 +18,9 @@ import {
   PathwayRouteDto,
   DemandLevel,
   DifficultyLevel,
+  CareerPathwayMapDto,
+  UpdateProgressDto,
+  CareerPathwayOverviewDto,
 } from './dto/careers.dto';
 
 @Injectable()
@@ -662,4 +665,367 @@ export class CareersService {
       console.log('Warning: Failed to track activity:', error.message);
     }
   }
+
+  // =============================================
+// CAREER PATHWAYS METHODS
+// =============================================
+
+async getCareerPathways(): Promise<CareerPathwayMapDto[]> {
+  console.log('🛣️ Getting all career pathways');
+
+  try {
+    const { data: pathways, error } = await this.supabase
+      .from('career_pathways')
+      .select(`
+        *,
+        careers!inner(title, category, emoji),
+        pathway_stages!left(
+          id, stage_number, title, duration, description,
+          requirements, key_subjects, examinations, skills_to_gain, next_options
+        ),
+        alternative_routes!left(
+          id, route_name, description, duration, advantages, challenges
+        )
+      `)
+      .order('careers(category)', { ascending: true })
+      .order('careers(title)', { ascending: true });
+
+    if (error) {
+      throw new Error('Failed to fetch career pathways: ' + error.message);
+    }
+
+    // Get local opportunities for each career
+    const formattedPathways = await Promise.all(pathways?.map(async (pathway) => {
+      const { data: opportunities } = await this.supabase
+        .from('local_opportunities')
+        .select('*')
+        .eq('career_id', pathway.careers.id)
+        .eq('is_active', true);
+
+      return {
+        id: pathway.id,
+        careerTitle: pathway.careers.title,
+        category: pathway.careers.category,
+        estimatedDuration: pathway.estimated_duration,
+        difficultyLevel: pathway.difficulty_level,
+        stages: this.formatPathwayStages(pathway.pathway_stages || []),
+        alternativeRoutes: this.formatAlternativeRoutes(pathway.alternative_routes || []),
+        localOpportunities: this.formatLocalOpportunities(opportunities || []),
+        isRecommended: false,
+        matchPercentage: undefined
+      };
+    }) || []);
+
+    console.log('✅ Retrieved', formattedPathways.length, 'career pathways');
+    return formattedPathways;
+
+  } catch (error) {
+    console.log('❌ Error getting career pathways:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
+async getRecommendedCareerPathways(studentId: string): Promise<CareerPathwayMapDto[]> {
+  console.log('🎯 Getting recommended career pathways for student:', studentId);
+
+  try {
+    // Get Holland test results for recommendations
+    const { data: hollandResults } = await this.supabase
+      .from('holland_results')
+      .select('personality_code, matched_careers')
+      .eq('student_id', studentId)
+      .single();
+
+    if (!hollandResults) {
+      // Return popular pathways if no Holland test completed
+      return this.getPopularCareerPathways();
+    }
+
+    // Get pathways for matched careers
+    const matchedCareers = hollandResults.matched_careers || [];
+    const { data: pathways, error } = await this.supabase
+      .from('career_pathways')
+      .select(`
+        *,
+        careers!inner(title, category, emoji),
+        pathway_stages!left(
+          id, stage_number, title, duration, description,
+          requirements, key_subjects, examinations, skills_to_gain, next_options
+        ),
+        alternative_routes!left(
+          id, route_name, description, duration, advantages, challenges
+        )
+      `)
+      .in('careers.title', matchedCareers);
+
+    if (error) {
+      throw new Error('Failed to fetch recommended pathways: ' + error.message);
+    }
+
+    // Format and add recommendation scores
+    const formattedPathways = await Promise.all(pathways?.map(async (pathway) => {
+      const { data: opportunities } = await this.supabase
+        .from('local_opportunities')
+        .select('*')
+        .eq('career_id', pathway.careers.id)
+        .eq('is_active', true);
+
+      // Calculate match percentage based on Holland code
+      const matchPercentage = this.calculateMatchPercentage(
+        pathway.careers.title,
+        hollandResults.matched_careers,
+        hollandResults.personality_code
+      );
+
+      return {
+        id: pathway.id,
+        careerTitle: pathway.careers.title,
+        category: pathway.careers.category,
+        estimatedDuration: pathway.estimated_duration,
+        difficultyLevel: pathway.difficulty_level,
+        stages: this.formatPathwayStages(pathway.pathway_stages || []),
+        alternativeRoutes: this.formatAlternativeRoutes(pathway.alternative_routes || []),
+        localOpportunities: this.formatLocalOpportunities(opportunities || []),
+        isRecommended: true,
+        matchPercentage
+      };
+    }) || []);
+
+    // Sort by match percentage
+    const sortedPathways = formattedPathways.sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
+
+    console.log('✅ Retrieved', sortedPathways.length, 'recommended pathways');
+    return sortedPathways;
+
+  } catch (error) {
+    console.log('❌ Error getting recommended pathways:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
+async getCareerPathwayOverview(): Promise<CareerPathwayOverviewDto[]> {
+  console.log('📊 Getting career pathway overview');
+
+  try {
+    const { data: pathways, error } = await this.supabase
+      .from('career_pathways')
+      .select(`
+        *,
+        careers!inner(title, category, emoji)
+      `)
+      .order('careers(category)', { ascending: true });
+
+    if (error) {
+      throw new Error('Failed to fetch pathway overview: ' + error.message);
+    }
+
+    const overview = pathways?.map(pathway => ({
+      title: pathway.careers.title,
+      category: pathway.careers.category,
+      icon: pathway.careers.emoji || '💼',
+      duration: pathway.estimated_duration,
+      difficulty: pathway.difficulty_level,
+      summary: this.generatePathwaySummary(pathway.careers.category, pathway.difficulty_level),
+      keySkills: this.getKeySkillsForCareer(pathway.careers.title)
+    })) || [];
+
+    console.log('✅ Retrieved pathway overview for', overview.length, 'careers');
+    return overview;
+
+  } catch (error) {
+    console.log('❌ Error getting pathway overview:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
+async updateCareerProgress(studentId: string, progressData: UpdateProgressDto): Promise<CareerProgressDto> {
+  console.log('📈 Updating career progress for student:', studentId);
+
+  try {
+    // Get current progress
+    let { data: progress } = await this.supabase
+      .from('student_career_progress')
+      .select('*')
+      .eq('student_id', studentId)
+      .single();
+
+    if (!progress) {
+      // Create initial progress record
+      const { data: newProgress, error } = await this.supabase
+        .from('student_career_progress')
+        .insert({ student_id: studentId })
+        .select('*')
+        .single();
+      
+      if (error) throw new Error('Failed to create progress record: ' + error.message);
+      progress = newProgress;
+    }
+
+    // Update progress based on completed stage
+    const newProgress = Math.min(100, progress.total_progress + (progressData.completed ? 5 : -5));
+
+    const { error: updateError } = await this.supabase
+      .from('student_career_progress')
+      .update({ 
+        total_progress: newProgress,
+        pathways_viewed: progress.pathways_viewed + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('student_id', studentId);
+
+    if (updateError) {
+      throw new Error('Failed to update progress: ' + updateError.message);
+    }
+
+    // Add activity record
+    await this.supabase
+      .from('student_recent_activities')
+      .insert({
+        student_id: studentId,
+        activity_type: 'career_progress',
+        activity_title: `Updated progress for ${progressData.careerSlug}`,
+        activity_description: progressData.notes || 'Career pathway progress updated',
+        status: progressData.completed ? 'completed' : 'in-progress',
+        activity_date: new Date().toISOString(),
+        metadata: {
+          careerSlug: progressData.careerSlug,
+          stageIndex: progressData.stageIndex,
+          completed: progressData.completed
+        }
+      });
+
+    // Return updated progress
+    return this.getStudentCareerProgress(studentId);
+
+  } catch (error) {
+    console.log('❌ Error updating career progress:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
+// =============================================
+// HELPER METHODS FOR PATHWAYS
+// =============================================
+
+private async getPopularCareerPathways(): Promise<CareerPathwayMapDto[]> {
+  // Get most explored careers as fallback
+  const { data: popularCareers } = await this.supabase
+    .from('student_activities')
+    .select('resource_id')
+    .eq('activity_type', 'career_explored')
+    .limit(5);
+
+  const popularSlugs = popularCareers?.map(c => c.resource_id) || ['software-engineer', 'doctor', 'teacher'];
+  
+  const { data: pathways } = await this.supabase
+    .from('career_pathways')
+    .select(`
+      *,
+      careers!inner(title, category, emoji, slug),
+      pathway_stages!left(*),
+      alternative_routes!left(*)
+    `)
+    .in('careers.slug', popularSlugs);
+
+  return pathways?.map(pathway => ({
+    id: pathway.id,
+    careerTitle: pathway.careers.title,
+    category: pathway.careers.category,
+    estimatedDuration: pathway.estimated_duration,
+    difficultyLevel: pathway.difficulty_level,
+    stages: this.formatPathwayStages(pathway.pathway_stages || []),
+    alternativeRoutes: this.formatAlternativeRoutes(pathway.alternative_routes || []),
+    localOpportunities: [],
+    isRecommended: false
+  })) || [];
+}
+
+private calculateMatchPercentage(careerTitle: string, matchedCareers: string[], personalityCode: string): number {
+  const index = matchedCareers.indexOf(careerTitle);
+  if (index === -1) return 60; // Default for non-matched careers
+  
+  // Higher percentage for careers listed earlier in matched careers
+  const baseScore = 95 - (index * 10);
+  
+  // Bonus for strong personality matches
+  const personalityBonus = personalityCode.length >= 3 ? 5 : 0;
+  
+  return Math.max(60, Math.min(100, baseScore + personalityBonus));
+}
+
+private generatePathwaySummary(category: string, difficulty: string): string {
+  const summaries: Record<string, string> = {
+    'Technology': 'High demand field with excellent growth prospects and competitive salaries',
+    'Healthcare': 'Essential services with stable career opportunities and social impact',
+    'Education': 'Shape future generations while contributing to society',
+    'Business': 'Dynamic field with entrepreneurial opportunities and leadership roles',
+    'Arts': 'Creative expression with diverse career paths and cultural impact'
+  };
+  
+  const difficultyNote = difficulty === 'advanced' ? 'Requires advanced education' : 
+                        difficulty === 'beginner' ? 'Entry-level friendly' : 'Moderate requirements';
+  
+  return `${summaries[category] || 'Diverse career opportunities'}. ${difficultyNote}.`;
+}
+
+private getKeySkillsForCareer(careerTitle: string): string[] {
+  const skillMappings: Record<string, string[]> = {
+    'Software Engineer': ['Programming', 'Problem Solving', 'Logic', 'Mathematics'],
+    'Doctor': ['Biology', 'Chemistry', 'Empathy', 'Communication'],
+    'Teacher': ['Communication', 'Patience', 'Subject Knowledge', 'Leadership'],
+    'Data Scientist': ['Statistics', 'Programming', 'Analysis', 'Mathematics'],
+    'Civil Engineer': ['Mathematics', 'Physics', 'Design', 'Project Management']
+  };
+  
+  return skillMappings[careerTitle] || ['Communication', 'Problem Solving', 'Teamwork', 'Leadership'];
+}
+
+// server/src/careers/careers.service.ts - ADD THIS METHOD
+
+async getLocalOpportunities(location?: string, type?: string): Promise<LocalOpportunityDto[]> {
+  console.log('🏫 Getting local opportunities with filters:', { location, type });
+
+  try {
+    let query = this.supabase
+      .from('local_opportunities')
+      .select('*')
+      .eq('is_active', true);
+
+    if (location) {
+      query = query.ilike('location', `%${location}%`);
+    }
+
+    if (type) {
+      query = query.eq('opportunity_type', type);
+    }
+
+    const { data: opportunities, error } = await query
+      .order('institution', { ascending: true })
+      .limit(50);
+
+    if (error) {
+      throw new Error('Failed to fetch local opportunities: ' + error.message);
+    }
+
+    const formattedOpportunities = opportunities?.map(opp => ({
+      type: opp.opportunity_type as string,
+      institution: opp.institution as string,
+      location: opp.location as string,
+      programs: (opp.programs as string[]) || [],
+      admissionCriteria: opp.admission_criteria as string,
+      website: opp.website as string | undefined,
+      contact: opp.contact as string | undefined,
+      feesRange: opp.fees_range as string | undefined,
+      placementRate: opp.placement_rate as number | undefined
+    })) || [];
+
+    console.log('✅ Retrieved', formattedOpportunities.length, 'local opportunities');
+    return formattedOpportunities;
+
+  } catch (error) {
+    console.log('❌ Error getting local opportunities:', error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  }
+}
+
 }
