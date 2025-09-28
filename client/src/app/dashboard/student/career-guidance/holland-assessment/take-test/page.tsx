@@ -536,7 +536,7 @@ export default function HollandAssessmentTest() {
             <p className="text-gray-600">How much do you agree with this statement?</p>
           </div>
 
-          {/* Answer Options */}
+          {/* FIXED: Answer Options with black borders */}
           <div className="space-y-3 max-w-2xl mx-auto">
             {currentQuestionData?.options.map((option, index) => (
               <Button
