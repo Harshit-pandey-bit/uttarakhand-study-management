@@ -17,7 +17,14 @@ import {
   ParseUUIDPipe,
   BadRequestException,
   Logger,
+  UseInterceptors,
+  UploadedFile,
+  UploadedFiles,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -29,6 +36,7 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AssignmentsService } from './assignments.service';
@@ -42,6 +50,12 @@ import {
   NCERTChapterDto,
   AssignmentStatsDto,
   AssignmentStatus,
+  AssignmentAttachmentDto,
+  DifficultyLevel,
+  SearchAssignmentsDto,
+  SubjectProgressDto,
+  AssignmentDashboardSummaryDto,
+  FileUploadResponseDto,
 } from './dto/assignments.dto';
 
 @ApiTags('Assignments')
@@ -54,7 +68,129 @@ export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
   // =============================================
-  // STUDENT ASSIGNMENT ENDPOINTS
+  // FILE UPLOAD ENDPOINTS
+  // =============================================
+
+  @Post('upload-file')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload assignment file',
+    description: 'Upload a file for assignment submission (PDF, DOC, DOCX, JPG, PNG)'
+  })
+  @ApiBody({
+    description: 'File upload',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Assignment file (max 10MB)'
+        },
+        assignmentId: {
+          type: 'string',
+          description: 'Assignment UUID (optional)'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'File uploaded successfully',
+    type: FileUploadResponseDto
+  })
+  @ApiBadRequestResponse({ description: 'Invalid file or file too large' })
+  async uploadAssignmentFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({ 
+            fileType: /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|image\/jpeg|image\/png|image\/jpg)$/
+          }),
+        ],
+      }),
+    ) file: Express.Multer.File,
+    @Body('assignmentId') assignmentId: string,
+    @Request() req
+  ): Promise<FileUploadResponseDto> {
+    const userId = req.user?.sub || req.user?.id;
+    this.logger.log(`Uploading file for user: ${userId}`);
+
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('Only students can upload assignment files');
+    }
+
+    return this.assignmentsService.uploadAssignmentFile(file, userId, assignmentId);
+  }
+
+  @Post('upload-multiple')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FilesInterceptor('files', 5)) // Max 5 files
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload multiple assignment files',
+    description: 'Upload multiple files for assignment submission (max 5 files, 10MB each)'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Files uploaded successfully',
+    type: [FileUploadResponseDto]
+  })
+  async uploadMultipleFiles(
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB per file
+          new FileTypeValidator({ 
+            fileType: /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|image\/jpeg|image\/png|image\/jpg)$/
+          }),
+        ],
+      }),
+    ) files: Express.Multer.File[],
+    @Body('assignmentId') assignmentId: string,
+    @Request() req
+  ): Promise<FileUploadResponseDto[]> {
+    const userId = req.user?.sub || req.user?.id;
+    this.logger.log(`Uploading ${files.length} files for user: ${userId}`);
+
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('Only students can upload assignment files');
+    }
+
+    const uploadPromises = files.map(file => 
+      this.assignmentsService.uploadAssignmentFile(file, userId, assignmentId)
+    );
+
+    return Promise.all(uploadPromises);
+  }
+
+  @Delete('files/:filePath')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete uploaded file',
+    description: 'Delete a previously uploaded assignment file'
+  })
+  @ApiParam({ name: 'filePath', description: 'File path to delete' })
+  @ApiResponse({ status: 204, description: 'File deleted successfully' })
+  async deleteAssignmentFile(
+    @Param('filePath') filePath: string,
+    @Request() req
+  ): Promise<void> {
+    const userId = req.user?.sub || req.user?.id;
+    this.logger.log(`Deleting file: ${filePath} for user: ${userId}`);
+
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('Only students can delete their assignment files');
+    }
+
+    return this.assignmentsService.deleteAssignmentFile(filePath, userId);
+  }
+
+  // =============================================
+  // STUDENT ASSIGNMENT ENDPOINTS (Updated)
   // =============================================
 
   @Get('my-assignments')
@@ -81,13 +217,75 @@ export class AssignmentsController {
   ): Promise<AssignmentListResponseDto> {
     const studentId = req.user?.sub || req.user?.id;
     this.logger.log(`Getting assignments for student: ${studentId}`);
-
+    
     if (req.user?.role !== 'student') {
       throw new BadRequestException('This endpoint is only for students');
     }
 
     return this.assignmentsService.getStudentAssignments(studentId, status, subject, limit, offset);
   }
+
+  @Post(':assignmentId/submit')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Submit assignment with files',
+    description: 'Submit completed assignment with uploaded files and/or text content'
+  })
+  @ApiParam({ name: 'assignmentId', type: 'string', description: 'Assignment UUID' })
+  @ApiBody({ 
+    type: SubmitAssignmentDto,
+    description: 'Submission data with file URLs and/or text content'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Assignment submitted successfully',
+    type: AssignmentSubmissionDto
+  })
+  @ApiBadRequestResponse({ description: 'Invalid submission or assignment already submitted' })
+  async submitAssignment(
+    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+    @Body(ValidationPipe) submitData: Omit<SubmitAssignmentDto, 'assignmentId'>,
+    @Request() req
+  ): Promise<AssignmentSubmissionDto> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Submitting assignment: ${assignmentId} for student: ${studentId}`);
+    
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('Only students can submit assignments');
+    }
+
+    const fullSubmitData: SubmitAssignmentDto = {
+      assignmentId,
+      ...submitData
+    };
+
+    return this.assignmentsService.submitAssignment(studentId, fullSubmitData);
+  }
+
+  @Get('my-submissions/history')
+  @ApiOperation({
+    summary: 'Get student submission history',
+    description: 'Retrieve all submissions made by the authenticated student with file information'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Submission history retrieved successfully',
+    type: [AssignmentSubmissionDto]
+  })
+  async getMySubmissions(@Request() req): Promise<AssignmentSubmissionDto[]> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Getting submission history for student: ${studentId}`);
+    
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
+    }
+
+    return this.assignmentsService.getStudentSubmissions(studentId);
+  }
+
+  // =============================================
+  // KEEP ALL OTHER EXISTING ENDPOINTS
+  // =============================================
 
   @Get(':assignmentId')
   @ApiOperation({
@@ -116,61 +314,6 @@ export class AssignmentsController {
     }
   }
 
-  @Post(':assignmentId/submit')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Submit assignment',
-    description: 'Submit completed assignment with files or text'
-  })
-  @ApiParam({ name: 'assignmentId', type: 'string', description: 'Assignment UUID' })
-  @ApiBody({ type: SubmitAssignmentDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Assignment submitted successfully',
-    type: AssignmentSubmissionDto
-  })
-  @ApiBadRequestResponse({ description: 'Invalid submission or assignment already submitted' })
-  async submitAssignment(
-    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
-    @Body(ValidationPipe) submitData: Omit<SubmitAssignmentDto, 'assignmentId'>,
-    @Request() req
-  ): Promise<AssignmentSubmissionDto> {
-    const studentId = req.user?.sub || req.user?.id;
-    this.logger.log(`Submitting assignment: ${assignmentId} for student: ${studentId}`);
-
-    if (req.user?.role !== 'student') {
-      throw new BadRequestException('Only students can submit assignments');
-    }
-
-    const fullSubmitData: SubmitAssignmentDto = {
-      assignmentId,
-      ...submitData
-    };
-
-    return this.assignmentsService.submitAssignment(studentId, fullSubmitData);
-  }
-
-  @Get('my-submissions/history')
-  @ApiOperation({
-    summary: 'Get student submission history',
-    description: 'Retrieve all submissions made by the authenticated student'
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Submission history retrieved successfully',
-    type: [AssignmentSubmissionDto]
-  })
-  async getMySubmissions(@Request() req): Promise<AssignmentSubmissionDto[]> {
-    const studentId = req.user?.sub || req.user?.id;
-    this.logger.log(`Getting submission history for student: ${studentId}`);
-
-    if (req.user?.role !== 'student') {
-      throw new BadRequestException('This endpoint is only for students');
-    }
-
-    return this.assignmentsService.getStudentSubmissions(studentId);
-  }
-
   @Get('my-stats')
   @ApiOperation({
     summary: 'Get student assignment statistics',
@@ -184,12 +327,54 @@ export class AssignmentsController {
   async getMyAssignmentStats(@Request() req): Promise<AssignmentStatsDto> {
     const studentId = req.user?.sub || req.user?.id;
     this.logger.log(`Getting assignment stats for student: ${studentId}`);
-
+    
     if (req.user?.role !== 'student') {
       throw new BadRequestException('This endpoint is only for students');
     }
 
     return this.assignmentsService.getStudentAssignmentStats(studentId);
+  }
+
+  @Get('dashboard/summary')
+  @ApiOperation({
+    summary: 'Get dashboard summary with counts',
+    description: 'Get comprehensive dashboard overview with statistics and counts'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard summary retrieved successfully',
+    type: AssignmentDashboardSummaryDto
+  })
+  async getDashboardSummary(@Request() req): Promise<AssignmentDashboardSummaryDto> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Getting dashboard summary for student: ${studentId}`);
+    
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
+    }
+
+    return this.assignmentsService.getStudentAssignmentDashboardSummary(studentId);
+  }
+
+  @Get('my-progress/subjects')
+  @ApiOperation({
+    summary: 'Get subject-wise progress',
+    description: 'Get detailed progress and statistics for each subject'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Subject progress retrieved successfully',
+    type: [SubjectProgressDto]
+  })
+  async getMySubjectProgress(@Request() req): Promise<SubjectProgressDto[]> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Getting subject progress for student: ${studentId}`);
+    
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
+    }
+
+    return this.assignmentsService.getStudentSubjectProgress(studentId);
   }
 
   // =============================================
@@ -292,7 +477,6 @@ export class AssignmentsController {
     @Query('classLevel') classLevel?: string
   ): Promise<NCERTChapterDto[]> {
     this.logger.log('Getting NCERT chapters');
-
     return this.assignmentsService.getNCERTChapters(subject, classLevel);
   }
 
@@ -317,7 +501,6 @@ export class AssignmentsController {
   })
   async getAvailableSubjects(): Promise<{ subjects: string[] }> {
     this.logger.log('Getting available subjects');
-
     // This could be dynamic from database or config
     const subjects = [
       'Mathematics',
@@ -333,7 +516,6 @@ export class AssignmentsController {
       'Economics',
       'Political Science'
     ];
-
     return { subjects };
   }
 
@@ -358,68 +540,91 @@ export class AssignmentsController {
   })
   async getAvailableClasses(): Promise<{ classes: string[] }> {
     this.logger.log('Getting available classes');
-
     const classes = ['6th', '7th', '8th', '9th', '10th', '11th', '12th'];
     return { classes };
   }
 
   // =============================================
-  // ADMIN/ANALYTICS ENDPOINTS
+  // SEARCH & FILTERING ENDPOINTS
   // =============================================
 
-  @Get('analytics/overview')
+  @Get('search')
   @ApiOperation({
-    summary: 'Get assignment analytics overview',
-    description: 'Get system-wide assignment analytics (admin/teacher only)'
+    summary: 'Advanced search/filtering',
+    description: 'Search assignments with advanced filters and parameters'
   })
+  @ApiQuery({ name: 'query', type: 'string', required: false, description: 'Search term' })
+  @ApiQuery({ name: 'subject', type: 'string', required: false })
+  @ApiQuery({ name: 'status', enum: AssignmentStatus, required: false })
+  @ApiQuery({ name: 'difficulty', enum: DifficultyLevel, required: false })
+  @ApiQuery({ name: 'dueDateFrom', type: 'string', required: false })
+  @ApiQuery({ name: 'dueDateTo', type: 'string', required: false })
+  @ApiQuery({ name: 'aiGenerated', type: 'boolean', required: false })
+  @ApiQuery({ name: 'ncertChapter', type: 'string', required: false })
+  @ApiQuery({ name: 'limit', type: 'number', required: false, example: 20 })
+  @ApiQuery({ name: 'offset', type: 'number', required: false, example: 0 })
   @ApiResponse({
     status: 200,
-    description: 'Analytics retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        totalAssignments: { type: 'number', example: 1250 },
-        aiGeneratedCount: { type: 'number', example: 450 },
-        totalSubmissions: { type: 'number', example: 8500 },
-        averageScore: { type: 'number', example: 78.5 },
-        subjectDistribution: {
-          type: 'object',
-          additionalProperties: { type: 'number' },
-          example: { 'Mathematics': 350, 'Science': 280, 'English': 200 }
-        }
-      }
-    }
+    description: 'Search results retrieved successfully',
+    type: AssignmentListResponseDto
   })
-  async getAssignmentAnalytics(@Request() req): Promise<any> {
-    this.logger.log('Getting assignment analytics');
+  async searchAssignments(
+    @Request() req,
+    @Query('query') query?: string,
+    @Query('subject') subject?: string,
+    @Query('status') status?: AssignmentStatus,
+    @Query('difficulty') difficulty?: DifficultyLevel,
+    @Query('dueDateFrom') dueDateFrom?: string,
+    @Query('dueDateTo') dueDateTo?: string,
+    @Query('aiGenerated') aiGenerated?: boolean,
+    @Query('ncertChapter') ncertChapter?: string,
+    @Query('limit') limit: number = 20,
+    @Query('offset') offset: number = 0
+  ): Promise<AssignmentListResponseDto> {
+    const studentId = req.user?.sub || req.user?.id;
+    this.logger.log(`Searching assignments for student: ${studentId}`);
 
-    if (!['teacher', 'hei_mentor', 'hei_admin', 'school_admin'].includes(req.user?.role)) {
-      throw new BadRequestException('Insufficient permissions to view analytics');
+    if (req.user?.role !== 'student') {
+      throw new BadRequestException('This endpoint is only for students');
     }
 
-    // Mock analytics data - implement actual analytics logic
-    return {
-      totalAssignments: 1250,
-      aiGeneratedCount: 450,
-      totalSubmissions: 8500,
-      averageScore: 78.5,
-      subjectDistribution: {
-        'Mathematics': 350,
-        'Science': 280,
-        'English': 200,
-        'Social Studies': 180,
-        'Hindi': 240
-      },
-      difficultyDistribution: {
-        'easy': 400,
-        'medium': 650,
-        'hard': 200
-      },
-      submissionTrends: {
-        onTime: 6800,
-        late: 1200,
-        notSubmitted: 500
-      }
+    const searchParams: SearchAssignmentsDto = {
+      query,
+      subject,
+      status,
+      difficulty,
+      dueDateFrom,
+      dueDateTo,
+      aiGenerated,
+      ncertChapter
     };
+
+    return this.assignmentsService.searchStudentAssignments(studentId, searchParams, limit, offset);
+  }
+
+  @Get(':assignmentId/attachments')
+  @ApiOperation({
+    summary: 'Get assignment attachments',
+    description: 'Get file attachments for a specific assignment'
+  })
+  @ApiParam({ name: 'assignmentId', type: 'string', description: 'Assignment UUID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Assignment attachments retrieved successfully',
+    type: [AssignmentAttachmentDto]
+  })
+  async getAssignmentAttachments(
+    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+    @Request() req
+  ): Promise<AssignmentAttachmentDto[]> {
+    this.logger.log(`Getting attachments for assignment: ${assignmentId}`);
+
+    // Verify user can access this assignment
+    if (req.user?.role === 'student') {
+      const userId = req.user?.sub || req.user?.id;
+      await this.assignmentsService.getAssignmentById(assignmentId, userId);
+    }
+
+    return this.assignmentsService.getAssignmentAttachments(assignmentId);
   }
 }

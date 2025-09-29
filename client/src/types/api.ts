@@ -208,7 +208,6 @@ export interface AssessmentStatus {
 
 // ===== DREAM EXPLORER TYPES =====
 export type DemandLevel = 'Extremely High' | 'Very High' | 'Growing Fast' | 'Growing' | 'High' | 'Medium' | 'Low';
-export type DifficultyLevel = 'Extremely Hard' | 'Hard' | 'Medium' | 'Easy';
 export type CareerCategory = 
   | 'Space & Exploration' 
   | 'Healthcare & Medicine' 
@@ -529,3 +528,139 @@ export interface InspirationalQuoteDto {
 
 // Career Map Stage Status
 export type CareerMapStageStatus = 'completed' | 'current' | 'upcoming';
+
+export enum AssignmentStatus {
+  PENDING = 'pending',
+  SUBMITTED = 'submitted',
+  GRADED = 'graded',
+  OVERDUE = 'overdue'
+}
+
+export enum DifficultyLevel {
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard'
+}
+
+export enum SubmissionFormat {
+  PDF = 'pdf',
+  DOC = 'doc',
+  IMAGE = 'image',
+  TEXT = 'text'
+}
+
+export interface AssignmentQuestionDto {
+  questionNumber: number;
+  question: string;
+  type: string;
+  marks: number;
+  options?: string[];
+  correctAnswer?: string;
+}
+
+export interface AssignmentDto {
+  id: string;
+  title: string;
+  description: string;
+  subject: string;
+  class: string;
+  dueDate: string;
+  status: AssignmentStatus;
+  aiGenerated: boolean;
+  ncertChapter: string;
+  difficulty: DifficultyLevel;
+  totalMarks: number;
+  timeEstimate: string;
+  questions: AssignmentQuestionDto[];
+  submissionFormat: SubmissionFormat[];
+  teacherNotes?: string;
+  aiInsights?: string;
+  score?: number;
+  feedback?: string;
+  grade?: string;
+  submittedAt?: string;
+}
+
+export interface AssignmentListResponseDto {
+  assignments: AssignmentDto[];
+  total: number;
+  pending: number;
+  completed: number;
+  overdue: number;
+}
+
+export interface AssignmentDashboardSummaryDto {
+  totalAssignments: number;
+  pendingAssignments: number;
+  completedAssignments: number;
+  overdueAssignments: number;
+  dueToday: number;
+  dueThisWeek: number;
+  averageScore: number;
+  overallGrade: string;
+  subjectDistribution: Record<string, any>;
+  recentActivity: Record<string, any>;
+}
+
+export interface SubjectProgressDto {
+  subject: string;
+  totalAssignments: number;
+  completedAssignments: number;
+  pendingAssignments: number;
+  overdueAssignments: number;
+  averageScore: number;
+  gradeInSubject: string;
+  completionRate: number;
+  lastSubmission: string;
+  improvementTrend: number;
+}
+
+export interface SubmitAssignmentDto {
+  assignmentId: string;
+  fileUrls?: string[];
+  submissionText?: string;
+}
+
+export interface AssignmentAttachmentDto {
+  id: string;
+  filename: string;
+  fileType: string;
+  fileSize: number;
+  downloadUrl: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export interface AssignmentSubmissionDto {
+  id: string;
+  assignmentId: string;
+  assignmentTitle: string;
+  fileUrls: string[];  // Updated field name
+  submissionText?: string;
+  submittedAt: string;
+  score?: number;
+  feedback?: string;
+  grade?: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface FileUploadResponseDto {
+  fileId: string;
+  filename: string;
+  fileUrl: string;
+  signedUrl?: string;
+  uploadedAt: string;
+}
+
+export interface SearchAssignmentsDto {
+  query?: string;
+  subject?: string;
+  status?: AssignmentStatus;
+  difficulty?: DifficultyLevel;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  aiGenerated?: boolean;
+  ncertChapter?: string;
+}

@@ -29,7 +29,17 @@ import {
   CareerProgressDto,
   LocalOpportunityDto,
   CareerPathwayMapDto,
-  UpdateProgressDto
+  UpdateProgressDto,
+  SubjectProgressDto,
+  AssignmentListResponseDto,
+  AssignmentDashboardSummaryDto,
+  AssignmentDto,
+  SubmitAssignmentDto,
+  AssignmentAttachmentDto,
+  AssignmentStatus,
+  SearchAssignmentsDto,
+  AssignmentSubmissionDto,
+  FileUploadResponseDto
 } from '@/types/api';
 
 interface APIResponse<T = any> {
@@ -467,6 +477,133 @@ async getCareerLocalOpportunities(location?: string, type?: string): Promise<API
   
   const query = params.toString() ? `?${params.toString()}` : '';
   return this.request<LocalOpportunityDto[]>(`/careers/local-opportunities${query}`);
+}
+
+async getMyAssignments(params?: {
+  status?: AssignmentStatus;
+  subject?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<APIResponse<AssignmentListResponseDto>> {
+  const searchParams = new URLSearchParams();
+  
+  if (params?.status) searchParams.append('status', params.status);
+  if (params?.subject) searchParams.append('subject', params.subject);
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+  return this.request<AssignmentListResponseDto>(`/assignments/my-assignments${query}`);
+}
+
+async getMyCompletedAssignments(): Promise<APIResponse<AssignmentListResponseDto>> {
+  const [submitted, graded] = await Promise.all([
+    this.request<AssignmentListResponseDto>('/assignments/my-assignments?status=submitted'),
+    this.request<AssignmentListResponseDto>('/assignments/my-assignments?status=graded')
+  ]);
+
+  if (submitted.error || graded.error) {
+    return { error: submitted.error || graded.error };
+  }
+
+  const allAssignments = [...(submitted.data?.assignments || []), ...(graded.data?.assignments || [])];
+  const total = (submitted.data?.total || 0) + (graded.data?.total || 0);
+
+  return {
+    data: {
+      assignments: allAssignments,
+      total,
+      pending: 0,
+      completed: total,
+      overdue: 0
+    }
+  };
+}
+
+async getMyOverdueAssignments(): Promise<APIResponse<AssignmentListResponseDto>> {
+  return this.request<AssignmentListResponseDto>('/assignments/my-assignments/overdue');
+}
+
+async getAssignmentDashboardSummary(): Promise<APIResponse<AssignmentDashboardSummaryDto>> {
+  return this.request<AssignmentDashboardSummaryDto>('/assignments/dashboard/summary');
+}
+
+async getMySubjectProgress(): Promise<APIResponse<SubjectProgressDto[]>> {
+  return this.request<SubjectProgressDto[]>('/assignments/my-progress/subjects');
+}
+
+async searchAssignments(params: SearchAssignmentsDto): Promise<APIResponse<AssignmentListResponseDto>> {
+  const searchParams = new URLSearchParams();
+  
+  if (params.query) searchParams.append('query', params.query);
+  if (params.subject) searchParams.append('subject', params.subject);
+  if (params.status) searchParams.append('status', params.status);
+  if (params.difficulty) searchParams.append('difficulty', params.difficulty);
+  if (params.dueDateFrom) searchParams.append('dueDateFrom', params.dueDateFrom);
+  if (params.dueDateTo) searchParams.append('dueDateTo', params.dueDateTo);
+  if (params.aiGenerated !== undefined) searchParams.append('aiGenerated', params.aiGenerated.toString());
+  if (params.ncertChapter) searchParams.append('ncertChapter', params.ncertChapter);
+
+  return this.request<AssignmentListResponseDto>(`/assignments/search?${searchParams.toString()}`);
+}
+
+async getAssignmentDetails(assignmentId: string): Promise<APIResponse<AssignmentDto>> {
+  return this.request<AssignmentDto>(`/assignments/${assignmentId}`);
+}
+
+async submitAssignment(submissionData: SubmitAssignmentDto): Promise<APIResponse<{ message: string; submissionId: string }>> {
+  return this.request<{ message: string; submissionId: string }>('/assignments/submit', {
+    method: 'POST',
+    body: JSON.stringify(submissionData),
+  });
+}
+
+async getMySubmissions(): Promise<APIResponse<AssignmentSubmissionDto[]>> {
+  return this.request<AssignmentSubmissionDto[]>('/assignments/my-submissions/history');
+}
+
+async getAssignmentAttachments(assignmentId: string): Promise<APIResponse<AssignmentAttachmentDto>> {
+  return this.request<AssignmentAttachmentDto>(`/assignments/${assignmentId}/attachments`);
+}
+
+async uploadAssignmentFile(file: File, assignmentId?: string): Promise<APIResponse<FileUploadResponseDto>> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (assignmentId) {
+    formData.append('assignmentId', assignmentId);
+  }
+
+  return this.request<FileUploadResponseDto>('/assignments/upload-file', {
+    method: 'POST',
+    body: formData,
+    headers: {
+      // Remove Content-Type header to let browser set it for FormData
+    },
+  });
+}
+
+async uploadMultipleFiles(files: File[], assignmentId?: string): Promise<APIResponse<FileUploadResponseDto[]>> {
+  const formData = new FormData();
+  files.forEach(file => {
+    formData.append('files', file);
+  });
+  if (assignmentId) {
+    formData.append('assignmentId', assignmentId);
+  }
+
+  return this.request<FileUploadResponseDto[]>('/assignments/upload-multiple', {
+    method: 'POST',
+    body: formData,
+    headers: {
+      // Remove Content-Type header to let browser set it for FormData
+    },
+  });
+}
+
+async deleteAssignmentFile(filePath: string): Promise<APIResponse<void>> {
+  return this.request<void>(`/assignments/files/${encodeURIComponent(filePath)}`, {
+    method: 'DELETE',
+  });
 }
 }
 
