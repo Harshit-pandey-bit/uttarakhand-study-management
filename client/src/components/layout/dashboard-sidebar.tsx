@@ -93,7 +93,7 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             route: '/dashboard/student/mentoring',
             children: [
               { icon: Users, label: 'Sessions', route: '/dashboard/student/mentoring/sessions' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/student/mentoring/doubt-clearing' },
+              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/student/mentoring/chat' },
             ]
           },
           {

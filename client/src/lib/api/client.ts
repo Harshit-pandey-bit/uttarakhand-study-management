@@ -552,7 +552,7 @@ async getAssignmentDetails(assignmentId: string): Promise<APIResponse<Assignment
 }
 
 async submitAssignment(submissionData: SubmitAssignmentDto): Promise<APIResponse<{ message: string; submissionId: string }>> {
-  return this.request<{ message: string; submissionId: string }>('/assignments/submit', {
+  return this.request<{ message: string; submissionId: string }>(`/assignments/${submissionData.assignmentId}/submit`, {
     method: 'POST',
     body: JSON.stringify(submissionData),
   });
