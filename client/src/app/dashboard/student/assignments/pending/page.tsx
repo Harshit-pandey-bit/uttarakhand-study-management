@@ -32,7 +32,8 @@ import {
   AssignmentDto,
   AssignmentStatus,
   DifficultyLevel,
-  AssignmentListResponseDto
+  AssignmentListResponseDto,
+  AssignmentSubmissionDto
 } from '@/types/api';
 
 export default function PendingAssignmentsPage() {
@@ -61,18 +62,45 @@ export default function PendingAssignmentsPage() {
       setLoading(!pendingAssignments.length);
       setError(null);
 
-      // Get pending assignments using the API client
-      const response = await apiClient.getMyAssignments({
-        status: AssignmentStatus.PENDING,
-        limit: 50
-      });
+      // UPDATED: Fetch both assignments and submissions simultaneously
+      const [assignmentsResponse, submissionsResponse] = await Promise.all([
+        apiClient.getMyAssignments({
+          limit: 50
+        }),
+        apiClient.getMySubmissions()
+      ]);
 
-      if (response.error) {
-        throw new Error(response.error);
+      if (assignmentsResponse.error) {
+        throw new Error(assignmentsResponse.error);
       }
 
-      if (response.data) {
-        setPendingAssignments(response.data.assignments);
+      let allAssignments: AssignmentDto[] = [];
+      let submittedAssignmentIds: string[] = [];
+
+      // Get submitted assignment IDs
+      if (submissionsResponse.data && !submissionsResponse.error) {
+        submittedAssignmentIds = submissionsResponse.data.map((submission: AssignmentSubmissionDto) => submission.assignmentId);
+        console.log('Submitted assignment IDs:', submittedAssignmentIds);
+      }
+
+      if (assignmentsResponse.data) {
+        allAssignments = assignmentsResponse.data.assignments;
+        console.log('All assignments count:', allAssignments.length);
+        
+        // Filter for pending assignments AND exclude submitted ones
+        const filteredAssignments = allAssignments.filter(assignment => {
+          const isSubmitted = submittedAssignmentIds.includes(assignment.id);
+          const isPending = assignment.status.toLowerCase() === 'pending';
+          
+          console.log(`Assignment ${assignment.id} (${assignment.title}): Status=${assignment.status}, Submitted=${isSubmitted ? 'YES' : 'NO'}`);
+          
+          // Keep assignments that are pending AND not submitted
+          return isPending && !isSubmitted;
+        });
+        
+        console.log('Filtered pending assignments count (excluding submitted):', filteredAssignments.length);
+        
+        setPendingAssignments(filteredAssignments);
       }
     } catch (err: unknown) {
       console.error('Error loading pending assignments:', err);
