@@ -24,7 +24,7 @@ interface AssignmentAttachmentsProps {
 
 export default function AssignmentAttachments({ assignmentId }: AssignmentAttachmentsProps) {
   const [attachments, setAttachments] = useState<AssignmentAttachmentDto[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function AssignmentAttachments({ assignmentId }: AssignmentAttach
       const response = await apiClient.getAssignmentAttachments(assignmentId);
       if (response.data && !response.error) {
         const newAttachments = response.data
-        setAttachments(prev => [newAttachments]);
+        setAttachments(prev => [...prev, newAttachments]);
       }
     } catch (error) {
       console.error('Failed to load attachments:', error);
@@ -69,17 +69,17 @@ export default function AssignmentAttachments({ assignmentId }: AssignmentAttach
   };
 
   const getFileIcon = (fileType: string | undefined | null) => {
-  // Add null/undefined check and provide fallback
-    if (!fileType) return <File className="h-5 w-5 text-gray-500" />;
-    
+    // Add null/undefined check and provide fallback
+    if (!fileType) return <File className="h-6 w-6 text-gray-500" />;
+
     // Convert to lowercase for case-insensitive comparison
     const type = fileType.toLowerCase();
     
-    if (type.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />;
-    if (type.includes('word') || type.includes('document')) return <FileType className="h-5 w-5 text-blue-500" />;
-    if (type.includes('image')) return <Image className="h-5 w-5 text-green-500" />;
-    return <File className="h-5 w-5 text-gray-500" />;
-};
+    if (type.includes('pdf')) return <FileText className="h-6 w-6 text-red-500" />;
+    if (type.includes('word') || type.includes('document')) return <FileText className="h-6 w-6 text-blue-500" />;
+    if (type.includes('image')) return <Image className="h-6 w-6 text-green-500" />;
+    return <File className="h-6 w-6 text-gray-500" />;
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -91,17 +91,19 @@ export default function AssignmentAttachments({ assignmentId }: AssignmentAttach
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Paperclip className="h-5 w-5" />
-            <span>Assignment Resources</span>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Paperclip className="h-6 w-6 text-blue-600" />
+            </div>
+            <span className="text-xl">Assignment Resources</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
+        <CardContent className="p-8 text-center">
+          <div className="flex items-center justify-center space-x-3 text-gray-500">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Loading attachments...</span>
+            <span className="text-lg">Loading resources...</span>
           </div>
         </CardContent>
       </Card>
@@ -110,53 +112,71 @@ export default function AssignmentAttachments({ assignmentId }: AssignmentAttach
 
   if (attachments.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Paperclip className="h-5 w-5" />
-            <span>Assignment Resources</span>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Paperclip className="h-6 w-6 text-blue-600" />
+            </div>
+            <span className="text-xl">Assignment Resources</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-500 text-center py-4">No additional resources provided</p>
+        <CardContent className="p-8 text-center">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-4 bg-gray-100 rounded-full">
+              <Paperclip className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg text-gray-500">No additional resources provided</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Paperclip className="h-5 w-5 text-blue-600" />
-          <span>Assignment Resources</span>
-          <Badge variant="secondary">{attachments.length}</Badge>
+    <Card className="border-0 shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Paperclip className="h-6 w-6 text-blue-600" />
+            </div>
+            <span className="text-xl">Assignment Resources</span>
+          </div>
+          <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
+            {attachments.length} {attachments.length === 1 ? 'file' : 'files'}
+          </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+      <CardContent className="p-6">
+        <div className="space-y-4">
           {attachments.map((attachment) => (
-            <div
+            <div 
               key={attachment.id}
-              className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200"
             >
-              <div className="flex items-center space-x-3 flex-1">
-                {getFileIcon(attachment.fileType)}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{attachment.filename}</p>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    <span>{formatFileSize(attachment.fileSize)}</span>
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  {getFileIcon(attachment.fileType)}
+                </div>
+                
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 text-lg">{attachment.filename}</h4>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                    <span className="font-medium">{formatFileSize(attachment.fileSize)}</span>
                     <span>•</span>
                     <span>Uploaded {new Date(attachment.uploadedAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
+
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleDownload(attachment)}
                   disabled={downloadingFiles.has(attachment.id)}
+                  className="border-gray-300 hover:border-gray-400"
                 >
                   {downloadingFiles.has(attachment.id) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -164,10 +184,12 @@ export default function AssignmentAttachments({ assignmentId }: AssignmentAttach
                     <Download className="h-4 w-4" />
                   )}
                 </Button>
+                
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => window.open(attachment.downloadUrl, '_blank')}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
