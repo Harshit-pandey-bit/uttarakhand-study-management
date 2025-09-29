@@ -1,124 +1,333 @@
-'use client'
+// app/dashboard/student/projects/showcase/page.tsx
+"use client";
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { CalendarDays, Users, Clock, CheckCircle2, AlertCircle, Play, FileText, MessageSquare, Upload, Download, Video, Link } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Calendar, Star, Award, Users, Clock, TrendingUp, 
+  Download, Share2, Medal, Trophy, BookOpen, Target,
+  CheckCircle2, ExternalLink, FileText, Zap
+} from 'lucide-react';
+import Link from 'next/link';
 
-const projectDetailData = {
-  id: "PROJ001",
-  title: "Water Conservation in Rural Schools",
-  description: "Research and propose solutions for reducing water wastage in our school community through innovative techniques and community engagement.",
-  duration: "3 weeks",
-  startDate: "2025-09-15",
-  endDate: "2025-10-06",
-  status: "in-progress",
-  mentor: {
-    name: "Dr. Environmental Science Prof",
-    avatar: "/mentors/env-prof.jpg",
-    email: "env.prof@hei.edu",
-    expertise: ["Environmental Science", "Water Management", "Rural Development"]
+// Type definitions
+interface Mentor {
+  name: string;
+  institution: string;
+  avatar: string;
+}
+
+interface CompletedProject {
+  id: string;
+  title: string;
+  description: string;
+  completedDate: string;
+  duration: string;
+  category: string;
+  rating: number;
+  mentor: Mentor;
+  team: string[];
+  skillsGained: string[];
+  outcomes: string[];
+  certificate: string;
+  presentation: string;
+  images: string[];
+  impact: string;
+}
+
+interface Skill {
+  name: string;
+  level: 'Advanced' | 'Intermediate' | 'Beginner';
+  projects: number;
+}
+
+interface Student {
+  name: string;
+  class: string;
+  school: string;
+  avatar: string;
+  joinedDate: string;
+  totalProjects: number;
+  completedProjects: number;
+  avgRating: number;
+  totalSkills: number;
+  achievements: string[];
+}
+
+interface StudentShowcaseData {
+  student: Student;
+  completedProjects: CompletedProject[];
+  skills: Skill[];
+}
+
+// Student showcase data
+const studentShowcaseData: StudentShowcaseData = {
+  student: {
+    name: "Rahul Sharma",
+    class: "Class 10",
+    school: "Government Higher Secondary School, Dehradun",
+    avatar: "/students/rahul.jpg",
+    joinedDate: "2025-08-15",
+    totalProjects: 5,
+    completedProjects: 3,
+    avgRating: 4.7,
+    totalSkills: 12,
+    achievements: ["Top Performer", "Research Excellence", "Team Leadership"]
   },
-  team: [
-    { name: "Rahul Sharma", role: "Team Lead", avatar: "/students/rahul.jpg" },
-    { name: "Priya Singh", role: "Data Collector", avatar: "/students/priya.jpg" },
-    { name: "Amit Kumar", role: "Researcher", avatar: "/students/amit.jpg" }
-  ],
-  milestones: [
+  completedProjects: [
     {
-      week: 1,
-      task: "Problem Identification & Survey",
-      status: "completed",
-      dueDate: "2025-09-21",
-      completedDate: "2025-09-20",
-      description: "Conduct school-wide survey to identify water wastage patterns and interview stakeholders."
+      id: "PROJ_COMPLETED_01",
+      title: "Soil pH Analysis of School Farm",
+      description: "Comprehensive study of soil chemistry and its impact on crop yield in the school's agricultural plot.",
+      completedDate: "2025-09-15",
+      duration: "3 weeks",
+      category: "Environmental Science",
+      rating: 4.8,
+      mentor: {
+        name: "Dr. Agricultural Science",
+        institution: "GBPUAT, Pantnagar",
+        avatar: "/mentors/agri-prof.jpg"
+      },
+      team: ["Rahul Sharma", "Priya Singh", "Ravi Kumar"],
+      skillsGained: ["Data Analysis", "Chemistry", "Research Methods", "Scientific Writing"],
+      outcomes: [
+        "Identified optimal pH levels for different crops",
+        "Recommended soil treatment methods",
+        "Increased crop yield by 15% in test plots"
+      ],
+      certificate: "/certificates/soil-analysis-cert.pdf",
+      presentation: "/presentations/soil-ph-presentation.pdf",
+      images: ["/projects/soil-1.jpg", "/projects/soil-2.jpg", "/projects/soil-3.jpg"],
+      impact: "Implemented across 5 government schools in the district"
     },
     {
-      week: 2,
-      task: "Data Collection & Analysis",
-      status: "in-progress",
-      dueDate: "2025-09-28",
-      description: "Analyze survey data, measure water usage, and identify key problem areas.",
-      progress: 60
+      id: "PROJ_COMPLETED_02",
+      title: "Waste Management System Design",
+      description: "Designed and implemented a sustainable waste segregation and recycling system for the school campus.",
+      completedDate: "2025-08-30",
+      duration: "4 weeks",
+      category: "Environmental Engineering",
+      rating: 4.6,
+      mentor: {
+        name: "Prof. Environmental Engineering",
+        institution: "IIT Roorkee",
+        avatar: "/mentors/env-eng-prof.jpg"
+      },
+      team: ["Rahul Sharma", "Anita Rawat", "Suresh Patel", "Maya Singh"],
+      skillsGained: ["System Design", "Project Management", "Sustainability", "CAD Design"],
+      outcomes: [
+        "Reduced waste disposal costs by 40%",
+        "Achieved 80% waste segregation efficiency",
+        "Created income stream through recycling"
+      ],
+      certificate: "/certificates/waste-mgmt-cert.pdf",
+      presentation: "/presentations/waste-system-presentation.pdf",
+      images: ["/projects/waste-1.jpg", "/projects/waste-2.jpg"],
+      impact: "Model adopted by 3 neighboring schools"
     },
     {
-      week: 3,
-      task: "Solution Design & Presentation",
-      status: "pending",
-      dueDate: "2025-10-05",
-      description: "Develop practical solutions and create presentation for school administration."
+      id: "PROJ_COMPLETED_03",
+      title: "Rainwater Harvesting Optimization",
+      description: "Mathematical modeling and optimization of rainwater harvesting system for maximum water conservation.",
+      completedDate: "2025-08-10",
+      duration: "5 weeks",
+      category: "Applied Mathematics",
+      rating: 4.9,
+      mentor: {
+        name: "Dr. Applied Mathematics",
+        institution: "HNB Garhwal University",
+        avatar: "/mentors/math-prof.jpg"
+      },
+      team: ["Rahul Sharma", "Deepak Bisht"],
+      skillsGained: ["Mathematical Modeling", "Optimization", "Statistical Analysis", "Excel Mastery"],
+      outcomes: [
+        "Optimized water collection efficiency by 35%",
+        "Developed predictive models for rainfall patterns",
+        "Created cost-benefit analysis framework"
+      ],
+      certificate: "/certificates/rainwater-cert.pdf",
+      presentation: "/presentations/rainwater-optimization.pdf",
+      images: ["/projects/rainwater-1.jpg", "/projects/rainwater-2.jpg", "/projects/rainwater-3.jpg", "/projects/rainwater-4.jpg"],
+      impact: "Research published in district education newsletter"
     }
   ],
-  resources: [
-    { name: "Water Survey Template", type: "document", url: "/resources/water-survey.pdf" },
-    { name: "Data Analysis Spreadsheet", type: "spreadsheet", url: "/resources/analysis.xlsx" },
-    { name: "Research Guidelines", type: "document", url: "/resources/research-guide.pdf" }
-  ],
-  submissions: [
-    {
-      title: "Week 1 Progress Report",
-      submittedDate: "2025-09-21",
-      status: "approved",
-      feedback: "Excellent survey methodology and comprehensive data collection."
-    }
-  ],
-  upcomingEvents: [
-    {
-      title: "Mentor Check-in",
-      date: "2025-09-28",
-      time: "10:00 AM",
-      type: "video-call",
-      description: "Review data analysis progress and discuss solution approaches"
-    }
+  skills: [
+    { name: "Data Analysis", level: "Advanced", projects: 3 },
+    { name: "Research Methods", level: "Advanced", projects: 3 },
+    { name: "Scientific Writing", level: "Intermediate", projects: 2 },
+    { name: "Mathematical Modeling", level: "Advanced", projects: 2 },
+    { name: "Project Management", level: "Intermediate", projects: 2 },
+    { name: "Chemistry", level: "Intermediate", projects: 1 },
+    { name: "System Design", level: "Beginner", projects: 1 },
+    { name: "Sustainability", level: "Intermediate", projects: 2 },
+    { name: "Team Leadership", level: "Advanced", projects: 3 },
+    { name: "CAD Design", level: "Beginner", projects: 1 },
+    { name: "Statistical Analysis", level: "Advanced", projects: 2 },
+    { name: "Excel Mastery", level: "Advanced", projects: 2 }
   ]
 };
 
-const MilestoneCard: React.FC<{ milestone: any }> = ({ milestone }) => {
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case 'in-progress': return <Play className="h-5 w-5 text-blue-500" />;
-      default: return <AlertCircle className="h-5 w-5 text-gray-400" />;
+// Component prop interfaces
+interface ProjectShowcaseCardProps {
+  project: CompletedProject;
+}
+
+interface SkillCardProps {
+  skill: Skill;
+}
+
+const ProjectShowcaseCard: React.FC<ProjectShowcaseCardProps> = ({ project }) => {
+  const [showFullDescription, setShowFullDescription] = useState<boolean>(false);
+
+  return (
+    <Card className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500">
+      <CardHeader className="pb-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
+              <div className="flex items-center gap-1 text-yellow-600">
+                <Star className="h-4 w-4 fill-current" />
+                <span className="font-semibold">{project.rating}</span>
+              </div>
+            </div>
+            <Badge variant="outline" className="w-fit">{project.category}</Badge>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant="secondary" className="bg-green-100 text-green-700">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Completed
+            </Badge>
+            <span className="text-sm text-gray-500">
+              {new Date(project.completedDate).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+
+        <p className="text-gray-600 leading-relaxed">
+          {showFullDescription ? project.description : `${project.description.slice(0, 120)}...`}
+          <button 
+            onClick={() => setShowFullDescription(!showFullDescription)}
+            className="text-blue-600 hover:text-blue-700 ml-2 text-sm font-medium"
+            type="button"
+          >
+            {showFullDescription ? 'Read less' : 'Read more'}
+          </button>
+        </p>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Project Details */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-gray-400" />
+            <span>{project.duration}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-gray-400" />
+            <span>{project.team.length} members</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Award className="h-4 w-4 text-gray-400" />
+            <span>{project.skillsGained.length} skills</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-gray-400" />
+            <span>{project.outcomes.length} outcomes</span>
+          </div>
+        </div>
+
+        {/* Mentor Info */}
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={project.mentor.avatar} alt={project.mentor.name} />
+            <AvatarFallback>{project.mentor.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium text-gray-900">{project.mentor.name}</p>
+            <p className="text-sm text-gray-600">{project.mentor.institution}</p>
+          </div>
+        </div>
+
+        {/* Skills Gained */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-gray-900">Skills Gained</h4>
+          <div className="flex flex-wrap gap-2">
+            {project.skillsGained.map((skill: string, index: number) => (
+              <Badge key={index} variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
+                {skill}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Key Outcomes */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-gray-900">Key Outcomes</h4>
+          <ul className="space-y-2">
+            {project.outcomes.map((outcome: string, index: number) => (
+              <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <span>{outcome}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Impact */}
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="h-4 w-4 text-green-600" />
+            <span className="font-semibold text-green-800">Impact</span>
+          </div>
+          <p className="text-sm text-green-700">{project.impact}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3 pt-3 border-t">
+          <Button variant="outline" size="sm">
+            <FileText className="h-4 w-4 mr-2" />
+            Certificate
+          </Button>
+          <Button variant="outline" size="sm">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Presentation
+          </Button>
+          <Button variant="outline" size="sm">
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const SkillCard: React.FC<SkillCardProps> = ({ skill }) => {
+  const getLevelColor = (level: Skill['level']): string => {
+    switch (level) {
+      case 'Advanced': return 'bg-green-100 text-green-700 border-green-200';
+      case 'Intermediate': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'Beginner': return 'bg-blue-100 text-blue-700 border-blue-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   return (
-    <Card className="mb-4">
+    <Card className="hover:shadow-md transition-shadow duration-200">
       <CardContent className="p-4">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 mt-1">
-            {getStatusIcon(milestone.status)}
+        <div className="space-y-3">
+          <div className="flex justify-between items-start">
+            <h4 className="font-semibold text-gray-900">{skill.name}</h4>
+            <Badge variant="outline" className={getLevelColor(skill.level)}>
+              {skill.level}
+            </Badge>
           </div>
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-gray-900">
-                Week {milestone.week}: {milestone.task}
-              </h4>
-              <Badge variant={milestone.status === 'completed' ? 'default' : 'secondary'}>
-                {milestone.status}
-              </Badge>
-            </div>
-            <p className="text-sm text-gray-600">{milestone.description}</p>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>Due: {new Date(milestone.dueDate).toLocaleDateString()}</span>
-              {milestone.completedDate && (
-                <span className="text-green-600">
-                  Completed: {new Date(milestone.completedDate).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-            {milestone.status === 'in-progress' && milestone.progress && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>Progress</span>
-                  <span>{milestone.progress}%</span>
-                </div>
-                <Progress value={milestone.progress} className="h-2" />
-              </div>
-            )}
+          <div className="text-sm text-gray-600">
+            Applied in {skill.projects} project{skill.projects > 1 ? 's' : ''}
           </div>
         </div>
       </CardContent>
@@ -126,218 +335,160 @@ const MilestoneCard: React.FC<{ milestone: any }> = ({ milestone }) => {
   );
 };
 
-const ProjectDetailPage: React.FC = () => {
-  const [project] = useState(projectDetailData);
-  const completedMilestones = project.milestones.filter(m => m.status === 'completed').length;
-  const overallProgress = (completedMilestones / project.milestones.length) * 100;
+export default function ProjectShowcasePage(): React.JSX.Element {
+  const { student, completedProjects, skills } = studentShowcaseData;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={student.avatar} alt={student.name} />
+            <AvatarFallback className="text-2xl">{student.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+          </Avatar>
+        </div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">{project.title}</h1>
-          <p className="text-gray-600 max-w-2xl">{project.description}</p>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline">{project.duration}</Badge>
-            <Badge variant={project.status === 'completed' ? 'default' : 'secondary'}>
-              {project.status}
-            </Badge>
+          <h1 className="text-3xl font-bold text-gray-900">{student.name}</h1>
+          <p className="text-lg text-gray-600">{student.class} • {student.school}</p>
+          <div className="flex justify-center gap-4 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              Joined {new Date(student.joinedDate).toLocaleDateString()}
+            </span>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Message Mentor
-          </Button>
+        
+        {/* Actions */}
+        <div className="flex justify-center gap-3 pt-4">
           <Button>
-            <Upload className="h-4 w-4 mr-2" />
-            Submit Work
+            <Download className="h-4 w-4 mr-2" />
+            Download Portfolio
+          </Button>
+          <Button variant="outline">
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Profile
           </Button>
         </div>
       </div>
 
-      {/* Progress Overview */}
+      {/* Achievement Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">{student.completedProjects}</div>
+            <div className="text-sm text-gray-600">Projects Completed</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center gap-1 mb-2">
+              <span className="text-3xl font-bold text-yellow-600">{student.avgRating}</span>
+              <Star className="h-6 w-6 text-yellow-500 fill-current" />
+            </div>
+            <div className="text-sm text-gray-600">Average Rating</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">{student.totalSkills}</div>
+            <div className="text-sm text-gray-600">Skills Mastered</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">
+              {completedProjects.reduce((acc: number, p: CompletedProject) => acc + p.team.length, 0)}
+            </div>
+            <div className="text-sm text-gray-600">Team Collaborations</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-orange-600 mb-2">{student.achievements.length}</div>
+            <div className="text-sm text-gray-600">Achievements</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Achievements Badges */}
       <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <div className="text-2xl font-bold text-blue-600">{Math.round(overallProgress)}%</div>
-              <div className="text-sm text-gray-600">Overall Progress</div>
-              <Progress value={overallProgress} className="h-3" />
-            </div>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold text-green-600">{completedMilestones}</div>
-              <div className="text-sm text-gray-600">Milestones Completed</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold text-orange-600">
-                {Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
-              </div>
-              <div className="text-sm text-gray-600">Days Remaining</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold text-purple-600">{project.team.length}</div>
-              <div className="text-sm text-gray-600">Team Members</div>
-            </div>
+        <CardHeader>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            Achievements
+          </h2>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            {student.achievements.map((achievement: string, index: number) => (
+              <Badge key={index} variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-700 px-3 py-1">
+                <Medal className="h-3 w-3 mr-1" />
+                {achievement}
+              </Badge>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="milestones" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="milestones">Milestones</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="submissions">Submissions</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="milestones" className="space-y-4">
-          {project.milestones.map((milestone, index) => (
-            <MilestoneCard key={index} milestone={milestone} />
+      {/* Completed Projects */}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold text-gray-900">Completed Projects</h2>
+          <Badge variant="secondary">{completedProjects.length} projects</Badge>
+        </div>
+        
+        <div className="space-y-8">
+          {completedProjects.map((project: CompletedProject) => (
+            <ProjectShowcaseCard key={project.id} project={project} />
           ))}
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value="team" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Project Mentor</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={project.mentor.avatar} />
-                  <AvatarFallback>{project.mentor.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <h4 className="font-semibold">{project.mentor.name}</h4>
-                  <p className="text-sm text-gray-600">{project.mentor.email}</p>
-                  <div className="flex gap-2">
-                    {project.mentor.expertise.map((skill, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">{skill}</Badge>
-                    ))}
-                  </div>
+      {/* Skills Portfolio */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+          <BookOpen className="h-6 w-6" />
+          Skills Portfolio
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {skills.map((skill: Skill, index: number) => (
+            <SkillCard key={index} skill={skill} />
+          ))}
+        </div>
+      </div>
+
+      {/* Timeline Summary */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Project Timeline
+          </h2>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {completedProjects.map((project: CompletedProject) => (
+              <div key={project.id} className="flex items-center gap-4 p-3 rounded-lg border-l-4 border-l-green-500 bg-green-50">
+                <div className="flex-shrink-0">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{project.title}</h4>
+                  <p className="text-sm text-gray-600">
+                    Completed on {new Date(project.completedDate).toLocaleDateString()} • {project.duration}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  <span className="text-sm font-medium">{project.rating}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Team Members</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {project.team.map((member, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-3 rounded-lg border">
-                    <Avatar>
-                      <AvatarImage src={member.avatar} />
-                      <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-medium">{member.name}</h4>
-                      <p className="text-sm text-gray-600">{member.role}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="resources" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Project Resources</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {project.resources.map((resource, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-blue-500" />
-                      <div>
-                        <h4 className="font-medium">{resource.name}</h4>
-                        <p className="text-sm text-gray-600 capitalize">{resource.type}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Link className="h-4 w-4 mr-1" />
-                        Open
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="submissions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Submitted Work</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {project.submissions.map((submission, idx) => (
-                  <div key={idx} className="p-4 rounded-lg border">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{submission.title}</h4>
-                      <Badge variant={submission.status === 'approved' ? 'default' : 'secondary'}>
-                        {submission.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">
-                      Submitted: {new Date(submission.submittedDate).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-green-700 bg-green-50 p-2 rounded">
-                      <strong>Feedback:</strong> {submission.feedback}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="schedule" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Upcoming Events</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {project.upcomingEvents.map((event, idx) => (
-                  <div key={idx} className="p-4 rounded-lg border-l-4 border-blue-500 bg-blue-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{event.title}</h4>
-                      <Badge variant="outline">{event.type}</Badge>
-                    </div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      <CalendarDays className="h-4 w-4 inline mr-1" />
-                      {new Date(event.date).toLocaleDateString()} at {event.time}
-                    </div>
-                    <p className="text-sm text-gray-700">{event.description}</p>
-                    <Button size="sm" className="mt-3">
-                      <Video className="h-4 w-4 mr-2" />
-                      Join Meeting
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default ProjectDetailPage;
+}
