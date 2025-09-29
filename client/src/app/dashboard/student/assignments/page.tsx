@@ -1,4 +1,4 @@
-// src/app/dashboard/student/assignments/page.tsx (Updated version)
+// src/app/dashboard/student/assignments/page.tsx (Updated design)
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -160,20 +160,20 @@ export default function AllAssignmentsPage() {
 
   const getStatusColor = (status: AssignmentStatus) => {
     switch (status) {
-      case AssignmentStatus.PENDING: return 'bg-yellow-100 text-yellow-800';
-      case AssignmentStatus.SUBMITTED: return 'bg-blue-100 text-blue-800';
-      case AssignmentStatus.GRADED: return 'bg-green-100 text-green-800';
-      case AssignmentStatus.OVERDUE: return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case AssignmentStatus.PENDING: return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case AssignmentStatus.SUBMITTED: return 'bg-blue-50 text-blue-700 border-blue-200';
+      case AssignmentStatus.GRADED: return 'bg-green-50 text-green-700 border-green-200';
+      case AssignmentStatus.OVERDUE: return 'bg-red-50 text-red-700 border-red-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   const getDifficultyColor = (difficulty: DifficultyLevel) => {
     switch (difficulty) {
-      case DifficultyLevel.HARD: return 'bg-red-100 text-red-800 border-red-300';
-      case DifficultyLevel.MEDIUM: return 'bg-orange-100 text-orange-800 border-orange-300';
-      case DifficultyLevel.EASY: return 'bg-green-100 text-green-800 border-green-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case DifficultyLevel.HARD: return 'bg-red-50 text-red-700 border-red-200';
+      case DifficultyLevel.MEDIUM: return 'bg-orange-50 text-orange-700 border-orange-200';
+      case DifficultyLevel.EASY: return 'bg-green-50 text-green-700 border-green-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
@@ -209,28 +209,27 @@ export default function AllAssignmentsPage() {
 
   const uniqueSubjects = [...new Set(assignments.map(a => a.subject))];
 
-  // Loading and error states remain the same...
+  // Loading state
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-6 w-96" />
-          </div>
-          <div className="flex space-x-3">
-            <Skeleton className="h-10 w-20" />
+      <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-10 w-80 mb-4" />
+              <Skeleton className="h-6 w-96" />
+            </div>
             <Skeleton className="h-10 w-32" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Array.from({ length: 3 }, (_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
+            <Card key={i} className="bg-white border-0 shadow-sm">
+              <CardContent className="p-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Skeleton className="h-4 w-32 mb-2" />
-                    <Skeleton className="h-8 w-16 mb-2" />
+                    <Skeleton className="h-4 w-32 mb-4" />
+                    <Skeleton className="h-10 w-16 mb-2" />
                     <Skeleton className="h-4 w-24" />
                   </div>
                   <Skeleton className="h-12 w-12 rounded" />
@@ -245,13 +244,13 @@ export default function AllAssignmentsPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center space-y-4">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-6">
+        <Card className="max-w-md w-full bg-white border-0 shadow-xl">
+          <CardContent className="p-8 text-center space-y-6">
+            <AlertCircle className="h-20 w-20 text-red-500 mx-auto" />
             <h2 className="text-2xl font-bold text-gray-900">Something went wrong</h2>
-            <p className="text-gray-600">{error}</p>
-            <Button onClick={handleRefresh} className="w-full" disabled={refreshing}>
+            <p className="text-gray-600 text-lg">{error}</p>
+            <Button onClick={handleRefresh} className="w-full h-12" disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               {refreshing ? 'Loading...' : 'Try Again'}
             </Button>
@@ -262,37 +261,44 @@ export default function AllAssignmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Assignments</h1>
-          <p className="text-gray-600 mt-1">Complete your assignments and track your progress</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
+    <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
+      {/* Enhanced Symmetric Header - REMOVED NEW ASSIGNMENT BUTTON */}
+      <div className="bg-white rounded-xl shadow-sm border p-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">All Assignments</h1>
+            <p className="text-gray-600 text-lg">Complete your assignments and track your progress</p>
+          </div>
+          <div>
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshing} className="border-gray-300 hover:border-gray-400">
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Quick Navigation Cards - Same as before */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Enhanced Symmetric Quick Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <Link href="/dashboard/student/assignments/pending">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-orange-500">
-            <CardContent className="p-6">
+          <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-white hover:bg-orange-50 group">
+            <CardContent className="p-8">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Pending Assignments</p>
-                  <p className="text-3xl font-bold text-orange-600">
-                    {dashboardSummary?.pendingAssignments || 0}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">Need attention</p>
+                <div className="flex items-center space-x-4">
+                  <div className="w-4 h-16 bg-orange-500 rounded-full"></div>
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Pending</p>
+                    </div>
+                    <p className="text-4xl font-bold text-orange-600 mb-2">
+                      {dashboardSummary?.pendingAssignments || 0}
+                    </p>
+                    <p className="text-sm text-gray-500">Need attention</p>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Timer className="h-12 w-12 text-orange-500" />
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center space-x-3">
+                  <Timer className="h-14 w-14 text-orange-500 group-hover:scale-110 transition-transform duration-300" />
+                  <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-orange-500 transition-colors duration-300" />
                 </div>
               </div>
             </CardContent>
@@ -300,60 +306,70 @@ export default function AllAssignmentsPage() {
         </Link>
 
         <Link href="/dashboard/student/assignments/completed">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-green-500">
-            <CardContent className="p-6">
+          <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-white hover:bg-green-50 group">
+            <CardContent className="p-8">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {dashboardSummary?.completedAssignments || 0}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">Well done!</p>
+                <div className="flex items-center space-x-4">
+                  <div className="w-4 h-16 bg-green-500 rounded-full"></div>
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Completed</p>
+                    </div>
+                    <p className="text-4xl font-bold text-green-600 mb-2">
+                      {dashboardSummary?.completedAssignments || 0}
+                    </p>
+                    <p className="text-sm text-gray-500">Well done!</p>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-12 w-12 text-green-500" />
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="h-14 w-14 text-green-500 group-hover:scale-110 transition-transform duration-300" />
+                  <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-500 transition-colors duration-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </Link>
 
-        <Card className="border-l-4 border-l-red-500">
-          <CardContent className="p-6">
+        <Card className="border-0 bg-white hover:shadow-xl transition-all duration-300 cursor-pointer hover:bg-red-50 group">
+          <CardContent className="p-8">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Due This Week</p>
-                <p className="text-3xl font-bold text-red-600">
-                  {dashboardSummary?.dueThisWeek || 0}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">Don't miss!</p>
+              <div className="flex items-center space-x-4">
+                <div className="w-4 h-16 bg-red-500 rounded-full"></div>
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Due This Week</p>
+                  </div>
+                  <p className="text-4xl font-bold text-red-600 mb-2">
+                    {dashboardSummary?.dueThisWeek || 0}
+                  </p>
+                  <p className="text-sm text-gray-500">Don't miss!</p>
+                </div>
               </div>
-              <AlertCircle className="h-12 w-12 text-red-500" />
+              <AlertCircle className="h-14 w-14 text-red-500 group-hover:scale-110 transition-transform duration-300" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters - Same as before */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+      {/* Enhanced Symmetric Search and Filters */}
+      <Card className="bg-white border-0 shadow-sm">
+        <CardContent className="p-8">
+          <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   placeholder="Search assignments, subjects, or chapters..."
-                  className="pl-10"
+                  className="pl-12 h-14 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-lg"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px] h-14 border-gray-300">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -367,7 +383,7 @@ export default function AllAssignmentsPage() {
               </Select>
 
               <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px] h-14 border-gray-300">
                   <SelectValue placeholder="Subject" />
                 </SelectTrigger>
                 <SelectContent>
@@ -381,7 +397,7 @@ export default function AllAssignmentsPage() {
               </Select>
 
               <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px] h-14 border-gray-300">
                   <SelectValue placeholder="Difficulty" />
                 </SelectTrigger>
                 <SelectContent>
@@ -396,14 +412,14 @@ export default function AllAssignmentsPage() {
         </CardContent>
       </Card>
 
-      {/* Assignments List */}
-      <div className="space-y-4">
+      {/* Enhanced Symmetric Assignments List */}
+      <div className="space-y-6">
         {filteredAssignments.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No assignments found</h3>
-              <p className="text-gray-500">
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-16 text-center">
+              <BookOpen className="h-24 w-24 text-gray-300 mx-auto mb-8" />
+              <h3 className="text-2xl font-semibold text-gray-700 mb-4">No assignments found</h3>
+              <p className="text-gray-500 text-lg">
                 {searchTerm || statusFilter !== 'all' || subjectFilter !== 'all' || difficultyFilter !== 'all'
                   ? 'Try adjusting your search criteria or filters'
                   : 'No assignments available at the moment'
@@ -421,90 +437,103 @@ export default function AllAssignmentsPage() {
             return (
               <Card 
                 key={assignment.id} 
-                className={`hover:shadow-lg transition-shadow ${
-                  isOverdue ? 'border-red-300 bg-red-50' : 
-                  isDueSoon ? 'border-orange-300 bg-orange-50' : ''
+                className={`hover:shadow-xl transition-all duration-300 border-0 bg-white cursor-pointer group ${
+                  isOverdue ? 'ring-2 ring-red-200 bg-red-50' : 
+                  isDueSoon ? 'ring-2 ring-orange-200 bg-orange-50' : 'hover:bg-gray-50'
                 }`}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-8">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <h3 className="text-xl font-bold text-gray-900">{assignment.title}</h3>
+                      <div className="flex items-center space-x-4 mb-6">
+                        <div className={`w-4 h-20 rounded-full ${
+                          isOverdue ? 'bg-red-500' : 
+                          isDueSoon ? 'bg-orange-500' : 
+                          assignment.status === AssignmentStatus.GRADED ? 'bg-green-500' : 'bg-blue-500'
+                        }`}></div>
                         
-                        {/* Assignment Type Badge */}
-                        <Badge className="bg-blue-100 text-blue-800 border-blue-300">
-                          <span className="flex items-center space-x-1">
-                            {getAssignmentTypeIcon(assignmentType)}
-                            <span>{getAssignmentTypeLabel(assignmentType)}</span>
-                          </span>
-                        </Badge>
-                        
-                        <Badge className={getDifficultyColor(assignment.difficulty)}>
-                          {assignment.difficulty.toUpperCase()}
-                        </Badge>
-                        <Badge className={getStatusColor(assignment.status)}>
-                          <span className="flex items-center space-x-1">
-                            {getStatusIcon(assignment.status)}
-                            <span>{assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}</span>
-                          </span>
-                        </Badge>
-                        {assignment.aiGenerated && (
-                          <Badge className="bg-purple-100 text-purple-800">
-                            <Bot className="mr-1 h-3 w-3" />
-                            AI Generated
-                          </Badge>
-                        )}
+                        <div className="flex-1">
+                          <div className="flex items-center flex-wrap gap-3 mb-4">
+                            <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                              {assignment.title}
+                            </h3>
+                            
+                            <Badge className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 font-medium">
+                              <span className="flex items-center space-x-2">
+                                {getAssignmentTypeIcon(assignmentType)}
+                                <span>{getAssignmentTypeLabel(assignmentType)}</span>
+                              </span>
+                            </Badge>
+                            
+                            <Badge className={`${getDifficultyColor(assignment.difficulty)} border font-medium px-3 py-1`}>
+                              {assignment.difficulty.toUpperCase()}
+                            </Badge>
+                            
+                            <Badge className={`${getStatusColor(assignment.status)} border font-medium px-3 py-1`}>
+                              <span className="flex items-center space-x-2">
+                                {getStatusIcon(assignment.status)}
+                                <span>{assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}</span>
+                              </span>
+                            </Badge>
+                            
+                            {assignment.aiGenerated && (
+                              <Badge className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 font-medium">
+                                <Bot className="mr-2 h-4 w-4" />
+                                AI Generated
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
+                            <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg">
+                              <BookOpen className="h-4 w-4" />
+                              <span className="font-medium">{assignment.subject}</span>
+                            </span>
+                            <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg">
+                              <Users className="h-4 w-4" />
+                              <span className="font-medium">Class {assignment.class}</span>
+                            </span>
+                            {assignmentType === 'online' && (
+                              <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg">
+                                <FileText className="h-4 w-4" />
+                                <span className="font-medium">{assignment.questions.length} questions</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                        <span className="flex items-center space-x-1">
-                          <BookOpen className="h-4 w-4" />
-                          <span>{assignment.subject}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <Users className="h-4 w-4" />
-                          <span>Class {assignment.class}</span>
-                        </span>
-                        {assignmentType === 'online' && (
-                          <span className="flex items-center space-x-1">
-                            <FileText className="h-4 w-4" />
-                            <span>{assignment.questions.length} questions</span>
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-gray-700 mb-6 text-lg leading-relaxed ml-6">{assignment.description}</p>
 
-                      <p className="text-gray-700 mb-4">{assignment.description}</p>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 ml-6">
+                        <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+                          <Calendar className="h-6 w-6 text-blue-600" />
                           <div>
-                            <p className="text-xs text-gray-500">Due Date</p>
-                            <p className={`text-sm font-medium ${
+                            <p className="text-sm font-medium text-gray-600">Due Date</p>
+                            <p className={`text-lg font-bold ${
                               isOverdue ? 'text-red-600' : isDueSoon ? 'text-orange-600' : 'text-gray-900'
                             }`}>
                               {formatDate(assignment.dueDate)}
-                              {isOverdue && <span className="ml-1 text-red-600">(Overdue)</span>}
-                              {isDueSoon && <span className="ml-1 text-orange-600">({Math.abs(daysUntilDue)} days left)</span>}
                             </p>
+                            {isOverdue && <span className="text-sm text-red-600 font-medium">(Overdue)</span>}
+                            {isDueSoon && <span className="text-sm text-orange-600 font-medium">({Math.abs(daysUntilDue)} days left)</span>}
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                          <Target className="h-4 w-4 text-gray-500" />
+                        <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
+                          <Target className="h-6 w-6 text-purple-600" />
                           <div>
-                            <p className="text-xs text-gray-500">Total Marks</p>
-                            <p className="text-sm font-medium text-gray-900">{assignment.totalMarks} points</p>
+                            <p className="text-sm font-medium text-gray-600">Total Marks</p>
+                            <p className="text-lg font-bold text-gray-900">{assignment.totalMarks} points</p>
                           </div>
                         </div>
 
                         {assignment.score !== undefined && (
-                          <div className="flex items-center space-x-2">
-                            <Award className="h-4 w-4 text-gray-500" />
+                          <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
+                            <Award className="h-6 w-6 text-green-600" />
                             <div>
-                              <p className="text-xs text-gray-500">Your Score</p>
-                              <p className="text-sm font-medium text-green-600">
+                              <p className="text-sm font-medium text-gray-600">Your Score</p>
+                              <p className="text-lg font-bold text-green-600">
                                 {assignment.score}/{assignment.totalMarks}
                                 {assignment.grade && <span className="ml-1">({assignment.grade})</span>}
                               </p>
@@ -513,23 +542,24 @@ export default function AllAssignmentsPage() {
                         )}
                       </div>
 
-                      {/* Simplified Button Layout */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex space-x-2">
+                      {/* Enhanced Button Layout */}
+                      <div className="flex items-center justify-between pt-6 border-t border-gray-100 ml-6">
+                        <div className="flex space-x-3">
                           {assignment.status === AssignmentStatus.PENDING && (
                             <Link href={`/dashboard/student/assignments/${assignment.id}`}>
                               <Button 
-                                size="sm" 
-                                className={isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+                                className={`h-12 px-6 ${
+                                  isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                                } text-white`}
                               >
                                 {assignmentType === 'online' ? (
                                   <>
-                                    <PlayCircle className="mr-2 h-4 w-4" />
+                                    <PlayCircle className="mr-2 h-5 w-5" />
                                     Start Assignment
                                   </>
                                 ) : (
                                   <>
-                                    <Upload className="mr-2 h-4 w-4" />
+                                    <Upload className="mr-2 h-5 w-5" />
                                     {isOverdue ? 'Submit Now' : 'Submit Assignment'}
                                   </>
                                 )}
@@ -537,16 +567,18 @@ export default function AllAssignmentsPage() {
                             </Link>
                           )}
                           <Link href={`/dashboard/student/assignments/${assignment.id}`}>
-                            <Button size="sm" variant="outline">
-                              <Eye className="mr-2 h-4 w-4" />
+                            <Button variant="outline" className="h-12 px-6 border-gray-300 hover:border-gray-400">
+                              <Eye className="mr-2 h-5 w-5" />
                               View Details
                             </Button>
                           </Link>
                         </div>
                         
-                        <div className="text-xs text-gray-500">
-                          {assignment.submittedAt && (
+                        <div className="text-sm font-medium text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
+                          {assignment.submittedAt ? (
                             <span>Submitted on {formatDate(assignment.submittedAt)}</span>
+                          ) : (
+                            <span>Assigned on {formatDate(assignment.dueDate)}</span>
                           )}
                         </div>
                       </div>
@@ -559,45 +591,61 @@ export default function AllAssignmentsPage() {
         )}
       </div>
 
-      {/* Subject Progress Cards - Same as before */}
+      {/* Enhanced Symmetric Subject Progress Cards */}
       {subjectProgress.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BookOpen className="h-5 w-5 text-indigo-600" />
+        <Card className="bg-white border-0 shadow-sm">
+          <CardHeader className="p-8 border-b">
+            <CardTitle className="flex items-center space-x-3 text-2xl">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <BookOpen className="h-6 w-6 text-indigo-600" />
+              </div>
               <span>Subject-wise Progress</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {subjectProgress.map((subject) => (
-                <Card key={subject.subject} className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <BookOpen className="h-8 w-8 text-blue-600" />
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{subject.subject}</h4>
-                        <p className="text-xs text-gray-500">Grade: {subject.gradeInSubject}</p>
+                <Card key={subject.subject} className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="w-3 h-12 bg-blue-500 rounded-full"></div>
+                      <div className="flex items-center space-x-3">
+                        <BookOpen className="h-8 w-8 text-blue-600" />
+                        <div>
+                          <h4 className="font-bold text-gray-900 text-lg">{subject.subject}</h4>
+                          <p className="text-sm text-gray-500">Grade: {subject.gradeInSubject}</p>
+                        </div>
                       </div>
                       {subject.improvementTrend > 0 && (
-                        <Badge className="bg-green-100 text-green-800">
+                        <Badge className="bg-green-100 text-green-800 ml-auto">
                           +{subject.improvementTrend}%
                         </Badge>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{subject.completionRate.toFixed(0)}%</span>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-sm font-medium mb-2">
+                          <span>Progress</span>
+                          <span>{subject.completionRate.toFixed(0)}%</span>
+                        </div>
+                        <Progress value={subject.completionRate} className="h-3 rounded-full" />
                       </div>
-                      <Progress value={subject.completionRate} className="h-2" />
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                        <span>{subject.completedAssignments} completed</span>
-                        <span>{subject.pendingAssignments} pending</span>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                        <div className="text-center p-2 bg-green-50 rounded-lg">
+                          <p className="font-bold text-green-700">{subject.completedAssignments}</p>
+                          <p className="text-xs">Completed</p>
+                        </div>
+                        <div className="text-center p-2 bg-orange-50 rounded-lg">
+                          <p className="font-bold text-orange-700">{subject.pendingAssignments}</p>
+                          <p className="text-xs">Pending</p>
+                        </div>
                       </div>
+                      
                       {subject.averageScore > 0 && (
-                        <div className="text-center pt-2 border-t">
-                          <span className="text-sm font-medium text-green-600">
+                        <div className="text-center pt-4 border-t">
+                          <span className="text-lg font-bold text-green-600">
                             {subject.averageScore.toFixed(1)}% Average
                           </span>
                         </div>
