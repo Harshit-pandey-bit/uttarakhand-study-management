@@ -25,7 +25,8 @@ import {
   Bell,
   Pin,
   Smartphone,
-  Calendar
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 import WhatsAppGroups from '@/components/shared/communication/whatsapp-groups';
 import { useAuth } from '@/hooks/use-auth';
@@ -64,6 +65,7 @@ export default function MentoringChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const selectedRoomData = chatRooms.find(room => room.id === selectedRoom);
@@ -162,7 +164,7 @@ export default function MentoringChatPage() {
 
       setChatRooms(mockRooms);
       setMessages(mockMessages);
-      setSelectedRoom('room1'); // Default to first room
+      setSelectedRoom('room2'); // Default to Chemistry Lab Discussion like in image
       setLoading(false);
     }, 1000);
   }, []);
@@ -206,14 +208,21 @@ export default function MentoringChatPage() {
     // Handle question submission to WhatsApp groups
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
+
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-96">
+          <div className="grid grid-cols-2 gap-6 h-96">
             <div className="bg-gray-200 rounded-lg"></div>
-            <div className="lg:col-span-3 bg-gray-200 rounded-lg"></div>
+            <div className="bg-gray-200 rounded-lg"></div>
           </div>
         </div>
       </div>
@@ -222,25 +231,46 @@ export default function MentoringChatPage() {
 
   return (
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
+      {/* Header with Back Button and Title in Top Left */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center space-x-6">
-          <Link href="/dashboard/student/mentoring">
-            <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Mentoring
-            </Button>
-          </Link>
+        <div className="flex items-start justify-between">
+          {/* Left Side - Back Button and Title */}
+          <div className="text-left">
+            {/* Back Button - Top */}
+            <div className="mb-3">
+              <Link href="/dashboard/student/mentoring">
+                <Button variant="outline" className="border-gray-300 hover:border-gray-400">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Mentoring
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Title and Description - Below */}
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Communication Hub</h1>
+              <p className="text-gray-600 text-lg">Chat with mentors and join study groups</p>
+            </div>
+          </div>
+          
+          {/* Right Side - Refresh Button */}
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Communication Hub</h1>
-            <p className="text-gray-600 text-lg">Chat with mentors and join study groups</p>
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="border-gray-300 hover:border-gray-400"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Tabs with WhatsApp Integration */}
-      <Tabs defaultValue="whatsapp" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      {/* Symmetric Tabs */}
+      <Tabs defaultValue="direct-chat" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 mx-auto max-w-2xl">
           <TabsTrigger value="whatsapp" className="flex items-center space-x-2">
             <Smartphone className="h-4 w-4" />
             <span>WhatsApp Groups</span>
@@ -267,10 +297,10 @@ export default function MentoringChatPage() {
           />
         </TabsContent>
 
-        {/* Direct Chat Tab - Your existing chat interface */}
+        {/* SYMMETRIC Direct Chat Tab */}
         <TabsContent value="direct-chat">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-300px)]">
-            {/* Chat Rooms Sidebar */}
+          <div className="grid grid-cols-2 gap-6 h-[calc(100vh-300px)]">
+            {/* Left Side - Chat Rooms (50% width) */}
             <Card className="bg-white border-0 shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -286,10 +316,10 @@ export default function MentoringChatPage() {
                     {chatRooms.map((room) => (
                       <div
                         key={room.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        className={`p-4 rounded-lg cursor-pointer transition-colors ${
                           selectedRoom === room.id 
-                            ? 'bg-blue-100 border border-blue-200' 
-                            : 'hover:bg-gray-100'
+                            ? 'bg-blue-50 border border-blue-200' 
+                            : 'hover:bg-gray-50'
                         }`}
                         onClick={() => setSelectedRoom(room.id)}
                       >
@@ -298,12 +328,12 @@ export default function MentoringChatPage() {
                             {room.type === 'direct' ? (
                               <Avatar className="h-12 w-12">
                                 <AvatarImage src={room.avatar} />
-                                <AvatarFallback>
+                                <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
                                   {room.name.split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
                               </Avatar>
                             ) : (
-                              <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <div className="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center">
                                 <Hash className="h-6 w-6 text-white" />
                               </div>
                             )}
@@ -312,12 +342,12 @@ export default function MentoringChatPage() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium text-gray-900 truncate">{room.name}</h3>
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="font-semibold text-gray-900 truncate">{room.name}</h3>
                               <div className="flex items-center space-x-1">
                                 <span className="text-xs text-gray-500">{room.lastMessageTime}</span>
                                 {room.unreadCount > 0 && (
-                                  <Badge className="bg-red-500 text-white text-xs min-w-[20px] h-5">
+                                  <Badge className="bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full">
                                     {room.unreadCount}
                                   </Badge>
                                 )}
@@ -327,7 +357,7 @@ export default function MentoringChatPage() {
                             {room.type === 'group' && (
                               <div className="flex items-center space-x-1 mt-1">
                                 <Users className="h-3 w-3 text-gray-400" />
-                                <span className="text-xs text-gray-400">{room.participants} members</span>
+                                <span className="text-xs text-gray-500">{room.participants} members</span>
                               </div>
                             )}
                           </div>
@@ -339,104 +369,85 @@ export default function MentoringChatPage() {
               </CardContent>
             </Card>
 
-            {/* Chat Messages Area */}
-            <div className="lg:col-span-3">
+            {/* Right Side - Chat Messages (50% width) */}
+            <div>
               {selectedRoomData ? (
                 <Card className="bg-white border-0 shadow-sm h-full flex flex-col">
                   {/* Chat Header */}
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b">
-                    <div className="flex items-center space-x-3">
-                      {selectedRoomData.type === 'direct' ? (
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={selectedRoomData.avatar} />
-                          <AvatarFallback>
-                            {selectedRoomData.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <Hash className="h-5 w-5 text-white" />
+                  <CardHeader className="pb-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {selectedRoomData.type === 'direct' ? (
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={selectedRoomData.avatar} />
+                            <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
+                              {selectedRoomData.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center">
+                            <Hash className="h-5 w-5 text-white" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{selectedRoomData.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {selectedRoomData.type === 'group' 
+                              ? `${selectedRoomData.participants} members`
+                              : selectedRoomData.isOnline ? 'Online' : 'Last seen recently'
+                            }
+                          </p>
                         </div>
-                      )}
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{selectedRoomData.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {selectedRoomData.type === 'group' 
-                            ? `${selectedRoomData.participants} members`
-                            : selectedRoomData.isOnline ? 'Online' : 'Last seen recently'
-                          }
-                        </p>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Video className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Video className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
 
                   {/* Messages */}
                   <CardContent className="flex-1 p-0">
                     <ScrollArea className="h-full px-4 py-4">
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={`flex space-x-3 ${
-                              message.sender.name === 'You' ? 'flex-row-reverse space-x-reverse' : ''
-                            }`}
-                          >
-                            {message.sender.name !== 'You' && (
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={message.sender.avatar} />
-                                <AvatarFallback className="text-xs">
-                                  {message.sender.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                            )}
-                            <div className={`flex-1 max-w-lg ${
-                              message.sender.name === 'You' ? 'text-right' : ''
-                            }`}>
-                              <div className={`inline-block p-3 rounded-lg ${
-                                message.sender.name === 'You'
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-900'
-                              }`}>
-                                {message.sender.name !== 'You' && (
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    <span className="text-sm font-medium">
-                                      {message.sender.name}
-                                    </span>
-                                    {message.sender.role === 'mentor' && (
-                                      <Badge className="bg-purple-100 text-purple-700 text-xs">
-                                        Mentor
-                                      </Badge>
-                                    )}
-                                  </div>
+                          <div key={message.id} className="flex items-start space-x-3">
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarImage src={message.sender.avatar} />
+                              <AvatarFallback className="bg-gray-200 text-gray-600 text-xs font-semibold">
+                                {message.sender.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="font-semibold text-gray-900 text-sm">
+                                  {message.sender.name}
+                                </span>
+                                {message.sender.role === 'mentor' && (
+                                  <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5">
+                                    Mentor
+                                  </Badge>
                                 )}
-                                <p className="text-sm">{message.content}</p>
+                                <span className="text-xs text-gray-500">{message.timestamp}</span>
                               </div>
-                              <div className={`text-xs text-gray-500 mt-1 ${
-                                message.sender.name === 'You' ? 'text-right' : 'text-left'
-                              }`}>
-                                {message.timestamp}
-                              </div>
+                              <p className="text-gray-700 text-sm leading-relaxed">{message.content}</p>
                               {/* Reactions */}
                               {message.reactions && (
-                                <div className="flex space-x-1 mt-2">
+                                <div className="flex items-center space-x-2 mt-2">
                                   {message.reactions.map((reaction, idx) => (
                                     <button
                                       key={idx}
-                                      className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2 py-1 text-xs"
+                                      className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2 py-1 text-xs transition-colors"
                                     >
                                       <span>{reaction.emoji}</span>
-                                      <span>{reaction.count}</span>
+                                      <span className="font-semibold">{reaction.count}</span>
                                     </button>
                                   ))}
                                 </div>
@@ -450,9 +461,9 @@ export default function MentoringChatPage() {
                   </CardContent>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t">
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
+                  <div className="p-4 border-t bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <Button variant="ghost" size="sm" className="text-gray-500">
                         <Paperclip className="h-4 w-4" />
                       </Button>
                       <div className="flex-1">
@@ -461,17 +472,17 @@ export default function MentoringChatPage() {
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyPress={handleKeyPress}
-                          className="border-0 focus:ring-0 focus:border-0"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                       </div>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="text-gray-500">
                         <Smile className="h-4 w-4" />
                       </Button>
                       <Button 
                         onClick={handleSendMessage} 
                         disabled={!newMessage.trim()}
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         <Send className="h-4 w-4" />
                       </Button>

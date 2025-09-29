@@ -206,12 +206,29 @@ export default function SessionsListPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="space-y-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* DESIGN ONLY: Enhanced Loading Header */}
+          <Card className="bg-white border-0 shadow-xl rounded-2xl">
+            <CardHeader className="p-8">
+              <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                  <div className="h-10 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded-lg w-96 animate-pulse"></div>
+                </div>
+                <div className="h-12 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* DESIGN ONLY: Enhanced Loading Content */}
+          <div className="space-y-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+              <Card key={i} className="bg-white border-0 shadow-lg rounded-2xl">
+                <CardContent className="p-8">
+                  <div className="h-32 bg-gray-200 rounded-xl animate-pulse"></div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -220,117 +237,138 @@ export default function SessionsListPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/dashboard/student/mentoring">
-              <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Mentoring
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">My Sessions</h1>
-              <p className="text-gray-600 text-lg">Manage your mentoring sessions</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* DESIGN ONLY: Enhanced Header */}
+        <Card className="bg-white border-0 shadow-xl rounded-2xl">
+          <CardHeader className="p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-6">
+                <Link href="/dashboard/student/mentoring">
+                  <Button variant="outline" className="border-2 border-gray-300 hover:border-gray-400 rounded-xl px-6 py-3 hover:shadow-md transition-all">
+                    <ArrowLeft className="mr-2 h-5 w-5" />
+                    Back to Mentoring
+                  </Button>
+                </Link>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    📅 My Sessions
+                  </h1>
+                  <p className="text-gray-600 text-lg">Manage your mentoring sessions</p>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <Link href="/dashboard/student/mentoring/sessions/schedule">
+                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                    <Calendar className="mr-2 h-5 w-5" />
+                    Schedule New Session
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="flex space-x-3">
-            <Link href="/dashboard/student/mentoring/sessions/schedule">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule New Session
+          </CardHeader>
+        </Card>
+
+        {/* DESIGN ONLY: Enhanced Success Alert */}
+        {scheduled && (
+          <Alert className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 shadow-lg">
+            <div className="bg-green-200 p-3 rounded-full w-fit">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <AlertDescription className="text-green-800 font-semibold text-lg ml-4">
+              ✅ Session scheduled successfully! You'll receive a confirmation email shortly.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* DESIGN ONLY: Enhanced Search and Filter */}
+        <Card className="bg-white border-0 shadow-lg rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+                <Input
+                  placeholder="🔍 Search sessions by topic or mentor name..."
+                  className="pl-12 h-14 border-2 border-gray-200 focus:border-blue-400 focus:ring-blue-400 rounded-xl text-lg bg-gray-50 hover:bg-white transition-colors"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" className="border-2 border-gray-300 hover:border-gray-400 px-6 py-3 rounded-xl h-14">
+                <Filter className="mr-2 h-5 w-5" />
+                Filter
               </Button>
-            </Link>
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* DESIGN ONLY: Enhanced Sessions Tabs */}
+        <Card className="bg-white border-0 shadow-xl rounded-2xl overflow-hidden">
+          <CardContent className="p-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <div className="bg-gradient-to-r from-blue-100 to-indigo-100 px-8 py-6">
+                <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg rounded-xl p-2 h-auto">
+                  <TabsTrigger 
+                    value="upcoming" 
+                    className="flex items-center justify-center space-x-2 py-4 rounded-lg data-[state=active]:bg-blue-500 data-[state=active]:text-white font-semibold"
+                  >
+                    <Calendar className="h-5 w-5" />
+                    <span>📅 Upcoming</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="completed" 
+                    className="flex items-center justify-center space-x-2 py-4 rounded-lg data-[state=active]:bg-green-500 data-[state=active]:text-white font-semibold"
+                  >
+                    <CheckCircle className="h-5 w-5" />
+                    <span>✅ Completed</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="cancelled" 
+                    className="flex items-center justify-center space-x-2 py-4 rounded-lg data-[state=active]:bg-red-500 data-[state=active]:text-white font-semibold"
+                  >
+                    <AlertCircle className="h-5 w-5" />
+                    <span>❌ Cancelled</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <div className="p-8">
+                <TabsContent value="upcoming" className="mt-0">
+                  <SessionsList 
+                    sessions={filteredSessions} 
+                    type="upcoming"
+                    getStatusColor={getStatusColor}
+                    getSessionTypeColor={getSessionTypeColor}
+                  />
+                </TabsContent>
+
+                <TabsContent value="completed" className="mt-0">
+                  <SessionsList 
+                    sessions={filteredSessions} 
+                    type="completed"
+                    getStatusColor={getStatusColor}
+                    getSessionTypeColor={getSessionTypeColor}
+                  />
+                </TabsContent>
+
+                <TabsContent value="cancelled" className="mt-0">
+                  <SessionsList 
+                    sessions={filteredSessions} 
+                    type="cancelled"
+                    getStatusColor={getStatusColor}
+                    getSessionTypeColor={getSessionTypeColor}
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* Success Alert */}
-      {scheduled && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            Session scheduled successfully! You'll receive a confirmation email shortly.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Search and Filter */}
-      <Card className="bg-white border-0 shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                placeholder="Search sessions by topic or mentor name..."
-                className="pl-10 h-12"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Sessions Tabs */}
-      <Card className="bg-white border-0 shadow-sm">
-        <CardContent className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="upcoming" className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>Upcoming</span>
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Completed</span>
-              </TabsTrigger>
-              <TabsTrigger value="cancelled" className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4" />
-                <span>Cancelled</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="upcoming" className="mt-6">
-              <SessionsList 
-                sessions={filteredSessions} 
-                type="upcoming"
-                getStatusColor={getStatusColor}
-                getSessionTypeColor={getSessionTypeColor}
-              />
-            </TabsContent>
-
-            <TabsContent value="completed" className="mt-6">
-              <SessionsList 
-                sessions={filteredSessions} 
-                type="completed"
-                getStatusColor={getStatusColor}
-                getSessionTypeColor={getSessionTypeColor}
-              />
-            </TabsContent>
-
-            <TabsContent value="cancelled" className="mt-6">
-              <SessionsList 
-                sessions={filteredSessions} 
-                type="cancelled"
-                getStatusColor={getStatusColor}
-                getSessionTypeColor={getSessionTypeColor}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-// Reusable Sessions List Component
+// DESIGN ONLY: Enhanced Reusable Sessions List Component
 function SessionsList({ 
   sessions, 
   type,
@@ -349,20 +387,30 @@ function SessionsList({
       cancelled: 'No cancelled sessions'
     };
 
+    const emptyEmojis = {
+      upcoming: '📅',
+      completed: '✅',
+      cancelled: '❌'
+    };
+
     return (
-      <div className="text-center py-12">
-        <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          {emptyMessages[type as keyof typeof emptyMessages]}
+      <div className="text-center py-20">
+        <div className="bg-gray-100 rounded-full p-8 w-fit mx-auto mb-6">
+          <Calendar className="h-20 w-20 text-gray-400" />
+        </div>
+        <h3 className="text-2xl font-bold text-gray-700 mb-3">
+          {emptyEmojis[type as keyof typeof emptyEmojis]} {emptyMessages[type as keyof typeof emptyMessages]}
         </h3>
-        <p className="text-gray-500 mb-6">
+        <p className="text-gray-500 mb-8 text-lg">
           {type === 'upcoming' && "Schedule your first mentoring session to get started"}
           {type === 'completed' && "Complete some sessions to see them here"}
           {type === 'cancelled' && "Cancelled sessions will appear here"}
         </p>
         {type === 'upcoming' && (
           <Link href="/dashboard/student/mentoring/sessions/schedule">
-            <Button>Schedule Session</Button>
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-xl shadow-lg">
+              📅 Schedule Session
+            </Button>
           </Link>
         )}
       </div>
@@ -370,129 +418,138 @@ function SessionsList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {sessions.map((session) => (
-        <div
+        <Card
           key={session.id}
-          className="p-6 border rounded-lg hover:shadow-md transition-shadow bg-white"
+          className="bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden group"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-4 flex-1">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={session.mentor.avatar} />
-                <AvatarFallback>
-                  {session.mentor.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
+          <CardContent className="p-8">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-6 flex-1">
+                <Avatar className="h-16 w-16 border-4 border-white shadow-lg">
+                  <AvatarImage src={session.mentor.avatar} />
+                  <AvatarFallback className="bg-blue-200 text-blue-700 font-bold text-lg">
+                    {session.mentor.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {session.topic}
-                  </h3>
-                  <Badge className={getStatusColor(session.status)}>
-                    {session.status === 'in-progress' ? 'Live' : session.status}
-                  </Badge>
-                  <Badge className={getSessionTypeColor(session.type)}>
-                    {session.type === 'individual' ? 'Individual' : 'Group'}
-                  </Badge>
-                </div>
-
-                <p className="text-gray-600 mb-2">
-                  with <span className="font-medium">{session.mentor.name}</span>
-                </p>
-
-                <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(session.date).toLocaleDateString('en-IN', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}</span>
+                <div className="flex-1">
+                  <div className="flex items-center flex-wrap gap-3 mb-3">
+                    <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                      {session.topic}
+                    </h3>
+                    <Badge className={`${getStatusColor(session.status)} px-3 py-1 text-sm font-semibold rounded-xl border-2`}>
+                      {session.status === 'in-progress' ? '🔴 Live' : 
+                       session.status === 'upcoming' ? '📅 Upcoming' :
+                       session.status === 'completed' ? '✅ Completed' : session.status}
+                    </Badge>
+                    <Badge className={`${getSessionTypeColor(session.type)} px-3 py-1 text-sm font-semibold rounded-xl border-2`}>
+                      {session.type === 'individual' ? '👤 Individual' : '👥 Group'}
+                    </Badge>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{session.time} ({session.duration})</span>
+
+                  <p className="text-gray-600 mb-4 text-lg">
+                    with <span className="font-bold text-blue-700">👨‍🏫 {session.mentor.name}</span>
+                    <span className="text-gray-500 ml-2">({session.mentor.designation})</span>
+                  </p>
+
+                  <div className="flex items-center flex-wrap gap-6 text-sm text-gray-600 mb-4">
+                    <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-xl">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                      <span className="font-semibold">{new Date(session.date).toLocaleDateString('en-IN', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-xl">
+                      <Clock className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold">{session.time} ({session.duration})</span>
+                    </div>
+                    {session.type === 'group' && session.participants && (
+                      <div className="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-xl">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <span className="font-semibold">{session.participants.length} participants</span>
+                      </div>
+                    )}
                   </div>
-                  {session.type === 'group' && session.participants && (
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-4 w-4" />
-                      <span>{session.participants.length} participants</span>
+
+                  {/* DESIGN ONLY: Enhanced Feedback for completed sessions */}
+                  {session.status === 'completed' && session.feedback && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 mb-4">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <Star className="h-6 w-6 text-yellow-500 fill-current" />
+                        <span className="text-lg font-bold text-green-800">⭐ Your Rating: {session.feedback.rating}/5</span>
+                      </div>
+                      <p className="text-green-700 italic">"{session.feedback.comment}"</p>
+                    </div>
+                  )}
+
+                  {/* DESIGN ONLY: Enhanced Session notes */}
+                  {session.notes && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 mb-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <MessageCircle className="h-5 w-5 text-blue-600" />
+                        <span className="font-bold text-blue-800">📝 Session Notes:</span>
+                      </div>
+                      <p className="text-blue-800">{session.notes}</p>
                     </div>
                   )}
                 </div>
+              </div>
 
-                {/* Feedback for completed sessions */}
-                {session.status === 'completed' && session.feedback && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-sm font-medium">Your Rating: {session.feedback.rating}/5</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{session.feedback.comment}</p>
-                  </div>
+              {/* DESIGN ONLY: Enhanced Action Buttons */}
+              <div className="flex flex-col space-y-3 ml-6">
+                {session.status === 'upcoming' && (
+                  <>
+                    <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg">
+                      <Video className="mr-2 h-5 w-5" />
+                      🎥 Join Session
+                    </Button>
+                    <Button variant="outline" className="border-2 border-blue-300 text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-xl">
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      💬 Chat
+                    </Button>
+                  </>
                 )}
 
-                {/* Session notes */}
-                {session.notes && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                    <p className="text-sm text-blue-800">{session.notes}</p>
-                  </div>
+                {session.status === 'in-progress' && (
+                  <>
+                    <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white animate-pulse px-6 py-3 rounded-xl shadow-lg">
+                      <Video className="mr-2 h-5 w-5" />
+                      🔴 Join Live
+                    </Button>
+                    <Button variant="outline" className="border-2 border-orange-300 text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-xl">
+                      <Phone className="mr-2 h-5 w-5" />
+                      📞 Audio Only
+                    </Button>
+                  </>
                 )}
+
+                {session.status === 'completed' && (
+                  <>
+                    {session.recordingUrl && (
+                      <Button variant="outline" className="border-2 border-green-300 text-green-600 hover:bg-green-50 px-6 py-3 rounded-xl">
+                        <Download className="mr-2 h-5 w-5" />
+                        📹 Recording
+                      </Button>
+                    )}
+                    <Button variant="outline" className="border-2 border-purple-300 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-xl">
+                      <MessageCircle className="mr-2 h-5 w-5" />
+                      💭 Feedback
+                    </Button>
+                  </>
+                )}
+
+                <Button variant="ghost" className="hover:bg-gray-100 px-4 py-3 rounded-xl">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col space-y-2 ml-4">
-              {session.status === 'upcoming' && (
-                <>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                    <Video className="mr-2 h-4 w-4" />
-                    Join Session
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Chat
-                  </Button>
-                </>
-              )}
-
-              {session.status === 'in-progress' && (
-                <>
-                  <Button size="sm" className="bg-red-600 hover:bg-red-700 animate-pulse">
-                    <Video className="mr-2 h-4 w-4" />
-                    Join Live
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Audio Only
-                  </Button>
-                </>
-              )}
-
-              {session.status === 'completed' && (
-                <>
-                  {session.recordingUrl && (
-                    <Button variant="outline" size="sm">
-                      <Download className="mr-2 h-4 w-4" />
-                      Recording
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Feedback
-                  </Button>
-                </>
-              )}
-
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

@@ -68,13 +68,13 @@ const TIME_SLOTS = [
   '13:00-14:00', '14:00-15:00', '15:00-16:00', '16:00-17:00'
 ];
 
-export default function DigitalTimetable({ 
-  userRole, 
-  studentId, 
-  mentorId, 
+export default function DigitalTimetable({
+  userRole,
+  studentId,
+  mentorId,
   schoolId,
   onSessionSelect,
-  onScheduleSession 
+  onScheduleSession
 }: DigitalTimetableProps) {
   // State management
   const [view, setView] = useState<'week' | 'month'>('week');
@@ -83,7 +83,7 @@ export default function DigitalTimetable({
   const [mentorAvailability, setMentorAvailability] = useState<MentorAvailability[]>([]);
   const [upcomingChanges, setUpcomingChanges] = useState<UpcomingChange[]>([]);
   const [selectedMentor, setSelectedMentor] = useState<string>('all');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   // Mock data based on PDF specifications
   useEffect(() => {
@@ -248,8 +248,8 @@ export default function DigitalTimetable({
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'individual' 
-      ? 'bg-purple-100 text-purple-700' 
+    return type === 'individual'
+      ? 'bg-purple-100 text-purple-700'
       : 'bg-teal-100 text-teal-700';
   };
 
@@ -262,294 +262,372 @@ export default function DigitalTimetable({
 
   if (loading) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <div className="animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="h-4 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* DESIGN ONLY: Enhanced Loading Header */}
+          <Card className="bg-white border-0 shadow-xl rounded-2xl">
+            <CardHeader className="p-8">
+              <div className="flex items-center justify-between">
+                <div className="space-y-3">
+                  <div className="h-10 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded-lg w-96 animate-pulse"></div>
+                </div>
+                <div className="flex space-x-3">
+                  <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* DESIGN ONLY: Enhanced Loading Grid */}
+          <Card className="bg-white border-0 shadow-xl rounded-2xl overflow-hidden">
+            <CardContent className="p-0">
+              <div className="grid grid-cols-8 gap-0">
+                <div className="bg-gray-50 p-4 border-r border-b">
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="bg-gray-50 p-4 border-r border-b">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                    </div>
+                  </div>
+                ))}
+                {Array.from({ length: 8 * 8 }).map((_, i) => (
+                  <div key={i} className="p-4 border-r border-b h-20">
+                    {i % 3 === 0 && (
+                      <div className="space-y-2">
+                        <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
   const weekDates = getWeekDates();
 
   return (
-    <div className="space-y-6">
-      {/* Header & Controls */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">Digital Timetable</CardTitle>
-              <p className="text-gray-600 mt-1">
-                {view === 'week' ? 'Weekly' : 'Monthly'} mentoring schedule
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              {/* View Toggle */}
-              <Select value={view} onValueChange={(value: 'week' | 'month') => setView(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">
-                    <div className="flex items-center space-x-2">
-                      <CalendarDays className="h-4 w-4" />
-                      <span>Week</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="month">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>Month</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Mentor Filter */}
-              <Select value={selectedMentor} onValueChange={setSelectedMentor}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Mentors</SelectItem>
-                  {mentorAvailability.map((mentor) => (
-                    <SelectItem key={mentor.mentorId} value={mentor.mentorId}>
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-4 w-4">
-                          <AvatarImage src={mentor.avatar} />
-                          <AvatarFallback className="text-xs">
-                            {mentor.mentorName.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{mentor.mentorName}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Navigation */}
-              <div className="flex items-center space-x-1">
-                <Button variant="outline" size="sm" onClick={() => navigateWeek('prev')}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium min-w-[120px] text-center">
-                  {weekDates[0].toLocaleDateString('en-IN', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })} - {weekDates[6].toLocaleDateString('en-IN', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => navigateWeek('next')}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* DESIGN ONLY: Enhanced Header & Controls */}
+        <Card className="bg-white border-0 shadow-xl rounded-2xl">
+          <CardHeader className="p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-6 lg:space-y-0">
+              <div className="space-y-3">
+                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  📅 Digital Timetable
+                </CardTitle>
+                <p className="text-gray-600 text-lg">
+                  {view === 'week' ? '📋 Weekly' : '📅 Monthly'} mentoring schedule
+                </p>
               </div>
 
-              {/* Add Session Button */}
-              {(userRole === 'hei-mentor' || userRole === 'student') && onScheduleSession && (
-                <Button onClick={onScheduleSession} className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Schedule
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                {/* DESIGN ONLY: Enhanced View Toggle */}
+                <Select value={view} onValueChange={(value: 'week' | 'month') => setView(value)}>
+                  <SelectTrigger className="w-full sm:w-32 border-2 border-gray-200 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">📋 Week</SelectItem>
+                    <SelectItem value="month">📅 Month</SelectItem>
+                  </SelectContent>
+                </Select>
 
-      {/* Upcoming Changes Alert */}
-      {upcomingChanges.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-orange-800 mb-2">Upcoming Schedule Changes</h3>
-                <div className="space-y-2">
-                  {upcomingChanges.map((change, index) => (
-                    <div key={index} className="text-sm text-orange-700">
-                      <span className="font-medium">
-                        {new Date(change.date).toLocaleDateString('en-IN')}:
-                      </span>
-                      {' '}{change.change}
-                      <span className="text-orange-600"> ({change.reason})</span>
-                    </div>
-                  ))}
+                {/* DESIGN ONLY: Enhanced Mentor Filter */}
+                <Select value={selectedMentor} onValueChange={setSelectedMentor}>
+                  <SelectTrigger className="w-full sm:w-48 border-2 border-gray-200 rounded-xl">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="All Mentors" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">👥 All Mentors</SelectItem>
+                    {mentorAvailability.map((mentor) => (
+                      <SelectItem key={mentor.mentorId} value={mentor.mentorId}>
+                        <div className="flex items-center space-x-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={mentor.avatar} />
+                            <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                              {mentor.mentorName.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{mentor.mentorName}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* DESIGN ONLY: Enhanced Navigation */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigateWeek('prev')}
+                    className="border-2 border-gray-200 rounded-xl hover:bg-blue-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="px-4 py-2 bg-blue-50 rounded-xl text-center min-w-[180px]">
+                    <span className="font-semibold text-blue-800">
+                      {weekDates[0].toLocaleDateString('en-IN', {
+                        month: 'short',
+                        day: 'numeric'
+                      })} - {weekDates[6].toLocaleDateString('en-IN', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigateWeek('next')}
+                    className="border-2 border-gray-200 rounded-xl hover:bg-blue-50"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
+
+                {/* DESIGN ONLY: Enhanced Add Session Button */}
+                {(userRole === 'hei-mentor' || userRole === 'student') && onScheduleSession && (
+                  <Button
+                    onClick={onScheduleSession}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule
+                  </Button>
+                )}
               </div>
             </div>
-          </CardContent>
+          </CardHeader>
         </Card>
-      )}
 
-      {/* Weekly Schedule Grid */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <div className="min-w-[800px]">
-              {/* Header */}
-              <div className="grid grid-cols-7 border-b">
-                <div className="p-4 bg-gray-50 border-r">
-                  <span className="text-sm font-medium text-gray-500">Time</span>
+        {/* DESIGN ONLY: Enhanced Upcoming Changes Alert */}
+        {upcomingChanges.length > 0 && (
+          <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-0 shadow-lg rounded-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-start space-x-4">
+                <div className="bg-orange-200 p-3 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
                 </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-orange-800 mb-3">⚠️ Upcoming Schedule Changes</h3>
+                  <div className="space-y-3">
+                    {upcomingChanges.map((change, index) => (
+                      <div key={index} className="bg-white p-4 rounded-xl border border-orange-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                          <div>
+                            <span className="font-semibold text-orange-700">
+                              📅 {new Date(change.date).toLocaleDateString('en-IN')}:
+                            </span>
+                            <span className="ml-2 text-orange-600">{change.change}</span>
+                          </div>
+                          <Badge className="bg-orange-100 text-orange-700 border-orange-200 w-fit">
+                            ({change.reason})
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* DESIGN ONLY: Enhanced Weekly Schedule Grid */}
+        <Card className="bg-white border-0 shadow-xl rounded-2xl overflow-hidden">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-8 gap-0 min-w-[800px]">
+                {/* DESIGN ONLY: Enhanced Header */}
+                <div className="bg-gradient-to-br from-blue-100 to-indigo-100 p-4 border-r border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <span className="font-bold text-blue-800">Time</span>
+                  </div>
+                </div>
+                
                 {DAYS.map((day, index) => (
-                  <div key={day} className="p-4 bg-gray-50 border-r last:border-r-0">
-                    <div className="text-center">
-                      <div className="text-sm font-semibold text-gray-900">{day}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {weekDates[index].toLocaleDateString('en-IN', { 
-                          month: 'short', 
-                          day: 'numeric' 
+                  <div key={day} className="bg-gradient-to-br from-blue-100 to-indigo-100 p-4 border-r border-gray-200">
+                    <div className="text-center space-y-1">
+                      <div className="font-bold text-blue-800">{day}</div>
+                      <div className="text-sm text-blue-600">
+                        {weekDates[index].toLocaleDateString('en-IN', {
+                          month: 'short',
+                          day: 'numeric'
                         })}
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
 
-              {/* Time Slots */}
-              {TIME_SLOTS.map((timeSlot) => (
-                <div key={timeSlot} className="grid grid-cols-7 border-b last:border-b-0">
-                  {/* Time Column */}
-                  <div className="p-4 bg-gray-50 border-r">
-                    <div className="text-sm font-medium text-gray-600">
-                      {timeSlot}
+                {/* DESIGN ONLY: Enhanced Time Slots */}
+                {TIME_SLOTS.map((timeSlot, slotIndex) => (
+                  <>
+                    {/* Time Column */}
+                    <div key={`time-${timeSlot}`} className="bg-gray-50 p-4 border-r border-b border-gray-200 flex items-center">
+                      <span className="font-semibold text-gray-700 text-sm">{timeSlot}</span>
+                    </div>
+
+                    {/* Day Columns */}
+                    {DAYS.map((day) => {
+                      const sessionsForDay = getSessionsForDay(day);
+                      const sessionForSlot = sessionsForDay.find(
+                        session => session.time === timeSlot
+                      );
+
+                      return (
+                        <div 
+                          key={`${day}-${timeSlot}`} 
+                          className={`p-2 border-r border-b border-gray-200 min-h-[120px] ${
+                            sessionForSlot ? 'bg-white' : 'bg-gray-50 hover:bg-gray-100'
+                          } transition-colors duration-200`}
+                        >
+                          {sessionForSlot && (
+                            <div
+                              className="h-full bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-blue-200 hover:border-blue-300"
+                              onClick={() => onSessionSelect?.(sessionForSlot)}
+                            >
+                              <div className="space-y-3">
+                                {/* DESIGN ONLY: Enhanced Mentor Info */}
+                                <div className="flex items-center space-x-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={sessionForSlot.mentor.avatar} />
+                                    <AvatarFallback className="bg-blue-200 text-blue-700 text-xs font-semibold">
+                                      {sessionForSlot.mentor.name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-semibold text-blue-700 truncate">
+                                      {sessionForSlot.mentor.name}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* DESIGN ONLY: Enhanced Subject */}
+                                <div className="text-sm font-bold text-gray-800">
+                                  📚 {sessionForSlot.subject}
+                                </div>
+
+                                {/* DESIGN ONLY: Enhanced Students */}
+                                <div className="text-xs text-gray-600">
+                                  👥 {formatStudentDisplay(sessionForSlot.students)}
+                                </div>
+
+                                {/* DESIGN ONLY: Enhanced Badges */}
+                                <div className="flex flex-wrap gap-1">
+                                  <Badge className={`${getTypeColor(sessionForSlot.type)} text-xs px-2 py-1`}>
+                                    {sessionForSlot.type === 'individual' ? (
+                                      <>👤 Individual</>
+                                    ) : (
+                                      <>👥 Group</>
+                                    )}
+                                  </Badge>
+                                  
+                                  <Badge className={`${getStatusColor(sessionForSlot.status)} text-xs px-2 py-1 border`}>
+                                    {sessionForSlot.status}
+                                  </Badge>
+                                </div>
+
+                                {/* DESIGN ONLY: Enhanced Action Buttons */}
+                                {sessionForSlot.status === 'scheduled' && (
+                                  <div className="flex space-x-1 pt-2">
+                                    {sessionForSlot.meetingLink && (
+                                      <Button
+                                        size="sm"
+                                        className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 h-7"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(sessionForSlot.meetingLink, '_blank');
+                                        }}
+                                      >
+                                        <Video className="h-3 w-3 mr-1" />
+                                        Join
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs px-2 py-1 h-7 border-blue-300 text-blue-600 hover:bg-blue-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                      <MessageCircle className="h-3 w-3 mr-1" />
+                                      Chat
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* DESIGN ONLY: Enhanced Mentor Availability Summary */}
+        <Card className="bg-white border-0 shadow-xl rounded-2xl">
+          <CardHeader className="p-6">
+            <CardTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+              <Users className="h-6 w-6 text-blue-600" />
+              <span>👨‍🏫 Mentor Availability</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mentorAvailability.map((mentor) => (
+                <div
+                  key={mentor.mentorId}
+                  className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border-2 border-blue-200 hover:border-blue-300 transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={mentor.avatar} />
+                      <AvatarFallback className="bg-blue-200 text-blue-700 font-bold">
+                        {mentor.mentorName.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-bold text-blue-800">{mentor.mentorName}</h3>
                     </div>
                   </div>
-
-                  {/* Day Columns */}
-                  {DAYS.map((day) => {
-                    const sessionsForDay = getSessionsForDay(day);
-                    const sessionForSlot = sessionsForDay.find(
-                      session => session.time === timeSlot
-                    );
-
-                    return (
-                      <div key={`${day}-${timeSlot}`} className="p-2 border-r last:border-r-0 min-h-[80px]">
-                        {sessionForSlot && (
-                          <div
-                            className="p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => onSessionSelect?.(sessionForSlot)}
-                          >
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage src={sessionForSlot.mentor.avatar} />
-                                <AvatarFallback className="text-xs">
-                                  {sessionForSlot.mentor.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs font-medium truncate">
-                                {sessionForSlot.mentor.name}
-                              </span>
-                            </div>
-
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-gray-900">
-                                {sessionForSlot.subject}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {formatStudentDisplay(sessionForSlot.students)}
-                              </p>
-                              
-                              <div className="flex items-center justify-between">
-                                <Badge className={getTypeColor(sessionForSlot.type)}>
-                                  {sessionForSlot.type === 'individual' ? (
-                                    <User className="mr-1 h-3 w-3" />
-                                  ) : (
-                                    <Users className="mr-1 h-3 w-3" />
-                                  )}
-                                  <span className="text-xs">
-                                    {sessionForSlot.type}
-                                  </span>
-                                </Badge>
-                                
-                                <Badge className={getStatusColor(sessionForSlot.status)}>
-                                  <span className="text-xs">
-                                    {sessionForSlot.status}
-                                  </span>
-                                </Badge>
-                              </div>
-
-                              {/* Action Buttons */}
-                              {sessionForSlot.status === 'scheduled' && (
-                                <div className="flex items-center space-x-1 mt-2">
-                                  {sessionForSlot.meetingLink && (
-                                    <Button variant="ghost" size="sm" className="p-1 h-6">
-                                      <Video className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                  <Button variant="ghost" size="sm" className="p-1 h-6">
-                                    <MessageCircle className="h-3 w-3" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="p-1 h-6">
-                                    <MoreHorizontal className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <div className="space-y-2">
+                    {mentor.availability.map((slot, index) => (
+                      <Badge
+                        key={index}
+                        className="bg-white text-blue-700 border-blue-300 text-xs mr-2 mb-2"
+                      >
+                        🕒 {slot}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mentor Availability Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Mentor Availability</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mentorAvailability.map((mentor) => (
-              <div key={mentor.mentorId} className="p-4 border rounded-lg">
-                <div className="flex items-center space-x-3 mb-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={mentor.avatar} />
-                    <AvatarFallback>
-                      {mentor.mentorName.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{mentor.mentorName}</h3>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  {mentor.availability.map((slot, index) => (
-                    <div key={index} className="text-sm text-gray-600">
-                      <Clock className="inline h-3 w-3 mr-1" />
-                      {slot}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
