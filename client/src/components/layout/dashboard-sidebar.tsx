@@ -99,7 +99,7 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
           {
             icon: FolderOpen,
             label: 'Projects',
-            route: '/dashboard/student/projects',
+            route: '/dashboard/student/projects/active',
             children: [
               { icon: FolderOpen, label: 'Active Projects', route: '/dashboard/student/projects/active' },
               { icon: FolderOpen, label: 'Showcase', route: '/dashboard/student/projects/showcase' },
