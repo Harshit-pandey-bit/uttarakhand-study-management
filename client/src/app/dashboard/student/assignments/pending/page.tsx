@@ -155,40 +155,47 @@ export default function PendingAssignmentsPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
-        {/* Header Skeleton */}
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Skeleton className="h-10 w-32" />
-              <div>
-                <Skeleton className="h-10 w-96 mb-2" />
-                <Skeleton className="h-6 w-64" />
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* DESIGN ONLY: Enhanced Header Skeleton - INCREASED CONTAINER HEIGHT */}
+          <div className="bg-white rounded-2xl shadow-lg border p-10">
+            <div className="flex flex-col space-y-6">
+              {/* Back Button Row */}
+              <div className="flex justify-start">
+                <Skeleton className="h-12 w-48 rounded-lg" />
+              </div>
+              
+              {/* Main Title and Refresh Button Row */}
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <Skeleton className="h-12 w-96 mb-3" />
+                  <Skeleton className="h-6 w-64" />
+                </div>
+                <Skeleton className="h-12 w-32 rounded-lg" />
               </div>
             </div>
-            <Skeleton className="h-10 w-32" />
           </div>
-        </div>
 
-        {/* Assignments Skeleton */}
-        {Array.from({ length: 3 }, (_, i) => (
-          <Card key={i} className="bg-white border-0 shadow-sm">
-            <CardContent className="p-8">
-              <div className="flex items-start space-x-4">
-                <Skeleton className="w-4 h-16 rounded-full" />
-                <div className="flex-1">
-                  <Skeleton className="h-8 w-3/4 mb-4" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3 mb-6" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
+          {/* DESIGN ONLY: Enhanced Assignments Skeleton */}
+          {Array.from({ length: 3 }, (_, i) => (
+            <Card key={i} className="bg-white border-0 shadow-lg rounded-2xl">
+              <CardContent className="p-8">
+                <div className="flex items-start space-x-6">
+                  <Skeleton className="w-5 h-20 rounded-full" />
+                  <div className="flex-1">
+                    <Skeleton className="h-10 w-3/4 mb-4" />
+                    <Skeleton className="h-5 w-full mb-2" />
+                    <Skeleton className="h-5 w-2/3 mb-6" />
+                    <div className="grid grid-cols-2 gap-6">
+                      <Skeleton className="h-20 w-full rounded-xl" />
+                      <Skeleton className="h-20 w-full rounded-xl" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -196,314 +203,350 @@ export default function PendingAssignmentsPage() {
   // Error state
   if (error) {
     return (
-      <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link href="/dashboard/student/assignments">
-                <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to All Assignments
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">Pending Assignments</h1>
-                <p className="text-gray-600 text-lg">Unable to load assignments</p>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* DESIGN ONLY: Enhanced Symmetric Error Header - INCREASED CONTAINER HEIGHT */}
+          <div className="bg-white rounded-2xl shadow-lg border p-10">
+            <div className="flex flex-col space-y-6">
+              {/* Back Button Row */}
+              <div className="flex justify-start">
+                <Link href="/dashboard/student/assignments">
+                  <Button variant="outline" className="border-2 border-gray-300 hover:border-gray-400 rounded-xl px-6 py-3">
+                    <ArrowLeft className="mr-2 h-5 w-5" />
+                    Back to All Assignments
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* Main Title Row */}
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-relaxed py-2">Pending Assignments</h1>
+                  <p className="text-gray-600 text-lg">Unable to load assignments</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <Card className="bg-white border-0 shadow-sm">
-          <CardContent className="p-12 text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Something went wrong</h3>
-            <p className="text-gray-500 mb-4">{error}</p>
-            <Button onClick={handleRefresh} disabled={refreshing}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Loading...' : 'Try Again'}
-            </Button>
-          </CardContent>
-        </Card>
+          {/* DESIGN ONLY: Enhanced Error Card */}
+          <Card className="bg-white border-0 shadow-lg rounded-2xl">
+            <CardContent className="p-16 text-center">
+              <div className="bg-red-100 rounded-full p-6 w-fit mx-auto mb-6">
+                <AlertCircle className="h-16 w-16 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Something went wrong</h3>
+              <p className="text-gray-600 mb-6 text-lg">{error}</p>
+              <Button 
+                onClick={handleRefresh} 
+                disabled={refreshing}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-xl"
+              >
+                <RefreshCw className={`mr-2 h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Loading...' : 'Try Again'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
-      {/* Enhanced Header */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/dashboard/student/assignments">
-              <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to All Assignments
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Pending Assignments</h1>
-              <p className="text-gray-600 text-lg">
-                {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? 's' : ''} need{filteredAssignments.length === 1 ? 's' : ''} your attention
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* DESIGN ONLY: Enhanced Symmetric Header - INCREASED CONTAINER HEIGHT */}
+        <div className="bg-white rounded-2xl shadow-lg border p-10">
+          <div className="flex flex-col space-y-6">
+            {/* Back Button Row */}
+            <div className="flex justify-start">
+              <Link href="/dashboard/student/assignments">
+                <Button variant="outline" className="border-2 border-gray-300 hover:border-gray-400 rounded-xl px-6 py-3 hover:shadow-md transition-all">
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Back to All Assignments
+                </Button>
+              </Link>
             </div>
-          </div>
-          <div className="flex space-x-3">
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh} 
-              disabled={refreshing}
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Alert Cards */}
-      {(overdueAssignments.length > 0 || urgentAssignments.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {overdueAssignments.length > 0 && (
-            <Card className="border-0 bg-red-50 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-red-100 rounded-full group-hover:bg-red-200 transition-colors duration-200">
-                    <AlertCircle className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-red-800 mb-1">Overdue Assignments</p>
-                    <p className="text-red-700 font-medium">
-                      {overdueAssignments.length} assignment{overdueAssignments.length > 1 ? 's are' : ' is'} overdue
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {urgentAssignments.length > 0 && (
-            <Card className="border-0 bg-orange-50 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-orange-100 rounded-full group-hover:bg-orange-200 transition-colors duration-200">
-                    <Timer className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-orange-800 mb-1">Due Soon</p>
-                    <p className="text-orange-700 font-medium">
-                      {urgentAssignments.length} assignment{urgentAssignments.length > 1 ? 's' : ''} due within 3 days
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Enhanced Search */}
-      <Card className="bg-white border-0 shadow-sm">
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              placeholder="Search pending assignments by title, subject, or chapter..."
-              className="pl-10 h-12 border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Assignments List */}
-      <div className="space-y-6">
-        {filteredAssignments.length === 0 ? (
-          <Card className="bg-white border-0 shadow-sm">
-            <CardContent className="p-16 text-center">
-              <CheckCircle className="h-20 w-20 text-green-400 mx-auto mb-6" />
-              <h3 className="text-2xl font-semibold text-gray-700 mb-4">All caught up!</h3>
-              <p className="text-gray-500 text-lg">
-                {searchTerm 
-                  ? 'No pending assignments found matching your search'
-                  : 'No pending assignments found'
-                }
-              </p>
-              {searchTerm && (
+            
+            {/* Main Title and Refresh Button Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-3 leading-tight">
+                  Pending Assignments
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  ⏰ {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? 's' : ''} need{filteredAssignments.length === 1 ? 's' : ''} your attention
+                </p>
+              </div>
+              <div className="flex space-x-3">
                 <Button 
                   variant="outline" 
-                  onClick={() => setSearchTerm('')}
-                  className="mt-4"
+                  onClick={handleRefresh} 
+                  disabled={refreshing}
+                  className="border-2 border-gray-300 hover:border-gray-400 rounded-xl px-6 py-3 hover:shadow-md transition-all"
                 >
-                  Clear Search
+                  <RefreshCw className={`mr-2 h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
                 </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          filteredAssignments.map((assignment) => {
-            const daysUntilDue = getDaysUntilDue(assignment.dueDate);
-            const isOverdue = daysUntilDue < 0;
-            const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
-            const assignmentType = getAssignmentType(assignment);
+              </div>
+            </div>
+          </div>
+        </div>
 
-            return (
-              <Card 
-                key={assignment.id} 
-                className={`hover:shadow-lg transition-all duration-200 border-0 bg-white cursor-pointer group ${
-                  isOverdue ? 'ring-2 ring-red-200 bg-red-50' : 
-                  isDueSoon ? 'ring-2 ring-orange-200 bg-orange-50' : 'hover:bg-gray-50'
-                }`}
-              >
-                <CardContent className="p-8">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className={`w-4 h-16 rounded-full ${
-                          isOverdue ? 'bg-red-500' : 
-                          isDueSoon ? 'bg-orange-500' : 'bg-yellow-500'
-                        }`}></div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4 mb-3">
-                            <h3 className="text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors duration-200">
-                              {assignment.title}
-                            </h3>
-                            
-                            {/* Assignment Type Badge */}
-                            <Badge className="bg-blue-100 text-blue-800 border-blue-300">
-                              <span className="flex items-center space-x-1">
-                                {getAssignmentTypeIcon(assignmentType)}
-                                <span>{assignmentType === 'online' ? 'Online Test' : 'File Submission'}</span>
-                              </span>
-                            </Badge>
-
-                            <Badge className={`${getDifficultyColor(assignment.difficulty)} border font-medium px-3 py-1`}>
-                              {assignment.difficulty.toUpperCase()}
-                            </Badge>
-                            
-                            {isOverdue && (
-                              <Badge className="bg-red-600 text-white px-3 py-1 font-bold">
-                                OVERDUE
-                              </Badge>
-                            )}
-                            {isDueSoon && !isOverdue && (
-                              <Badge className="bg-orange-600 text-white px-3 py-1 font-bold">
-                                DUE SOON
-                              </Badge>
-                            )}
-                            {assignment.aiGenerated && (
-                              <Badge className="bg-purple-100 text-purple-800">
-                                <Bot className="mr-1 h-3 w-3" />
-                                AI Generated
-                              </Badge>
-                            )}
-                          </div>
-
-                          <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
-                            <span className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
-                              <BookOpen className="h-4 w-4" />
-                              <span className="font-medium">{assignment.subject}</span>
-                            </span>
-                            <span className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
-                              <Users className="h-4 w-4" />
-                              <span className="font-medium">Class {assignment.class}</span>
-                            </span>
-                            <span className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
-                              <Clock className="h-4 w-4" />
-                              <span className="font-medium">{assignment.timeEstimate}</span>
-                            </span>
-                            {assignmentType === 'online' && (
-                              <span className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
-                                <FileText className="h-4 w-4" />
-                                <span className="font-medium">{assignment.questions.length} questions</span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="text-gray-700 mb-6 text-lg leading-relaxed ml-6">{assignment.description}</p>
-
-                      {assignment.ncertChapter && (
-                        <div className="mb-4 ml-6">
-                          <Badge variant="outline" className="text-indigo-600 border-indigo-300">
-                            NCERT: {assignment.ncertChapter}
-                          </Badge>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 ml-6">
-                        <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-                          <Calendar className="h-5 w-5 text-blue-600" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Due Date</p>
-                            <p className={`text-lg font-bold ${
-                              isOverdue ? 'text-red-600' : isDueSoon ? 'text-orange-600' : 'text-gray-900'
-                            }`}>
-                              {formatDate(assignment.dueDate)}
-                            </p>
-                            {isOverdue && (
-                              <p className="text-sm text-red-600 font-medium">
-                                {Math.abs(daysUntilDue)} days overdue
-                              </p>
-                            )}
-                            {isDueSoon && !isOverdue && (
-                              <p className="text-sm text-orange-600 font-medium">
-                                {daysUntilDue} days remaining
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
-                          <Target className="h-5 w-5 text-purple-600" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Total Marks</p>
-                            <p className="text-lg font-bold text-gray-900">{assignment.totalMarks} points</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100 ml-6">
-                        <div className="flex space-x-3">
-                          <Link href={`/dashboard/student/assignments/${assignment.id}`}>
-                            <Button 
-                              className={`${
-                                isOverdue 
-                                  ? 'bg-red-600 hover:bg-red-700 text-white' 
-                                  : 'bg-orange-600 hover:bg-orange-700 text-white'
-                              }`}
-                            >
-                              {assignmentType === 'online' ? (
-                                <>
-                                  <PlayCircle className="mr-2 h-4 w-4" />
-                                  {isOverdue ? 'Start Now' : 'Start Assignment'}
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="mr-2 h-4 w-4" />
-                                  {isOverdue ? 'Submit Now' : 'Submit Assignment'}
-                                </>
-                              )}
-                            </Button>
-                          </Link>
-                          
-                          <Link href={`/dashboard/student/assignments/${assignment.id}`}>
-                            <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
+        {/* DESIGN ONLY: Enhanced Alert Cards */}
+        {(overdueAssignments.length > 0 || urgentAssignments.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {overdueAssignments.length > 0 && (
+              <Card className="border-0 bg-gradient-to-br from-red-50 to-red-100 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group rounded-2xl overflow-hidden">
+                <CardContent className="p-8 relative">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-red-200 rounded-full -mr-10 -mt-10 opacity-20"></div>
+                  <div className="flex items-center space-x-6 relative z-10">
+                    <div className="bg-red-200 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-200">
+                      <AlertCircle className="h-10 w-10 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-red-800 mb-2">🚨 Overdue Assignments</p>
+                      <p className="text-red-700 font-semibold text-lg">
+                        {overdueAssignments.length} assignment{overdueAssignments.length > 1 ? 's are' : ' is'} overdue
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })
+            )}
+
+            {urgentAssignments.length > 0 && (
+              <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group rounded-2xl overflow-hidden">
+                <CardContent className="p-8 relative">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-orange-200 rounded-full -mr-10 -mt-10 opacity-20"></div>
+                  <div className="flex items-center space-x-6 relative z-10">
+                    <div className="bg-orange-200 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-200">
+                      <Timer className="h-10 w-10 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-orange-800 mb-2">⚡ Due Soon</p>
+                      <p className="text-orange-700 font-semibold text-lg">
+                        {urgentAssignments.length} assignment{urgentAssignments.length > 1 ? 's' : ''} due within 3 days
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
+
+        {/* DESIGN ONLY: Enhanced Search */}
+        <Card className="bg-white border-0 shadow-lg rounded-2xl">
+          <CardContent className="p-8">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+              <Input
+                placeholder="🔍 Search pending assignments by title, subject, or chapter..."
+                className="pl-12 h-14 border-2 border-gray-200 focus:border-orange-400 focus:ring-orange-400 rounded-xl text-lg bg-gray-50 hover:bg-white transition-colors"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* DESIGN ONLY: Enhanced Assignments List */}
+        <div className="space-y-8">
+          {filteredAssignments.length === 0 ? (
+            <Card className="bg-white border-0 shadow-lg rounded-2xl">
+              <CardContent className="p-20 text-center">
+                <div className="bg-green-100 rounded-full p-8 w-fit mx-auto mb-8">
+                  <CheckCircle className="h-20 w-20 text-green-500" />
+                </div>
+                <h3 className="text-3xl font-bold text-gray-700 mb-4">🎉 All caught up!</h3>
+                <p className="text-gray-500 text-xl mb-6">
+                  {searchTerm 
+                    ? 'No pending assignments found matching your search'
+                    : 'No pending assignments found'
+                  }
+                </p>
+                {searchTerm && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSearchTerm('')}
+                    className="border-2 border-gray-300 hover:border-gray-400 rounded-xl px-8 py-3"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            filteredAssignments.map((assignment) => {
+              const daysUntilDue = getDaysUntilDue(assignment.dueDate);
+              const isOverdue = daysUntilDue < 0;
+              const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
+              const assignmentType = getAssignmentType(assignment);
+
+              return (
+                <Card 
+                  key={assignment.id} 
+                  className={`hover:shadow-xl transition-all duration-300 border-0 bg-white cursor-pointer group rounded-2xl overflow-hidden ${
+                    isOverdue ? 'ring-4 ring-red-200 bg-gradient-to-r from-red-50 to-white' : 
+                    isDueSoon ? 'ring-4 ring-orange-200 bg-gradient-to-r from-orange-50 to-white' : 'hover:bg-gradient-to-r hover:from-yellow-50 hover:to-white'
+                  }`}
+                >
+                  <CardContent className="p-8">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-6 mb-6">
+                          <div className={`w-5 h-20 rounded-full shadow-lg ${
+                            isOverdue ? 'bg-gradient-to-b from-red-400 to-red-600' : 
+                            isDueSoon ? 'bg-gradient-to-b from-orange-400 to-orange-600' : 'bg-gradient-to-b from-yellow-400 to-yellow-600'
+                          }`}></div>
+                          <div className="flex-1">
+                            <div className="flex items-center flex-wrap gap-4 mb-4">
+                              <h3 className="text-3xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors duration-300">
+                                {assignment.title}
+                              </h3>
+                              
+                              {/* DESIGN ONLY: Enhanced Assignment Type Badge */}
+                              <Badge className="bg-blue-50 text-blue-700 border-2 border-blue-200 px-4 py-2 rounded-xl hover:bg-blue-100 transition-colors">
+                                <span className="flex items-center space-x-2">
+                                  {getAssignmentTypeIcon(assignmentType)}
+                                  <span className="font-semibold">{assignmentType === 'online' ? 'Online Test' : 'File Submission'}</span>
+                                </span>
+                              </Badge>
+
+                              <Badge className={`${getDifficultyColor(assignment.difficulty)} border-2 font-semibold px-4 py-2 rounded-xl`}>
+                                {assignment.difficulty.toUpperCase()}
+                              </Badge>
+                              
+                              {isOverdue && (
+                                <Badge className="bg-red-600 text-white px-4 py-2 font-bold rounded-xl animate-pulse">
+                                  🚨 OVERDUE
+                                </Badge>
+                              )}
+                              {isDueSoon && !isOverdue && (
+                                <Badge className="bg-orange-600 text-white px-4 py-2 font-bold rounded-xl">
+                                  ⚡ DUE SOON
+                                </Badge>
+                              )}
+                              {assignment.aiGenerated && (
+                                <Badge className="bg-purple-50 text-purple-700 border-2 border-purple-200 px-4 py-2 rounded-xl">
+                                  <Bot className="mr-2 h-4 w-4" />
+                                  🤖 AI Generated
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* DESIGN ONLY: Enhanced Meta Info */}
+                            <div className="flex items-center flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                              <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-colors">
+                                <BookOpen className="h-4 w-4" />
+                                <span className="font-semibold">{assignment.subject}</span>
+                              </span>
+                              <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-colors">
+                                <Users className="h-4 w-4" />
+                                <span className="font-semibold">Class {assignment.class}</span>
+                              </span>
+                              <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-colors">
+                                <Clock className="h-4 w-4" />
+                                <span className="font-semibold">{assignment.timeEstimate}</span>
+                              </span>
+                              {assignmentType === 'online' && (
+                                <span className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-colors">
+                                  <FileText className="h-4 w-4" />
+                                  <span className="font-semibold">{assignment.questions.length} questions</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-gray-700 mb-6 text-lg leading-relaxed ml-11">{assignment.description}</p>
+
+                        {assignment.ncertChapter && (
+                          <div className="mb-6 ml-11">
+                            <Badge variant="outline" className="text-indigo-600 border-2 border-indigo-300 bg-indigo-50 px-4 py-2 rounded-xl">
+                              📚 NCERT: {assignment.ncertChapter}
+                            </Badge>
+                          </div>
+                        )}
+
+                        {/* DESIGN ONLY: Enhanced Metrics Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6 ml-11">
+                          <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl hover:shadow-md transition-shadow">
+                            <div className="bg-blue-200 p-3 rounded-xl">
+                              <Calendar className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-blue-800 mb-1">Due Date</p>
+                              <p className={`text-xl font-bold ${
+                                isOverdue ? 'text-red-600' : isDueSoon ? 'text-orange-600' : 'text-blue-900'
+                              }`}>
+                                {formatDate(assignment.dueDate)}
+                              </p>
+                              {isOverdue && (
+                                <p className="text-sm text-red-600 font-semibold">
+                                  🚨 {Math.abs(daysUntilDue)} days overdue
+                                </p>
+                              )}
+                              {isDueSoon && !isOverdue && (
+                                <p className="text-sm text-orange-600 font-semibold">
+                                  ⚡ {daysUntilDue} days remaining
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl hover:shadow-md transition-shadow">
+                            <div className="bg-purple-200 p-3 rounded-xl">
+                              <Target className="h-6 w-6 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-purple-800 mb-1">Total Marks</p>
+                              <p className="text-xl font-bold text-purple-900">{assignment.totalMarks} points</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* DESIGN ONLY: Enhanced Action Section */}
+                        <div className="flex items-center justify-between pt-6 border-t-2 border-gray-100 ml-11">
+                          <div className="flex space-x-4">
+                            <Link href={`/dashboard/student/assignments/${assignment.id}`}>
+                              <Button 
+                                className={`px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all ${
+                                  isOverdue 
+                                    ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white' 
+                                    : 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white'
+                                }`}
+                              >
+                                {assignmentType === 'online' ? (
+                                  <>
+                                    <PlayCircle className="mr-2 h-5 w-5" />
+                                    {isOverdue ? '🚨 Start Now' : '▶️ Start Assignment'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="mr-2 h-5 w-5" />
+                                    {isOverdue ? '🚨 Submit Now' : '📤 Submit Assignment'}
+                                  </>
+                                )}
+                              </Button>
+                            </Link>
+                            
+                            <Link href={`/dashboard/student/assignments/${assignment.id}`}>
+                              <Button variant="outline" className="border-2 border-gray-300 hover:border-gray-400 px-8 py-3 rounded-xl">
+                                <Eye className="mr-2 h-5 w-5" />
+                                View Details
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );
