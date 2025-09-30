@@ -1,4 +1,5 @@
-// app/dashboard/student/projects/page.tsx
+"use client";
+
 import React from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +94,6 @@ const ProjectCard: React.FC<{ project: any, type: 'active' | 'completed' }> = ({
           )}
         </div>
       </CardHeader>
-      
       <CardContent className="space-y-4">
         {type === 'active' ? (
           <>
@@ -104,7 +104,6 @@ const ProjectCard: React.FC<{ project: any, type: 'active' | 'completed' }> = ({
               </div>
               <Progress value={project.progress} className="h-2" />
             </div>
-            
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="h-4 w-4" />
@@ -119,7 +118,6 @@ const ProjectCard: React.FC<{ project: any, type: 'active' | 'completed' }> = ({
                 <span>{project.team.length} team members</span>
               </div>
             </div>
-            
             <div className="pt-3 border-t">
               <p className="text-sm text-gray-500 mb-3">Mentor: {project.mentor}</p>
               <Link href={`/dashboard/student/projects/${project.id}`}>
@@ -136,7 +134,6 @@ const ProjectCard: React.FC<{ project: any, type: 'active' | 'completed' }> = ({
               <CheckCircle2 className="h-4 w-4" />
               <span>Completed on {new Date(project.completedDate).toLocaleDateString()}</span>
             </div>
-            
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">Rating:</span>
@@ -146,14 +143,13 @@ const ProjectCard: React.FC<{ project: any, type: 'active' | 'completed' }> = ({
                 </div>
               </div>
               <div className="flex flex-wrap gap-1">
-                {project.skills.slice(0, 3).map((skill, index) => (
+                {project.skills.slice(0, 3).map((skill: string, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {skill}
                   </Badge>
                 ))}
               </div>
             </div>
-            
             <Button variant="outline" className="w-full">
               View Certificate
             </Button>
@@ -172,7 +168,6 @@ const RecommendationCard: React.FC<{ project: any }> = ({ project }) => (
           <h4 className="font-semibold text-gray-900 line-clamp-1">{project.title}</h4>
           <Badge variant="secondary">{project.match}% match</Badge>
         </div>
-        
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Badge variant="outline" className="text-xs">{project.category}</Badge>
           <span>•</span>
@@ -180,7 +175,6 @@ const RecommendationCard: React.FC<{ project: any }> = ({ project }) => (
           <span>•</span>
           <span>{project.duration}</span>
         </div>
-        
         <Button variant="outline" size="sm" className="w-full">
           Learn More
         </Button>
@@ -191,7 +185,7 @@ const RecommendationCard: React.FC<{ project: any }> = ({ project }) => (
 
 export default function StudentProjectsPage() {
   const { student, activeProjects, recentCompletedProjects, recommendations } = studentProjectsData;
-  
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
@@ -252,17 +246,15 @@ export default function StudentProjectsPage() {
               </Button>
             </Link>
           </div>
-          
           <div className="grid gap-4">
-            {activeProjects.map(project => (
+            {activeProjects.map((project: any) => (
               <ProjectCard key={project.id} project={project} type="active" />
             ))}
           </div>
-          
           {/* Recent Completed Projects */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900">Recently Completed</h2>
-            {recentCompletedProjects.map(project => (
+            {recentCompletedProjects.map((project: any) => (
               <ProjectCard key={project.id} project={project} type="completed" />
             ))}
           </div>
@@ -302,7 +294,7 @@ export default function StudentProjectsPage() {
               <p className="text-sm text-gray-600">Based on your interests and skills</p>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recommendations.map(project => (
+              {recommendations.map((project: any) => (
                 <RecommendationCard key={project.id} project={project} />
               ))}
               <Link href="/dashboard/student/projects/browse">
