@@ -124,24 +124,21 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             label: 'Dashboard',
             route: '/dashboard/teacher',
           },
-          {
-            icon: Brain,
-            label: 'AI Assistant',
-            route: '/dashboard/teacher/ai-assistant',
-            badge: 'New',
-            children: [
-              { icon: Brain, label: 'Assignment Generator', route: '/dashboard/teacher/ai-assistant/assignment-generator' },
-              { icon: Brain, label: 'Lesson Planner', route: '/dashboard/teacher/ai-assistant/lesson-planner' },
-            ]
-          },
+          // {
+          //   icon: Brain,
+          //   label: 'AI Assistant',
+          //   route: '/dashboard/teacher/ai-assistant',
+          //   badge: 'New',
+          //   children: [
+          //     { icon: Brain, label: 'Assignment Generator', route: '/dashboard/teacher/ai-assistant/assignment-generator' },
+          //     { icon: Brain, label: 'Lesson Planner', route: '/dashboard/teacher/ai-assistant/lesson-planner' },
+          //   ]
+          // },
           {
             icon: UserCheck,
             label: 'Students',
             route: '/dashboard/teacher/students',
-            children: [
-              { icon: UserCheck, label: 'Portfolios', route: '/dashboard/teacher/students/portfolios' },
-              { icon: UserCheck, label: 'Progress', route: '/dashboard/teacher/students/progress' },
-            ]
+           
           },
           {
             icon: Presentation,
