@@ -146,8 +146,8 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             route: '/dashboard/teacher/assessments',
             children: [
               { icon: Presentation, label: 'Formative', route: '/dashboard/teacher/assessments/formative' },
-              { icon: Presentation, label: 'Summative', route: '/dashboard/teacher/assessments/summative' },
-              { icon: Presentation, label: 'Diagnostic', route: '/dashboard/teacher/assessments/diagnostic' },
+              // { icon: Presentation, label: 'Summative', route: '/dashboard/teacher/assessments/summative' },
+              // { icon: Presentation, label: 'Diagnostic', route: '/dashboard/teacher/assessments/diagnostic' },
             ]
           },
           {
