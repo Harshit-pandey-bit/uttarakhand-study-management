@@ -160,11 +160,11 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
               { icon: Award, label: 'Certificates', route: '/dashboard/teacher/cpd/certificates' },
             ]
           },
-          {
-            icon: Building2,
-            label: 'HEI Collaboration',
-            route: '/dashboard/teacher/hei-collaboration',
-          },
+          // {
+          //   icon: Building2,
+          //   label: 'HEI Collaboration',
+          //   route: '/dashboard/teacher/hei-collaboration',
+          // },
         ];
 
       case 'hei-mentor':

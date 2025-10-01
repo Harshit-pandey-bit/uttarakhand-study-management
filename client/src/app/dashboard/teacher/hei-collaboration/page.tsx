@@ -1,3 +1,5 @@
+// teacher/hei-collaboration/page.tsx
+
 'use client';
 
 import React, { useState } from 'react';
@@ -277,7 +279,7 @@ export default function HEICollaborationPage() {
           </Card>
 
           {/* Quick Actions */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <h3 className="text-lg font-semibold">Quick Actions</h3>
             </CardHeader>
@@ -299,7 +301,7 @@ export default function HEICollaborationPage() {
                 Resource Library
               </Button>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>
