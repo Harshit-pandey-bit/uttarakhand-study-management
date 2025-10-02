@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FormativeCard from '@/components/assessments/FormativeCard';
-import FormativeStats from '@/components/assessments/FormativeStats';
 import { Activity, Plus, Search } from 'lucide-react';
 
 // Types
@@ -109,9 +108,6 @@ export default function FormativeAssessmentsPage() {
           New Formative
         </Button>
       </div>
-
-      {/* Statistics Overview */}
-      <FormativeStats assessments={assessments} />
 
       {/* Filters */}
       <Card className="border-indigo-100 shadow-sm">
