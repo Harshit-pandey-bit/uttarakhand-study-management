@@ -167,122 +167,122 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
           // },
         ];
 
-      case 'hei-mentor':
+      case 'hei_mentor':
         return [
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/hei-mentor',
+            route: '/dashboard/hei_mentor',
           },
           {
             icon: Users,
             label: 'Mentoring',
-            route: '/dashboard/hei-mentor/mentoring',
+            route: '/dashboard/hei_mentor/mentoring',
             children: [
-              { icon: Calendar, label: 'Sessions', route: '/dashboard/hei-mentor/mentoring/sessions' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/hei-mentor/mentoring/doubt-clearing' },
-              { icon: GraduationCap, label: 'Career Guidance', route: '/dashboard/hei-mentor/mentoring/career-guidance' },
+              { icon: Calendar, label: 'Sessions', route: '/dashboard/hei_mentor/mentoring/sessions' },
+              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/hei_mentor/mentoring/doubt-clearing' },
+              { icon: GraduationCap, label: 'Career Guidance', route: '/dashboard/hei_mentor/mentoring/career-guidance' },
             ]
           },
           {
             icon: School,
             label: 'Schools',
-            route: '/dashboard/hei-mentor/schools',
+            route: '/dashboard/hei_mentor/schools',
           },
           {
             icon: FileText,
             label: 'Content Creation',
-            route: '/dashboard/hei-mentor/content-creation',
+            route: '/dashboard/hei_mentor/content-creation',
             children: [
-              { icon: Brain, label: 'AI Assistant', route: '/dashboard/hei-mentor/content-creation/ai-assistant' },
-              { icon: FileText, label: 'Resources', route: '/dashboard/hei-mentor/content-creation/resources' },
+              { icon: Brain, label: 'AI Assistant', route: '/dashboard/hei_mentor/content-creation/ai-assistant' },
+              { icon: FileText, label: 'Resources', route: '/dashboard/hei_mentor/content-creation/resources' },
             ]
           },
         ];
 
-      case 'hei-admin':
+      case 'hei_admin':
         return [
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/hei-admin',
+            route: '/dashboard/hei_admin',
           },
           {
             icon: UsersIcon,
             label: 'Mentors',
-            route: '/dashboard/hei-admin/mentors',
+            route: '/dashboard/hei_admin/mentors',
             children: [
-              { icon: UsersIcon, label: 'Assign', route: '/dashboard/hei-admin/mentors/assign' },
-              { icon: BarChart3, label: 'Performance', route: '/dashboard/hei-admin/mentors/performance' },
+              { icon: UsersIcon, label: 'Assign', route: '/dashboard/hei_admin/mentors/assign' },
+              { icon: BarChart3, label: 'Performance', route: '/dashboard/hei_admin/mentors/performance' },
             ]
           },
           {
             icon: Building2,
             label: 'Partnerships',
-            route: '/dashboard/hei-admin/partnerships',
+            route: '/dashboard/hei_admin/partnerships',
             children: [
-              { icon: Building2, label: 'Active', route: '/dashboard/hei-admin/partnerships/active' },
+              { icon: Building2, label: 'Active', route: '/dashboard/hei_admin/partnerships/active' },
             ]
           },
           {
             icon: Target,
             label: 'Programs',
-            route: '/dashboard/hei-admin/programs',
+            route: '/dashboard/hei_admin/programs',
             children: [
-              { icon: Award, label: 'CPD', route: '/dashboard/hei-admin/programs/cpd' },
-              { icon: Microscope, label: 'STEM', route: '/dashboard/hei-admin/programs/stem' },
+              { icon: Award, label: 'CPD', route: '/dashboard/hei_admin/programs/cpd' },
+              { icon: Microscope, label: 'STEM', route: '/dashboard/hei_admin/programs/stem' },
             ]
           },
           {
             icon: TrendingUp,
             label: 'Analytics',
-            route: '/dashboard/hei-admin/analytics',
+            route: '/dashboard/hei_admin/analytics',
             badge: 'Live',
             children: [
-              { icon: TrendingUp, label: 'Impact Metrics', route: '/dashboard/hei-admin/analytics/impact-metrics' },
-              { icon: Users, label: 'Mentoring Effectiveness', route: '/dashboard/hei-admin/analytics/mentoring-effectiveness' },
-              { icon: BarChart3, label: 'Partnership Health', route: '/dashboard/hei-admin/analytics/partnership-health' },
+              { icon: TrendingUp, label: 'Impact Metrics', route: '/dashboard/hei_admin/analytics/impact-metrics' },
+              { icon: Users, label: 'Mentoring Effectiveness', route: '/dashboard/hei_admin/analytics/mentoring-effectiveness' },
+              { icon: BarChart3, label: 'Partnership Health', route: '/dashboard/hei_admin/analytics/partnership-health' },
             ]
           },
         ];
 
-      case 'school-admin':
+      case 'school_admin':
         return [
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/school-admin',
+            route: '/dashboard/school_admin',
           },
           {
             icon: UsersIcon,
             label: 'Teachers',
-            route: '/dashboard/school-admin/teachers',
+            route: '/dashboard/school_admin/teachers',
             children: [
-              { icon: Award, label: 'CPD Tracking', route: '/dashboard/school-admin/teachers/cpd-tracking' },
+              { icon: Award, label: 'CPD Tracking', route: '/dashboard/school_admin/teachers/cpd-tracking' },
             ]
           },
           {
             icon: UserCheck,
             label: 'Students',
-            route: '/dashboard/school-admin/students',
+            route: '/dashboard/school_admin/students',
             children: [
-              { icon: BarChart3, label: 'Progress', route: '/dashboard/school-admin/students/progress' },
+              { icon: BarChart3, label: 'Progress', route: '/dashboard/school_admin/students/progress' },
             ]
           },
           {
             icon: Building2,
             label: 'HEI Partnerships',
-            route: '/dashboard/school-admin/hei-partnerships',
+            route: '/dashboard/school_admin/hei-partnerships',
             children: [
-              { icon: Building2, label: 'Active', route: '/dashboard/school-admin/hei-partnerships/active' },
+              { icon: Building2, label: 'Active', route: '/dashboard/school_admin/hei-partnerships/active' },
             ]
           },
           {
             icon: Settings,
             label: 'Infrastructure',
-            route: '/dashboard/school-admin/infrastructure',
+            route: '/dashboard/school_admin/infrastructure',
             children: [
-              { icon: Settings, label: 'Smart Classrooms', route: '/dashboard/school-admin/infrastructure/smart-classrooms' },
+              { icon: Settings, label: 'Smart Classrooms', route: '/dashboard/school_admin/infrastructure/smart-classrooms' },
             ]
           },
         ];
@@ -302,9 +302,9 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
     const colors = {
       student: 'from-indigo-500 to-purple-500',
       teacher: 'from-purple-500 to-pink-500',
-      'hei-mentor': 'from-teal-500 to-cyan-500',
-      'hei-admin': 'from-orange-500 to-red-500',
-      'school-admin': 'from-rose-500 to-pink-500',
+      'hei_mentor': 'from-teal-500 to-cyan-500',
+      'hei_admin': 'from-orange-500 to-red-500',
+      'school_admin': 'from-rose-500 to-pink-500',
     };
     return colors[role] || 'from-gray-500 to-gray-600';
   };
@@ -313,9 +313,9 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
     const labels = {
       student: 'Student Portal',
       teacher: 'Teacher Portal',
-      'hei-mentor': 'HEI Mentor Portal',
-      'hei-admin': 'HEI Admin Portal',
-      'school-admin': 'School Admin Portal',
+      'hei_mentor': 'HEI Mentor Portal',
+      'hei_admin': 'HEI Admin Portal',
+      'school_admin': 'School Admin Portal',
     };
     return labels[role] || role;
   };

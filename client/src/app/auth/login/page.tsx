@@ -98,13 +98,13 @@ export default function LoginPage() {
           case 'teacher':
             router.push('/dashboard/teacher');
             break;
-          case 'hei-mentor':
+          case 'hei_mentor':
             router.push('/dashboard/hei-mentor');
             break;
-          case 'hei-admin':
+          case 'hei_admin':
             router.push('/dashboard/hei-admin');
             break;
-          case 'school-admin':
+          case 'school_admin':
             router.push('/dashboard/school-admin');
             break;
           default:
