@@ -1,499 +1,560 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  Video,
   Calendar,
   Clock,
-  MessageCircle,
   Users,
-  User,
-  Search,
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle,
   Star,
-  Phone,
+  Video,
+  MessageCircle,
+  MoreHorizontal,
+  ArrowLeft,
   Filter,
-  Download,
-  MoreHorizontal
+  Search,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
-interface MentoringSession {
-  id: string;
-  date: string;
-  time: string;
-  mentor: {
-    name: string;
-    designation: string;
-    avatar: string;
-    rating: number;
-  };
-  type: 'individual' | 'group';
-  topic: string;
-  status: 'upcoming' | 'completed' | 'cancelled' | 'in-progress';
-  duration: string;
-  meetingLink?: string;
-  participants?: string[];
-  feedback?: {
-    rating: number;
-    comment: string;
-  };
-  recordingUrl?: string;
-  notes?: string;
-}
+// Import API client and types
+import { mentoringAPI } from '@/lib/api/mentoringClient';
+import { 
+  Session, 
+  SessionList,
+  SessionStatus, 
+  SessionType,
+  SessionFeedback,
+  SessionFilters,
+  UpdateSession
+} from '@/types/mentoring';
 
-export default function SessionsListPage() {
-  const searchParams = useSearchParams();
-  const scheduled = searchParams.get('scheduled');
-
+export default function SessionsPage() {
   // State management
-  const [sessions, setSessions] = useState<MentoringSession[]>([]);
-  const [filteredSessions, setFilteredSessions] = useState<MentoringSession[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('upcoming');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
+  
+  // Filters and search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<SessionType | 'all'>('all');
+  
+  // Feedback modal
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [feedbackData, setFeedbackData] = useState<SessionFeedback>({
+    rating: 5,
+    comment: ''
+  });
 
-  // Mock data based on PDF specifications
+  // Load sessions
   useEffect(() => {
-    setTimeout(() => {
-      const mockSessions: MentoringSession[] = [
-        // Upcoming Sessions
-        {
-          id: 'SES001',
-          date: '2025-09-30',
-          time: '10:00 AM',
-          mentor: {
-            name: 'Dr. Rajesh Kumar',
-            designation: 'Assistant Professor, Physics',
-            avatar: '/mentors/dr-rajesh.jpg',
-            rating: 4.8
-          },
-          type: 'individual',
-          topic: 'Career Guidance - Engineering Paths',
-          status: 'upcoming',
-          duration: '45 minutes',
-          meetingLink: 'https://meet.google.com/xyz-abc-def'
-        },
-        {
-          id: 'SES002',
-          date: '2025-10-02',
-          time: '2:00 PM',
-          mentor: {
-            name: 'Prof. Sunita Sharma',
-            designation: 'Professor, Chemistry',
-            avatar: '/mentors/prof-sunita.jpg',
-            rating: 4.6
-          },
-          type: 'group',
-          topic: 'Chemical Bonding - Doubt Clearing',
-          status: 'upcoming',
-          duration: '60 minutes',
-          participants: ['Rahul Sharma', 'Priya Singh', 'Amit Kumar', '5 others']
-        },
-        // Completed Sessions
-        {
-          id: 'SES003',
-          date: '2025-09-25',
-          time: '11:00 AM',
-          mentor: {
-            name: 'Dr. Rajesh Kumar',
-            designation: 'Assistant Professor, Physics',
-            avatar: '/mentors/dr-rajesh.jpg',
-            rating: 4.8
-          },
-          type: 'individual',
-          topic: 'Physics: Light & Reflection',
-          status: 'completed',
-          duration: '45 minutes',
-          feedback: {
-            rating: 5,
-            comment: 'Excellent session! Very clear explanation of concepts.'
-          },
-          recordingUrl: 'https://example.com/recording/ses003',
-          notes: 'Covered basics of light reflection, refraction, and practical applications.'
-        },
-        {
-          id: 'SES004',
-          date: '2025-09-20',
-          time: '3:00 PM',
-          mentor: {
-            name: 'Prof. Sunita Sharma',
-            designation: 'Professor, Chemistry',
-            avatar: '/mentors/prof-sunita.jpg',
-            rating: 4.6
-          },
-          type: 'group',
-          topic: 'Organic Chemistry Basics',
-          status: 'completed',
-          duration: '60 minutes',
-          feedback: {
-            rating: 4,
-            comment: 'Good session, would like more practice problems.'
-          },
-          recordingUrl: 'https://example.com/recording/ses004',
-          participants: ['Rahul Sharma', 'Priya Singh', 'Neha Gupta', '3 others']
-        },
-        // In Progress
-        {
-          id: 'SES005',
-          date: '2025-09-29',
-          time: '4:00 PM',
-          mentor: {
-            name: 'Dr. Anjali Mehta',
-            designation: 'Associate Professor, Mathematics',
-            avatar: '/mentors/dr-anjali.jpg',
-            rating: 4.7
-          },
-          type: 'individual',
-          topic: 'Calculus Problem Solving',
-          status: 'in-progress',
-          duration: '45 minutes',
-          meetingLink: 'https://meet.google.com/live-session'
-        }
-      ];
+    loadSessions();
+  }, [currentPage, activeTab, statusFilter, typeFilter, searchTerm]);
 
-      setSessions(mockSessions);
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const filters: SessionFilters = {};
+      
+      // Set status filter based on active tab
+      if (activeTab === 'upcoming') {
+        filters.status = SessionStatus.SCHEDULED;
+      } else if (activeTab === 'completed') {
+        filters.status = SessionStatus.COMPLETED;
+      } else if (activeTab === 'cancelled') {
+        filters.status = SessionStatus.CANCELLED;
+      }
+
+      // Add additional filters
+      if (statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (typeFilter !== 'all') {
+        filters.type = typeFilter;
+      }
+
+      const response = await mentoringAPI.getSessions(filters, currentPage, 10);
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (response.data) {
+        setSessions(response.data.sessions);
+        setTotalPages(Math.ceil(response.data.total / response.data.limit));
+      }
+    } catch (err) {
+      console.error('Failed to load sessions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load sessions');
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
-
-  useEffect(() => {
-    let filtered = sessions;
-
-    // Filter by tab
-    if (activeTab === 'upcoming') {
-      filtered = sessions.filter(s => s.status === 'upcoming' || s.status === 'in-progress');
-    } else if (activeTab === 'completed') {
-      filtered = sessions.filter(s => s.status === 'completed');
-    } else if (activeTab === 'cancelled') {
-      filtered = sessions.filter(s => s.status === 'cancelled');
     }
+  };
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(session =>
-        session.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        session.mentor.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredSessions(filtered);
-  }, [sessions, activeTab, searchTerm]);
-
-  const getStatusColor = (status: string) => {
+  // Helper functions
+  const getSessionStatusColor = (status: SessionStatus) => {
     switch (status) {
-      case 'upcoming': return 'bg-blue-100 text-blue-700';
-      case 'completed': return 'bg-green-100 text-green-700';
-      case 'cancelled': return 'bg-red-100 text-red-700';
-      case 'in-progress': return 'bg-orange-100 text-orange-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'scheduled': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'in_progress': return 'bg-green-100 text-green-700 border-green-200';
+      case 'completed': return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
-  const getSessionTypeColor = (type: string) => {
-    return type === 'individual' ? 'bg-purple-100 text-purple-700' : 'bg-teal-100 text-teal-700';
+  const formatSessionTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Session actions
+  const handleJoinSession = async (sessionId: string) => {
+    try {
+      const response = await mentoringAPI.joinSession(sessionId);
+      if (response.data?.meetingLink) {
+        window.open(response.data.meetingLink, '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to join session:', err);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!confirm('Are you sure you want to cancel this session?')) return;
+    
+    try {
+      const response = await mentoringAPI.deleteSession(sessionId);
+      if (response.data?.success) {
+        await loadSessions(); // Reload sessions
+      }
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!selectedSession) return;
+
+    try {
+      const response = await mentoringAPI.submitSessionFeedback(selectedSession.id, feedbackData);
+      if (response.data?.success) {
+        setShowFeedbackModal(false);
+        setSelectedSession(null);
+        await loadSessions(); // Reload sessions
+      }
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    }
+  };
+
+  // Filter sessions by search term
+  const filteredSessions = sessions.filter(session =>
+    session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    session.mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    session.subject.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
+    <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/dashboard/student/mentoring">
-              <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Mentoring
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">My Sessions</h1>
-              <p className="text-gray-600 text-lg">Manage your mentoring sessions</p>
-            </div>
-          </div>
-          <div className="flex space-x-3">
-            <Link href="/dashboard/student/mentoring/sessions/schedule">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule New Session
-              </Button>
-            </Link>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Mentoring Sessions</h1>
+          <p className="text-gray-600 mt-1">Manage your mentoring sessions</p>
         </div>
+        <Link href="/dashboard/student/mentoring/sessions/schedule">
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Schedule Session
+          </Button>
+        </Link>
       </div>
 
-      {/* Success Alert */}
-      {scheduled && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            Session scheduled successfully! You'll receive a confirmation email shortly.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Search and Filter */}
-      <Card className="bg-white border-0 shadow-sm">
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
+      {/* Filters and Search */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search sessions by topic or mentor name..."
-                className="pl-10 h-12"
+                placeholder="Search sessions, mentors, or subjects..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
             </div>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as SessionStatus | 'all')}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Type Filter */}
+            <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as SessionType | 'all')}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="one_on_one">One-on-One</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+                <SelectItem value="workshop">Workshop</SelectItem>
+                <SelectItem value="doubt_session">Doubt Session</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Sessions Tabs */}
-      <Card className="bg-white border-0 shadow-sm">
-        <CardContent className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="upcoming" className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>Upcoming</span>
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Completed</span>
-              </TabsTrigger>
-              <TabsTrigger value="cancelled" className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4" />
-                <span>Cancelled</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="upcoming" className="mt-6">
-              <SessionsList 
-                sessions={filteredSessions} 
-                type="upcoming"
-                getStatusColor={getStatusColor}
-                getSessionTypeColor={getSessionTypeColor}
-              />
-            </TabsContent>
-
-            <TabsContent value="completed" className="mt-6">
-              <SessionsList 
-                sessions={filteredSessions} 
-                type="completed"
-                getStatusColor={getStatusColor}
-                getSessionTypeColor={getSessionTypeColor}
-              />
-            </TabsContent>
-
-            <TabsContent value="cancelled" className="mt-6">
-              <SessionsList 
-                sessions={filteredSessions} 
-                type="cancelled"
-                getStatusColor={getStatusColor}
-                getSessionTypeColor={getSessionTypeColor}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Reusable Sessions List Component
-function SessionsList({ 
-  sessions, 
-  type,
-  getStatusColor,
-  getSessionTypeColor 
-}: {
-  sessions: MentoringSession[];
-  type: string;
-  getStatusColor: (status: string) => string;
-  getSessionTypeColor: (type: string) => string;
-}) {
-  if (sessions.length === 0) {
-    const emptyMessages = {
-      upcoming: 'No upcoming sessions scheduled',
-      completed: 'No completed sessions yet',
-      cancelled: 'No cancelled sessions'
-    };
-
-    return (
-      <div className="text-center py-12">
-        <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          {emptyMessages[type as keyof typeof emptyMessages]}
-        </h3>
-        <p className="text-gray-500 mb-6">
-          {type === 'upcoming' && "Schedule your first mentoring session to get started"}
-          {type === 'completed' && "Complete some sessions to see them here"}
-          {type === 'cancelled' && "Cancelled sessions will appear here"}
-        </p>
-        {type === 'upcoming' && (
-          <Link href="/dashboard/student/mentoring/sessions/schedule">
-            <Button>Schedule Session</Button>
-          </Link>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {sessions.map((session) => (
-        <div
-          key={session.id}
-          className="p-6 border rounded-lg hover:shadow-md transition-shadow bg-white"
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <Button
+          variant={activeTab === 'upcoming' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('upcoming')}
+          className={cn(
+            "px-6 py-2",
+            activeTab === 'upcoming' && "bg-white shadow-sm"
+          )}
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-4 flex-1">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={session.mentor.avatar} />
-                <AvatarFallback>
-                  {session.mentor.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
+          Upcoming ({sessions.filter(s => s.status === 'scheduled').length})
+        </Button>
+        <Button
+          variant={activeTab === 'completed' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('completed')}
+          className={cn(
+            "px-6 py-2",
+            activeTab === 'completed' && "bg-white shadow-sm"
+          )}
+        >
+          Completed ({sessions.filter(s => s.status === 'completed').length})
+        </Button>
+        <Button
+          variant={activeTab === 'cancelled' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('cancelled')}
+          className={cn(
+            "px-6 py-2",
+            activeTab === 'cancelled' && "bg-white shadow-sm"
+          )}
+        >
+          Cancelled ({sessions.filter(s => s.status === 'cancelled').length})
+        </Button>
+      </div>
 
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {session.topic}
-                  </h3>
-                  <Badge className={getStatusColor(session.status)}>
-                    {session.status === 'in-progress' ? 'Live' : session.status}
-                  </Badge>
-                  <Badge className={getSessionTypeColor(session.type)}>
-                    {session.type === 'individual' ? 'Individual' : 'Group'}
-                  </Badge>
-                </div>
-
-                <p className="text-gray-600 mb-2">
-                  with <span className="font-medium">{session.mentor.name}</span>
-                </p>
-
-                <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(session.date).toLocaleDateString('en-IN', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{session.time} ({session.duration})</span>
-                  </div>
-                  {session.type === 'group' && session.participants && (
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-4 w-4" />
-                      <span>{session.participants.length} participants</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Feedback for completed sessions */}
-                {session.status === 'completed' && session.feedback && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-sm font-medium">Your Rating: {session.feedback.rating}/5</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{session.feedback.comment}</p>
-                  </div>
-                )}
-
-                {/* Session notes */}
-                {session.notes && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                    <p className="text-sm text-blue-800">{session.notes}</p>
-                  </div>
-                )}
+      {/* Sessions List */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="pt-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <p className="text-gray-600">Loading sessions...</p>
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col space-y-2 ml-4">
-              {session.status === 'upcoming' && (
-                <>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                    <Video className="mr-2 h-4 w-4" />
-                    Join Session
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <div className="flex items-center space-x-3">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <div>
+                  <h3 className="text-red-800 font-medium">Unable to load sessions</h3>
+                  <p className="text-red-600 text-sm mt-1">{error}</p>
+                  <Button 
+                    onClick={loadSessions} 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-3 border-red-200 hover:bg-red-50"
+                  >
+                    Try Again
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Chat
-                  </Button>
-                </>
+                </div>
+              </div>
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                {activeTab === 'upcoming' && "Schedule your first mentoring session to get started"}
+                {activeTab === 'completed' && "Complete some sessions to see them here"}
+                {activeTab === 'cancelled' && "Cancelled sessions will appear here"}
+              </h3>
+              {activeTab === 'upcoming' && (
+                <Link href="/dashboard/student/mentoring/sessions/schedule">
+                  <Button className="mt-4">Schedule Your First Session</Button>
+                </Link>
               )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      {/* Session Header */}
+                      <div className="flex items-center space-x-3 mb-3">
+                        <h3 className="font-semibold text-gray-900 text-lg">{session.title}</h3>
+                        <Badge className={cn("text-xs", getSessionStatusColor(session.status))}>
+                          {session.status.replace('_', ' ')}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {session.sessionType.replace('_', ' ')}
+                        </Badge>
+                      </div>
 
-              {session.status === 'in-progress' && (
-                <>
-                  <Button size="sm" className="bg-red-600 hover:bg-red-700 animate-pulse">
-                    <Video className="mr-2 h-4 w-4" />
-                    Join Live
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Audio Only
-                  </Button>
-                </>
-              )}
+                      <p className="text-gray-600 mb-4">{session.description}</p>
 
-              {session.status === 'completed' && (
-                <>
-                  {session.recordingUrl && (
-                    <Button variant="outline" size="sm">
-                      <Download className="mr-2 h-4 w-4" />
-                      Recording
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Feedback
-                  </Button>
-                </>
-              )}
+                      {/* Session Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span>{formatSessionTime(session.sessionDate)}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-gray-400" />
+                          <span>with {session.mentor.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-gray-400" />
+                          <span>{session.subject}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>{session.duration} minutes</span>
+                        </div>
+                      </div>
 
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+                      {/* Mentor Info */}
+                      <div className="flex items-center space-x-3 mt-4 pt-4 border-t border-gray-200">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={session.mentor.avatar} />
+                          <AvatarFallback className="bg-blue-100 text-blue-700">
+                            {session.mentor.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{session.mentor.name}</p>
+                          <p className="text-xs text-gray-500">{session.mentor.designation}</p>
+                        </div>
+                      </div>
+
+                      {/* Feedback (for completed sessions) */}
+                      {session.status === 'completed' && session.feedback && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Star className="h-4 w-4 text-yellow-500" />
+                            <span className="font-medium">{session.feedback.rating}/5</span>
+                          </div>
+                          <p className="text-sm text-gray-600">{session.feedback.comment}</p>
+                        </div>
+                      )}
+
+                      {/* Session Notes */}
+                      {session.sessionNotes && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="font-medium text-sm mb-2">Session Notes:</h4>
+                          <p className="text-sm text-gray-600">{session.sessionNotes}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col space-y-2 ml-6">
+                      {session.status === 'scheduled' && session.canJoin && (
+                        <Button
+                          onClick={() => handleJoinSession(session.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                          size="sm"
+                        >
+                          <Video className="mr-2 h-4 w-4" />
+                          Join
+                        </Button>
+                      )}
+                      
+                      {session.status === 'completed' && !session.feedback && (
+                        <Button
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setShowFeedbackModal(true);
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Star className="mr-2 h-4 w-4" />
+                          Rate
+                        </Button>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          {session.status === 'scheduled' && (
+                            <>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Session
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteSession(session.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Cancel Session
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {session.recordingUrl && (
+                            <DropdownMenuItem>
+                              <Video className="mr-2 h-4 w-4" />
+                              View Recording
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Feedback Modal */}
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rate Your Session</DialogTitle>
+            <DialogDescription>
+              How was your session with {selectedSession?.mentor.name}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Rating</label>
+              <div className="flex space-x-1">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <Button
+                    key={rating}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFeedbackData(prev => ({ ...prev, rating }))}
+                  >
+                    <Star
+                      className={cn(
+                        "h-6 w-6",
+                        rating <= feedbackData.rating
+                          ? "text-yellow-500 fill-current"
+                          : "text-gray-300"
+                      )}
+                    />
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Comment</label>
+              <Textarea
+                placeholder="Share your feedback about the session..."
+                value={feedbackData.comment}
+                onChange={(e) => setFeedbackData(prev => ({ ...prev, comment: e.target.value }))}
+                rows={3}
+              />
             </div>
           </div>
-        </div>
-      ))}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFeedbackModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitFeedback}>
+              Submit Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

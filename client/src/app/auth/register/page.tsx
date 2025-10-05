@@ -113,6 +113,10 @@ export default function RegisterPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    console.log(formData)
+  }, [formData])
+
   const handleCommonFieldChange = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value });
   };
@@ -153,33 +157,33 @@ export default function RegisterPage() {
           setError('Please select school and class level');
           return false;
         }
-        break;
+        return true;
       case 'teacher':
         if (!formData.school_id || !formData.qualification || 
             !formData.experience_years || !formData.subjects?.length) {
           setError('Please fill in all required fields');
           return false;
         }
-        break;
-      case 'hei-mentor':
+        return true;
+      case 'hei_mentor':
         if (!formData.hei_id || !formData.designation || !formData.department ||
-            !formData.qualification || !formData.experience_years || !formData.expertise?.length) {
+            !formData.qualification || !formData.experience_years || !formData.primary_expertise) {
           setError('Please fill in all required fields');
           return false;
         }
-        break;
-      case 'hei-admin':
+        return true;
+      case 'hei_admin':
         if (!formData.hei_id || !formData.designation) {
           setError('Please fill in all required fields');
           return false;
         }
-        break;
-      case 'school-admin':
+        return true;
+      case 'school_admin':
         if (!formData.school_id || !formData.designation) {
           setError('Please fill in all required fields');
           return false;
         }
-        break;
+        return true;
     }
     return true;
   };
@@ -200,10 +204,11 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
-
+    console.log("here: ")
+    console.log(formData)
     try {
       const response = await apiClient.register(formData);
-      
+      console.log("response =",response);
       if (response.error) {
         setError(response.error);
         setLoading(false);

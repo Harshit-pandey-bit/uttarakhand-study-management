@@ -1,5 +1,5 @@
 // Base User Types
-export type UserRole = 'student' | 'teacher' | 'hei-mentor' | 'hei-admin' | 'school-admin';
+export type UserRole = 'student' | 'teacher' | 'hei_mentor' | 'hei_admin' | 'school_admin';
 
 // Authentication Request/Response Types
 export interface LoginRequest {

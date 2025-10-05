@@ -98,11 +98,11 @@ class APIClient {
 
   async register(registerData: RegisterRequest): Promise<APIResponse<RegistrationResponse>> {
     const endpoints = {
-      student: '/auth/register/student',
-      teacher: '/auth/register/teacher',
-      'hei-mentor': '/auth/register/hei-mentor',
-      'hei-admin': '/auth/register/hei-admin',
-      'school-admin': '/auth/register/school-admin',
+      'student': '/auth/register/student',
+      'teacher': '/auth/register/teacher',
+      'hei_mentor': '/auth/register/hei-mentor',
+      'hei_admin': '/auth/register/hei-admin',
+      'school_admin': '/auth/register/school-admin',
     };
 
     const endpoint = endpoints[registerData.role];
@@ -394,7 +394,7 @@ async getLocalOpportunities(location?: string): Promise<APIResponse<LocalOpportu
           joined_date: data.joined_date || undefined,
         };
 
-      case 'hei-mentor':
+      case 'hei_mentor':
         return {
           ...baseData,
           hei_id: data.hei_id,
@@ -408,7 +408,7 @@ async getLocalOpportunities(location?: string): Promise<APIResponse<LocalOpportu
           max_students: data.max_students || 30,
         };
 
-      case 'hei-admin':
+      case 'hei_admin':
         return {
           ...baseData,
           hei_id: data.hei_id,
@@ -418,7 +418,7 @@ async getLocalOpportunities(location?: string): Promise<APIResponse<LocalOpportu
           responsibilities: data.responsibilities || [],
         };
 
-      case 'school-admin':
+      case 'school_admin':
         return {
           ...baseData,
           school_id: data.school_id,
