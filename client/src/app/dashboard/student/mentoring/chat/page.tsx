@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,194 +8,121 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import {
   MessageCircle,
   Send,
-  ArrowLeft,
   Users,
-  Hash,
+  Video,
+  Calendar,
+  Settings,
   Search,
   MoreVertical,
-  Paperclip,
-  Smile,
   Phone,
-  Video,
-  Settings,
-  Bell,
-  Pin,
-  Smartphone,
-  Calendar,
-  RefreshCw
+  UserPlus,
+  Loader2,
+  Wifi,
+  WifiOff,
+  AlertTriangle
 } from 'lucide-react';
-import WhatsAppGroups from '@/components/shared/communication/whatsapp-groups';
-import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
-interface ChatRoom {
-  id: string;
-  name: string;
-  type: 'group' | 'direct';
-  participants: number;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  isOnline?: boolean;
-  avatar?: string;
-}
+// Import our custom hook
+import { useChat } from '@/hooks/useSocket';
+import { mentoringAPI } from '@/lib/api/mentoringClient';
+import { ChatRoom, ChatMessage } from '@/types/mentoring';
 
-interface Message {
-  id: string;
-  sender: {
-    name: string;
-    avatar: string;
-    role: 'student' | 'mentor';
-  };
-  content: string;
-  timestamp: string;
-  type: 'text' | 'file' | 'image';
-  reactions?: { emoji: string; count: number; users: string[] }[];
-}
+export default function ChatPage() {
+  // Socket connection and chat state
+  const {
+    connected,
+    error,
+    connecting,
+    messages,
+    typingUsers,
+    currentRoom,
+    roomInfo,
+    joinRoom,
+    sendMessage,
+    startTyping,
+    stopTyping,
+    connect
+  } = useChat();
 
-export default function MentoringChatPage() {
-  const { user } = useAuth();
-
-  // State management
+  // UI state
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  
+  const [messageInput, setMessageInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const selectedRoomData = chatRooms.find(room => room.id === selectedRoom);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mock data
+  // Load chat rooms
   useEffect(() => {
-    setTimeout(() => {
-      const mockRooms: ChatRoom[] = [
-        {
-          id: 'room1',
-          name: 'Physics Study Group',
-          type: 'group',
-          participants: 12,
-          lastMessage: 'Great explanation about optics!',
-          lastMessageTime: '2 min ago',
-          unreadCount: 3
-        },
-        {
-          id: 'room2',
-          name: 'Chemistry Lab Discussion',
-          type: 'group',
-          participants: 8,
-          lastMessage: 'When is our next lab session?',
-          lastMessageTime: '10 min ago',
-          unreadCount: 0
-        },
-        {
-          id: 'room3',
-          name: 'Dr. Rajesh Kumar',
-          type: 'direct',
-          participants: 2,
-          lastMessage: 'I\'ll send you the study material',
-          lastMessageTime: '1 hour ago',
-          unreadCount: 1,
-          isOnline: true,
-          avatar: '/mentors/dr-rajesh.jpg'
-        },
-        {
-          id: 'room4',
-          name: 'Career Guidance Group',
-          type: 'group',
-          participants: 15,
-          lastMessage: 'Thanks for the advice on engineering careers',
-          lastMessageTime: '3 hours ago',
-          unreadCount: 0
-        }
-      ];
-
-      const mockMessages: Message[] = [
-        {
-          id: 'msg1',
-          sender: {
-            name: 'Dr. Rajesh Kumar',
-            avatar: '/mentors/dr-rajesh.jpg',
-            role: 'mentor'
-          },
-          content: 'Good morning everyone! Today we\'ll discuss the principles of light and optics.',
-          timestamp: '9:00 AM',
-          type: 'text'
-        },
-        {
-          id: 'msg2',
-          sender: {
-            name: 'Priya Singh',
-            avatar: '/students/priya.jpg',
-            role: 'student'
-          },
-          content: 'Sir, I have a doubt about total internal reflection.',
-          timestamp: '9:15 AM',
-          type: 'text'
-        },
-        {
-          id: 'msg3',
-          sender: {
-            name: 'Dr. Rajesh Kumar',
-            avatar: '/mentors/dr-rajesh.jpg',
-            role: 'mentor'
-          },
-          content: 'Excellent question, Priya! Total internal reflection occurs when light travels from a denser medium to a rarer medium at an angle greater than the critical angle.',
-          timestamp: '9:16 AM',
-          type: 'text',
-          reactions: [{ emoji: '👍', count: 5, users: ['Priya Singh', 'Amit Kumar', 'Neha Gupta', 'Rohit Sharma', 'Kavya Patel'] }]
-        },
-        {
-          id: 'msg4',
-          sender: {
-            name: 'Rahul Sharma',
-            avatar: '/students/rahul.jpg',
-            role: 'student'
-          },
-          content: 'That makes sense! Can you explain with a practical example?',
-          timestamp: '9:18 AM',
-          type: 'text'
-        }
-      ];
-
-      setChatRooms(mockRooms);
-      setMessages(mockMessages);
-      setSelectedRoom('room2'); // Default to Chemistry Lab Discussion like in image
-      setLoading(false);
-    }, 1000);
+    loadChatRooms();
   }, []);
+
+  const loadChatRooms = async () => {
+    try {
+      setLoading(true);
+      const response = await mentoringAPI.getChatRooms();
+      if (response.data) {
+        setChatRooms(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load chat rooms:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedRoom) return;
+  // Handle room selection
+  const handleRoomSelect = useCallback((roomId: string) => {
+    setSelectedRoom(roomId);
+    joinRoom(roomId);
+  }, [joinRoom]);
 
-    const message: Message = {
-      id: `msg${Date.now()}`,
-      sender: {
-        name: 'You',
-        avatar: '/students/current-user.jpg',
-        role: 'student'
-      },
-      content: newMessage,
-      timestamp: new Date().toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit' 
-      }),
-      type: 'text'
-    };
+  // Handle message sending
+  const handleSendMessage = useCallback(() => {
+    if (messageInput.trim() && connected) {
+      sendMessage(messageInput);
+      setMessageInput('');
+      stopTyping();
+    }
+  }, [messageInput, sendMessage, stopTyping, connected]);
 
-    setMessages([...messages, message]);
-    setNewMessage('');
+  // Handle typing indicators
+  const handleInputChange = (value: string) => {
+    setMessageInput(value);
+
+    if (value.trim() && connected) {
+      startTyping();
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set new timeout to stop typing
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping();
+      }, 2000);
+    } else {
+      stopTyping();
+    }
   };
 
+  // Handle Enter key
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -203,384 +130,341 @@ export default function MentoringChatPage() {
     }
   };
 
-  const handleWhatsAppQuestion = (question: string, subject: string) => {
-    console.log('WhatsApp question submitted:', { question, subject });
-    // Handle question submission to WhatsApp groups
+  // Filter rooms based on search
+  const filteredRooms = chatRooms.filter(room =>
+    room.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Format message time
+  const formatMessageTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return format(date, 'HH:mm');
+    } else {
+      return format(date, 'dd MMM HH:mm');
+    }
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-2 gap-6 h-96">
-            <div className="bg-gray-200 rounded-lg"></div>
-            <div className="bg-gray-200 rounded-lg"></div>
-          </div>
+  // Connection status component
+  const ConnectionStatus = () => {
+    if (connecting) {
+      return (
+        <div className="flex items-center space-x-2 text-yellow-600 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Connecting...</span>
         </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center space-x-2 text-red-600 text-sm">
+          <WifiOff className="h-4 w-4" />
+          <span>Connection error</span>
+          <Button onClick={connect} size="sm" variant="outline">
+            Retry
+          </Button>
+        </div>
+      );
+    }
+
+    if (!connected) {
+      return (
+        <div className="flex items-center space-x-2 text-gray-500 text-sm">
+          <WifiOff className="h-4 w-4" />
+          <span>Disconnected</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center space-x-2 text-green-600 text-sm">
+        <Wifi className="h-4 w-4" />
+        <span>Connected</span>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-      {/* Header with Back Button and Title in Top Left */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-start justify-between">
-          {/* Left Side - Back Button and Title */}
-          <div className="text-left">
-            {/* Back Button - Top */}
-            <div className="mb-3">
-              <Link href="/dashboard/student/mentoring">
-                <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Mentoring
-                </Button>
-              </Link>
-            </div>
-            
-            {/* Title and Description - Below */}
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Communication Hub</h1>
-              <p className="text-gray-600 text-lg">Chat with mentors and join study groups</p>
-            </div>
+    <div className="h-screen flex bg-gray-50">
+      {/* Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-semibold">Mentoring Chat</h1>
+            <ConnectionStatus />
           </div>
           
-          {/* Right Side - Refresh Button */}
-          <div>
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="border-gray-300 hover:border-gray-400"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search conversations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+        </div>
+
+        {/* Room List */}
+        <ScrollArea className="flex-1">
+          <div className="p-2">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : filteredRooms.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <MessageCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>No conversations found</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredRooms.map((room) => (
+                  <div
+                    key={room.id}
+                    onClick={() => handleRoomSelect(room.id)}
+                    className={cn(
+                      "p-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-100",
+                      selectedRoom === room.id && "bg-blue-50 border border-blue-200"
+                    )}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={room.avatar} />
+                          <AvatarFallback className="bg-blue-100 text-blue-700">
+                            {room.type === 'group' ? (
+                              <Users className="h-5 w-5" />
+                            ) : (
+                              room.name.slice(0, 2).toUpperCase()
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
+                        {room.isOnline && (
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-gray-900 truncate">{room.name}</h3>
+                          {room.lastMessageTime && (
+                            <span className="text-xs text-gray-500">
+                              {format(new Date(room.lastMessageTime), 'HH:mm')}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <p className="text-sm text-gray-600 truncate">
+                          {room.lastMessage?.content || 'No messages yet'}
+                        </p>
+                        
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="flex items-center space-x-2">
+                            {room.type === 'group' && (
+                              <Badge variant="outline" className="text-xs">
+                                <Users className="h-3 w-3 mr-1" />
+                                {room.participants}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {room.unreadCount > 0 && (
+                            <Badge className="bg-blue-600 text-white text-xs min-w-[20px] h-5 flex items-center justify-center rounded-full">
+                              {room.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Action Buttons */}
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          <Link href="/dashboard/student/mentoring/sessions">
+            <Button variant="outline" className="w-full justify-start">
+              <Video className="mr-2 h-4 w-4" />
+              Video Sessions
+            </Button>
+          </Link>
+          <Link href="/dashboard/student/mentoring/sessions/schedule">
+            <Button variant="outline" className="w-full justify-start">
+              <Calendar className="mr-2 h-4 w-4" />
+              Schedule Session
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Symmetric Tabs */}
-      <Tabs defaultValue="direct-chat" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mx-auto max-w-2xl">
-          <TabsTrigger value="whatsapp" className="flex items-center space-x-2">
-            <Smartphone className="h-4 w-4" />
-            <span>WhatsApp Groups</span>
-          </TabsTrigger>
-          <TabsTrigger value="direct-chat" className="flex items-center space-x-2">
-            <MessageCircle className="h-4 w-4" />
-            <span>Direct Chat</span>
-          </TabsTrigger>
-          <TabsTrigger value="video-call" className="flex items-center space-x-2">
-            <Video className="h-4 w-4" />
-            <span>Video Sessions</span>
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
-            <span>Schedule</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* WhatsApp Groups Tab */}
-        <TabsContent value="whatsapp">
-          <WhatsAppGroups 
-            studentId={user?.id || ''} 
-            onQuestionSubmit={handleWhatsAppQuestion}
-          />
-        </TabsContent>
-
-        {/* SYMMETRIC Direct Chat Tab */}
-        <TabsContent value="direct-chat">
-          <div className="grid grid-cols-2 gap-6 h-[calc(100vh-300px)]">
-            {/* Left Side - Chat Rooms (50% width) */}
-            <Card className="bg-white border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Chats</CardTitle>
-                  <Button variant="ghost" size="sm">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-full">
-                  <div className="space-y-1 p-4">
-                    {chatRooms.map((room) => (
-                      <div
-                        key={room.id}
-                        className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                          selectedRoom === room.id 
-                            ? 'bg-blue-50 border border-blue-200' 
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => setSelectedRoom(room.id)}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            {room.type === 'direct' ? (
-                              <Avatar className="h-12 w-12">
-                                <AvatarImage src={room.avatar} />
-                                <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
-                                  {room.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                            ) : (
-                              <div className="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center">
-                                <Hash className="h-6 w-6 text-white" />
-                              </div>
-                            )}
-                            {room.isOnline && (
-                              <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-semibold text-gray-900 truncate">{room.name}</h3>
-                              <div className="flex items-center space-x-1">
-                                <span className="text-xs text-gray-500">{room.lastMessageTime}</span>
-                                {room.unreadCount > 0 && (
-                                  <Badge className="bg-red-500 text-white text-xs min-w-[20px] h-5 rounded-full">
-                                    {room.unreadCount}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-500 truncate">{room.lastMessage}</p>
-                            {room.type === 'group' && (
-                              <div className="flex items-center space-x-1 mt-1">
-                                <Users className="h-3 w-3 text-gray-400" />
-                                <span className="text-xs text-gray-500">{room.participants} members</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            {/* Right Side - Chat Messages (50% width) */}
-            <div>
-              {selectedRoomData ? (
-                <Card className="bg-white border-0 shadow-sm h-full flex flex-col">
-                  {/* Chat Header */}
-                  <CardHeader className="pb-3 border-b">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {selectedRoomData.type === 'direct' ? (
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={selectedRoomData.avatar} />
-                            <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold">
-                              {selectedRoomData.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center">
-                            <Hash className="h-5 w-5 text-white" />
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{selectedRoomData.name}</h3>
-                          <p className="text-sm text-gray-500">
-                            {selectedRoomData.type === 'group' 
-                              ? `${selectedRoomData.participants} members`
-                              : selectedRoomData.isOnline ? 'Online' : 'Last seen recently'
-                            }
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Phone className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Video className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  {/* Messages */}
-                  <CardContent className="flex-1 p-0">
-                    <ScrollArea className="h-full px-4 py-4">
-                      <div className="space-y-6">
-                        {messages.map((message) => (
-                          <div key={message.id} className="flex items-start space-x-3">
-                            <Avatar className="h-8 w-8 flex-shrink-0">
-                              <AvatarImage src={message.sender.avatar} />
-                              <AvatarFallback className="bg-gray-200 text-gray-600 text-xs font-semibold">
-                                {message.sender.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="font-semibold text-gray-900 text-sm">
-                                  {message.sender.name}
-                                </span>
-                                {message.sender.role === 'mentor' && (
-                                  <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5">
-                                    Mentor
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-gray-500">{message.timestamp}</span>
-                              </div>
-                              <p className="text-gray-700 text-sm leading-relaxed">{message.content}</p>
-                              {/* Reactions */}
-                              {message.reactions && (
-                                <div className="flex items-center space-x-2 mt-2">
-                                  {message.reactions.map((reaction, idx) => (
-                                    <button
-                                      key={idx}
-                                      className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2 py-1 text-xs transition-colors"
-                                    >
-                                      <span>{reaction.emoji}</span>
-                                      <span className="font-semibold">{reaction.count}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-
-                  {/* Message Input */}
-                  <div className="p-4 border-t bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <Button variant="ghost" size="sm" className="text-gray-500">
-                        <Paperclip className="h-4 w-4" />
-                      </Button>
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Type your message..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-gray-500">
-                        <Smile className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        onClick={handleSendMessage} 
-                        disabled={!newMessage.trim()}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ) : (
-                <Card className="bg-white border-0 shadow-sm h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      Select a chat to start messaging
-                    </h3>
-                    <p className="text-gray-500">
-                      Choose a conversation from the sidebar to begin chatting
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedRoom && currentRoom ? (
+          <>
+            {/* Chat Header */}
+            <div className="bg-white border-b border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-blue-100 text-blue-700">
+                      <Users className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="font-semibold">{roomInfo?.roomId || selectedRoom}</h2>
+                    <p className="text-sm text-gray-600">
+                      {roomInfo?.onlineUsers.length || 0} members online
                     </p>
                   </div>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Video Sessions Tab */}
-        <TabsContent value="video-call">
-          <Card className="bg-white border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Video className="h-5 w-5" />
-                <span>Video Sessions</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Join live video sessions with mentors and peers
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-2">Scheduled Sessions</h3>
-                  <p className="text-sm text-gray-600">View and join your upcoming video sessions</p>
-                  <Link href="/dashboard/student/mentoring/sessions">
-                    <Button className="mt-3" variant="outline">
-                      View Sessions
-                    </Button>
-                  </Link>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-2">Live Sessions</h3>
-                  <p className="text-sm text-gray-600">Join ongoing group sessions</p>
-                  <Button className="mt-3" disabled>
-                    <Video className="mr-2 h-4 w-4" />
-                    No Live Sessions
+                
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm">
+                    <Phone className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Video className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <MoreVertical className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        {/* Schedule Tab */}
-        <TabsContent value="schedule">
-          <Card className="bg-white border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Schedule Sessions</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Schedule new mentoring sessions and manage your timetable
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-2">Book Individual Session</h3>
-                  <p className="text-sm text-gray-600">One-on-one mentoring with your assigned mentor</p>
-                  <Link href="/dashboard/student/mentoring/sessions/schedule">
-                    <Button className="mt-3">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Schedule Session
-                    </Button>
-                  </Link>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-2">View Timetable</h3>
-                  <p className="text-sm text-gray-600">Check your weekly mentoring schedule</p>
-                  <Link href="/dashboard/student/mentoring/timetable">
-                    <Button className="mt-3" variant="outline">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      View Timetable
-                    </Button>
-                  </Link>
-                </div>
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "flex",
+                      message.messageType === 'system' 
+                        ? "justify-center" 
+                        : "justify-start"
+                    )}
+                  >
+                    {message.messageType === 'system' ? (
+                      <div className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+                        {message.content}
+                      </div>
+                    ) : (
+                      <div className="flex items-start space-x-3 max-w-3xl">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-gray-200 text-gray-700 text-xs">
+                            {message.username.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-medium text-sm">{message.username}</span>
+                            <span className="text-xs text-gray-500">
+                              {formatMessageTime(message.timestamp)}
+                            </span>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                            <p className="text-gray-900">{message.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Typing indicators */}
+                {typingUsers.length > 0 && (
+                  <div className="flex items-start space-x-3 opacity-60">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-gray-200 text-gray-700 text-xs">
+                        ...
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-gray-100 rounded-lg p-3">
+                      <p className="text-sm text-gray-600">
+                        {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="bg-white border-t border-gray-200 p-4">
+              <div className="flex items-end space-x-2">
+                <div className="flex-1">
+                  <Input
+                    ref={inputRef}
+                    value={messageInput}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={
+                      connected 
+                        ? `Message ${roomInfo?.roomId || 'room'}...`
+                        : "Connecting to chat..."
+                    }
+                    disabled={!connected}
+                    className="resize-none"
+                    maxLength={roomInfo?.features.maxMessageLength || 1000}
+                  />
+                  {roomInfo?.features.maxMessageLength && (
+                    <div className="text-xs text-gray-500 mt-1 text-right">
+                      {messageInput.length}/{roomInfo.features.maxMessageLength}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!connected || !messageInput.trim()}
+                  className="px-4 py-2"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* No room selected */
+          <div className="flex-1 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                Choose a conversation to start chatting
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Select a room from the sidebar to begin messaging with mentors and peers
+              </p>
+              <div className="space-y-2">
+                <Link href="/dashboard/student/mentoring/sessions">
+                  <Button className="mr-2">
+                    <Video className="mr-2 h-4 w-4" />
+                    Join Video Session
+                  </Button>
+                </Link>
+                <Link href="/dashboard/student/mentoring/sessions/schedule">
+                  <Button variant="outline">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Schedule Session
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
