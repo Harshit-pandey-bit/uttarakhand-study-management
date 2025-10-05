@@ -172,30 +172,30 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/hei_mentor',
+            route: '/dashboard/hei-mentor',
           },
           {
             icon: Users,
             label: 'Mentoring',
-            route: '/dashboard/hei_mentor/mentoring',
+            route: '/dashboard/hei-mentor/mentoring',
             children: [
-              { icon: Calendar, label: 'Sessions', route: '/dashboard/hei_mentor/mentoring/sessions' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/hei_mentor/mentoring/doubt-clearing' },
-              { icon: GraduationCap, label: 'Career Guidance', route: '/dashboard/hei_mentor/mentoring/career-guidance' },
+              { icon: Calendar, label: 'Sessions', route: '/dashboard/hei-mentor/mentoring/sessions/schedule' },
+              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/hei-mentor/mentoring/doubt-clearing' },
+              { icon: GraduationCap, label: 'Career Guidance', route: '/dashboard/hei-mentor/mentoring/career-guidance' },
             ]
           },
           {
             icon: School,
             label: 'Schools',
-            route: '/dashboard/hei_mentor/schools',
+            route: '/dashboard/hei-mentor/schools',
           },
           {
             icon: FileText,
             label: 'Content Creation',
-            route: '/dashboard/hei_mentor/content-creation',
+            route: '/dashboard/hei-mentor/content-creation',
             children: [
-              { icon: Brain, label: 'AI Assistant', route: '/dashboard/hei_mentor/content-creation/ai-assistant' },
-              { icon: FileText, label: 'Resources', route: '/dashboard/hei_mentor/content-creation/resources' },
+              { icon: Brain, label: 'AI Assistant', route: '/dashboard/hei-mentor/content-creation/ai-assistant' },
+              { icon: FileText, label: 'Resources', route: '/dashboard/hei-mentor/content-creation/resources' },
             ]
           },
         ];
@@ -251,40 +251,31 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/school_admin',
+            route: '/dashboard/school-admin',
           },
           {
             icon: UsersIcon,
             label: 'Teachers',
-            route: '/dashboard/school_admin/teachers',
+            route: '/dashboard/school-admin/teachers',
             children: [
-              { icon: Award, label: 'CPD Tracking', route: '/dashboard/school_admin/teachers/cpd-tracking' },
+              { icon: Award, label: 'CPD Tracking', route: '/dashboard/school-admin/teachers/cpd-tracking' },
             ]
           },
           {
             icon: UserCheck,
             label: 'Students',
-            route: '/dashboard/school_admin/students',
+            route: '/dashboard/school-admin/students',
             children: [
-              { icon: BarChart3, label: 'Progress', route: '/dashboard/school_admin/students/progress' },
+              { icon: BarChart3, label: 'Progress', route: '/dashboard/school-admin/students/progress' },
             ]
           },
           {
             icon: Building2,
             label: 'HEI Partnerships',
-            route: '/dashboard/school_admin/hei-partnerships',
-            children: [
-              { icon: Building2, label: 'Active', route: '/dashboard/school_admin/hei-partnerships/active' },
-            ]
+            route: '/dashboard/school-admin/hei-partnerships',
+
           },
-          {
-            icon: Settings,
-            label: 'Infrastructure',
-            route: '/dashboard/school_admin/infrastructure',
-            children: [
-              { icon: Settings, label: 'Smart Classrooms', route: '/dashboard/school_admin/infrastructure/smart-classrooms' },
-            ]
-          },
+         
         ];
 
       default:
