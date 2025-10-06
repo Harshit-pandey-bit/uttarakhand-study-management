@@ -232,16 +232,16 @@ export default function MentorAssignment() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        {/* <div>
           <h1 className="text-2xl font-bold">Intelligent Mentor Assignment</h1>
           <p className="text-gray-600">Match mentors with schools based on expertise and requirements</p>
-        </div>
+        </div> */}
         <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            {/* <Button>
               <Plus className="h-4 w-4 mr-2" />
               Create Assignment
-            </Button>
+            </Button> */}
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
