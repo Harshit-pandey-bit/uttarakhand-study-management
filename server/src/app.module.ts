@@ -8,9 +8,11 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { StudentsModule } from './students/students.module';
 import { AssessmentModule } from './assessment/assessment.module';
-import { AssignmentsModule } from './assignments/assignments.module';
+// import { AssignmentsModule } from './assignments/assignments.module';
 import { CareersModule } from './careers/careers.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { MentoringModule } from './mentoring/mentoring.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -22,9 +24,10 @@ import { DashboardModule } from './dashboard/dashboard.module';
     AuthModule,
     StudentsModule,
     AssessmentModule,
-    AssignmentsModule,
     CareersModule,
     DashboardModule,
+    MentoringModule,
+    CommonModule,
     
     // Feature modules
     //AuthModule,
