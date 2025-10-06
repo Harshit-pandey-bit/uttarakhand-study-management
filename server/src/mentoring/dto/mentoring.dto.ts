@@ -222,15 +222,28 @@ export class ChatRoomDto {
   }>;
 }
 
+// Update SendMessageDto in mentoring.dto.ts to remove file fields
 export class SendMessageDto {
-  @ApiProperty() @IsString()                   content: string;
-  @ApiProperty({ enum: MessageType }) @IsEnum(MessageType)
-                                              messageType: MessageType;
-  @ApiProperty({ required: false }) @IsOptional() @IsString()
-                                              fileUrl?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsUUID()
-                                              replyToId?: string;
+  @ApiProperty()
+  @IsString()
+  messagecontent: string;
+
+  @ApiProperty({ enum: MessageType })
+  @IsEnum(MessageType)
+  @IsOptional()
+  messageType?: MessageType; // Will be forced to TEXT
+
+  // ❌ REMOVED FILE FIELDS:
+  // @IsOptional()
+  // @IsString()
+  // fileUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUUID()
+  replyToId?: string;
 }
+
 
 export class CreateChatRoomDto {
   @ApiProperty() @IsString()                   name: string;
@@ -272,4 +285,268 @@ export class BookSessionDto {
   @ApiProperty() @IsString()                   subject: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString()
                                               description?: string;
+}
+
+/* ---------- HEI-MENTOR SPECIFIC DTOS ---------- */
+
+export class HEIMentorDashboardDto {
+  @ApiProperty({ example: 25 })
+  totalAssignedStudents: number;
+
+  @ApiProperty({ example: 5 })
+  assignedSchools: number;
+
+  @ApiProperty({ example: 15 })
+  activeSessions: number;
+
+  @ApiProperty({ example: 120 })
+  completedSessions: number;
+
+  @ApiProperty({ example: 4.2 })
+  averageRating: number;
+
+  @ApiProperty({ example: 45 })
+  totalTeachingHours: number;
+
+  @ApiProperty({ type: [SessionDto] })
+  upcomingSessions: SessionDto[];
+
+  @ApiProperty({ type: [Object] })
+  recentActivities: any[];
+
+  @ApiProperty({ 
+    example: { 'Class 10': 12, 'Class 11': 8, 'Class 12': 5 },
+    description: 'Student distribution by class'
+  })
+  studentDistribution: Record<string, number>;
+}
+
+export class AssignedStudentDto {
+  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
+  id: string;
+
+  @ApiProperty({ example: 'Rahul Sharma' })
+  name: string;
+
+  @ApiProperty({ example: 'rahul.sharma@student.edu' })
+  email: string;
+
+  @ApiProperty({ example: 'Class 10' })
+  classLevel: string;
+
+  @ApiProperty({ example: 'Greenfield High School' })
+  schoolName: string;
+
+  @ApiProperty({ example: '9876543210' })
+  phoneNumber?: string;
+
+  @ApiProperty({ example: 'Mathematics, Science' })
+  subjects: string;
+
+  @ApiProperty({ example: 4.1 })
+  averageScore: number;
+
+  @ApiProperty({ example: 8 })
+  completedSessions: number;
+
+  @ApiProperty({ example: 2 })
+  upcomingSessions: number;
+
+  @ApiProperty({ example: '2024-09-15T10:30:00.000Z' })
+  lastSessionDate?: string;
+
+  @ApiProperty({ example: 'active' })
+  status: string;
+
+  @ApiProperty({ example: '2024-08-01T00:00:00.000Z' })
+  assignedAt: string;
+}
+
+export class StudentDetailDto extends AssignedStudentDto {
+  @ApiProperty({ example: 'Strong in problem-solving, needs help with theory' })
+  notes?: string;
+
+  @ApiProperty({ type: [Object] })
+  recentSessions: any[];
+
+  @ApiProperty({ type: [Object] })
+  assignments: any[];
+
+  @ApiProperty({ type: [Object] })
+  progressHistory: any[];
+
+  @ApiProperty({ 
+    example: { mathematics: 85, science: 78, english: 82 },
+    description: 'Subject-wise performance scores'
+  })
+  subjectPerformance: Record<string, number>;
+
+  @ApiProperty({ example: 75.5 })
+  attendanceRate: number;
+}
+
+export class AssignedSchoolDto {
+  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
+  id: string;
+
+  @ApiProperty({ example: 'Greenfield High School' })
+  name: string;
+
+  @ApiProperty({ example: 'Delhi' })
+  city: string;
+
+  @ApiProperty({ example: 'Delhi' })
+  state: string;
+
+  @ApiProperty({ example: 'CBSE' })
+  board: string;
+
+  @ApiProperty({ example: 'government' })
+  type: string;
+
+  @ApiProperty({ example: 1200 })
+  totalStudents: number;
+
+  @ApiProperty({ example: 25 })
+  assignedStudents: number;
+
+  @ApiProperty({ example: 'Dr. Priya Mehta' })
+  principalName: string;
+
+  @ApiProperty({ example: 'principal@greenfield.edu' })
+  contactEmail: string;
+
+  @ApiProperty({ example: '9876543210' })
+  contactPhone: string;
+
+  @ApiProperty({ example: '2024-08-01T00:00:00.000Z' })
+  assignedAt: string;
+
+  @ApiProperty({ example: 'active' })
+  status: string;
+}
+
+export class SchoolDetailDto extends AssignedSchoolDto {
+  @ApiProperty({ example: '123 Education Street, New Delhi - 110001' })
+  address: string;
+
+  @ApiProperty({ example: 'Established in 1985, known for academic excellence' })
+  description?: string;
+
+  @ApiProperty({ type: [AssignedStudentDto] })
+  students: AssignedStudentDto[];
+
+  @ApiProperty({ type: [Object] })
+  recentActivities: any[];
+
+  @ApiProperty({ 
+    example: { 'Class 10': 12, 'Class 11': 8, 'Class 12': 5 },
+    description: 'Student count by class level'
+  })
+  classDistribution: Record<string, number>;
+
+  @ApiProperty({ example: 4.3 })
+  averagePerformance: number;
+
+  @ApiProperty({ example: 15 })
+  completedSessions: number;
+
+  @ApiProperty({ example: 3 })
+  upcomingSessions: number;
+}
+
+export class StudentFiltersDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  schoolId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()  
+  @IsString()
+  classLevel?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiProperty({ required: false, example: 1 })
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @ApiProperty({ required: false, example: 20 })
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
+export class SchoolFiltersDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  board?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @ApiProperty({ required: false, example: 1 })
+  @IsOptional()
+  @IsNumber()
+  page?: number;
+
+  @ApiProperty({ required: false, example: 20 })
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
+export class AssignedStudentsResponseDto {
+  @ApiProperty({ type: [AssignedStudentDto] })
+  students: AssignedStudentDto[];
+
+  @ApiProperty({ example: 25 })
+  total: number;
+
+  @ApiProperty({ example: 1 })
+  page: number;
+
+  @ApiProperty({ example: 20 })
+  limit: number;
+
+  @ApiProperty({ example: 15 })
+  activeStudents: number;
+
+  @ApiProperty({ example: 10 })
+  inactiveStudents: number;
+}
+
+export class AssignedSchoolsResponseDto {
+  @ApiProperty({ type: [AssignedSchoolDto] })
+  schools: AssignedSchoolDto[];
+
+  @ApiProperty({ example: 5 })
+  total: number;
+
+  @ApiProperty({ example: 1 })
+  page: number;
+
+  @ApiProperty({ example: 20 })
+  limit: number;
+
+  @ApiProperty({ example: 125 })
+  totalStudentsAcrossSchools: number;
 }
