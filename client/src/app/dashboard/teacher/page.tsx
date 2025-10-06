@@ -21,17 +21,6 @@ import {
   GraduationCap
 } from 'lucide-react';
 
-// Event type definition
-interface Event {
-  title: string;
-  date: string;
-  time: string;
-  type: 'collaboration' | 'teaching' | 'meeting';
-  participants?: string[];
-  subject?: string;
-  students?: number;
-}
-
 // Teacher dashboard data with proper typing
 const teacherDashboardData = {
   teacher: { 
@@ -50,13 +39,6 @@ const teacherDashboardData = {
     attendanceRate: 89,
     activeProjects: 8
   },
-  aiUsage: { 
-    assignmentsGenerated: 15, 
-    timeSaved: 12, 
-    lastGenerated: "Quadratic Equations - Practice Set",
-    lessonsPlanned: 8,
-    resourcesCreated: 23
-  },
   cpdProgress: { 
     coursesCompleted: 3, 
     totalCourses: 5, 
@@ -64,29 +46,6 @@ const teacherDashboardData = {
     certificates: ["DIKSHA Teaching Methods", "NISHTHA", "Inclusive Education"],
     upcomingDeadline: "Digital Assessment - Due Oct 5"
   },
-  upcomingEvents: [
-    { 
-      title: "Joint Planning Call with IIT Roorkee", 
-      date: "2025-10-02", 
-      time: "10:00 AM",
-      type: "collaboration" as const,
-      participants: ["Dr. Rajesh Kumar", "Prof. Anita Sharma"]
-    },
-    { 
-      title: "Virtual Lab Session - Class 9A", 
-      date: "2025-10-05", 
-      time: "2:00 PM",
-      type: "teaching" as const,
-      subject: "Chemistry - Acids and Bases"
-    },
-    { 
-      title: "Parent-Teacher Meeting", 
-      date: "2025-10-08", 
-      time: "4:00 PM",
-      type: "meeting" as const,
-      students: 15
-    }
-  ] as Event[], // Type assertion for the entire array
   recentActivity: [
     { 
       action: "Generated assignment", 
@@ -164,73 +123,6 @@ const QuickStatCard: React.FC<QuickStatCardProps> = ({
   </Card>
 );
 
-// Event Card Component
-const EventCard: React.FC<{ event: Event }> = ({ event }) => {
-  const getEventIcon = (type: Event['type']) => {
-    switch (type) {
-      case 'collaboration': 
-        return <Video className="h-4 w-4 text-indigo-500" />;
-      case 'teaching': 
-        return <GraduationCap className="h-4 w-4 text-emerald-500" />;
-      case 'meeting': 
-        return <Users className="h-4 w-4 text-violet-500" />;
-      default: 
-        return <Calendar className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const getEventColor = (type: Event['type']) => {
-    switch (type) {
-      case 'collaboration': 
-        return 'border-l-indigo-500 bg-indigo-50';
-      case 'teaching': 
-        return 'border-l-emerald-500 bg-emerald-50';
-      case 'meeting': 
-        return 'border-l-violet-500 bg-violet-50';
-      default: 
-        return 'border-l-gray-500 bg-gray-50';
-    }
-  };
-
-  return (
-    <div className={`p-4 rounded-lg border-l-4 ${getEventColor(event.type)}`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-3">
-          <div className="mt-1">
-            {getEventIcon(event.type)}
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-gray-900">
-              {event.title}
-            </h4>
-            <p className="text-xs text-gray-600">
-              {new Date(event.date).toLocaleDateString()} at {event.time}
-            </p>
-            {event.subject && (
-              <p className="text-xs text-gray-500">{event.subject}</p>
-            )}
-            {event.participants && (
-              <p className="text-xs text-gray-500">
-                With: {event.participants.join(', ')}
-              </p>
-            )}
-            {event.students && (
-              <p className="text-xs text-gray-500">{event.students} students</p>
-            )}
-          </div>
-        </div>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="border-violet-200 text-violet-700 hover:bg-violet-50"
-        >
-          Join
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 // Main Teacher Dashboard Component
 export default function TeacherDashboardHome() {
   const [data] = useState(teacherDashboardData);
@@ -269,16 +161,10 @@ export default function TeacherDashboardHome() {
             </div>
           </div>
         </div>
-        <div className="hidden lg:flex">
-          <Button className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Use AI Assistant
-          </Button>
-        </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Total Students Card Only */}
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6">
         <QuickStatCard
           title="Total Students"
           value={data.classStats.totalStudents}
@@ -287,81 +173,11 @@ export default function TeacherDashboardHome() {
           color="bg-gradient-to-br from-indigo-500 to-indigo-600"
           description="Across all classes"
         />
-        <QuickStatCard
-          title="Assignments Graded"
-          value={data.classStats.assignmentsGraded}
-          change={`${data.classStats.pendingGrading} pending`}
-          icon={CheckCircle2}
-          color="bg-gradient-to-br from-emerald-500 to-emerald-600"
-          description="This month"
-        />
-        <QuickStatCard
-          title="Class Average"
-          value={`${data.classStats.avgPerformance}%`}
-          change="+5% this month"
-          icon={TrendingUp}
-          color="bg-gradient-to-br from-violet-500 to-violet-600"
-          description="Overall performance"
-        />
-        <QuickStatCard
-          title="AI Tools Used"
-          value={data.aiUsage.assignmentsGenerated}
-          change={`${data.aiUsage.timeSaved}h saved`}
-          icon={Brain}
-          color="bg-gradient-to-br from-rose-500 to-rose-600"
-          description="Assignments generated"
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - AI Usage & CPD */}
+        {/* Left Column - CPD */}
         <div className="lg:col-span-2 space-y-6">
-          {/* AI Assistant Usage */}
-          <Card className="border-violet-100 shadow-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center">
-                  <Brain className="h-5 w-5 mr-2 text-rose-500" />
-                  AI Assistant Usage
-                </h3>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="border-violet-200 text-violet-700 hover:bg-violet-50"
-                >
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-rose-50 rounded-lg border border-rose-100">
-                  <div className="text-2xl font-bold text-rose-600">
-                    {data.aiUsage.assignmentsGenerated}
-                  </div>
-                  <div className="text-sm text-gray-600">Assignments Generated</div>
-                </div>
-                <div className="text-center p-4 bg-violet-50 rounded-lg border border-violet-100">
-                  <div className="text-2xl font-bold text-violet-600">
-                    {data.aiUsage.lessonsPlanned}
-                  </div>
-                  <div className="text-sm text-gray-600">Lessons Planned</div>
-                </div>
-                <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {data.aiUsage.timeSaved}h
-                  </div>
-                  <div className="text-sm text-gray-600">Time Saved</div>
-                </div>
-              </div>
-              <div className="p-3 bg-violet-50 rounded-lg border border-violet-100">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Last Generated:</span> {data.aiUsage.lastGenerated}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Professional Development */}
           <Card className="border-violet-100 shadow-sm">
             <CardHeader>
@@ -453,23 +269,8 @@ export default function TeacherDashboardHome() {
           </Card>
         </div>
 
-        {/* Right Column - Upcoming Events & Quick Actions */}
+        {/* Right Column - Quick Actions */}
         <div className="space-y-6">
-          {/* Upcoming Events */}
-          <Card className="border-violet-100 shadow-sm">
-            <CardHeader>
-              <h3 className="text-lg font-semibold flex items-center">
-                <Calendar className="h-5 w-5 mr-2 text-violet-500" />
-                Upcoming Events
-              </h3>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {data.upcomingEvents.map((event, index) => (
-                <EventCard key={index} event={event} />
-              ))}
-            </CardContent>
-          </Card>
-
           {/* Quick Actions */}
           <Card className="border-violet-100 shadow-sm">
             <CardHeader>
