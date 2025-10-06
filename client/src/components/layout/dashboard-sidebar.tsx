@@ -157,7 +157,7 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             children: [
               { icon: Award, label: 'DIKSHA', route: '/dashboard/teacher/cpd/diksha' },
               { icon: Award, label: 'NISHTHA', route: '/dashboard/teacher/cpd/nishtha' },
-              { icon: Award, label: 'Certificates', route: '/dashboard/teacher/cpd/certificates' },
+              // { icon: Award, label: 'Certificates', route: '/dashboard/teacher/cpd/certificates' },
             ]
           },
           // {
@@ -175,75 +175,124 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             route: '/dashboard/hei-mentor',
           },
           {
+            icon: User,
+            label: 'Profile',
+            route: '/dashboard/hei-mentor/profile',
+          },
+          {
             icon: Users,
             label: 'Mentoring',
-            route: '/dashboard/hei-mentor/mentoring',
+            route: '/dashboard/hei-mentor/mentoring/sessions',
             children: [
-              { icon: Calendar, label: 'Sessions', route: '/dashboard/hei-mentor/mentoring/sessions/schedule' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/hei-mentor/mentoring/doubt-clearing' },
-              { icon: GraduationCap, label: 'Career Guidance', route: '/dashboard/hei-mentor/mentoring/career-guidance' },
+              {
+                icon: Calendar,
+                label: 'Sessions',
+                route: '/dashboard/hei-mentor/mentoring/sessions'
+              },
+              {
+                icon: Users,
+                label: 'Students',
+                route: '/dashboard/hei-mentor/mentoring/students'
+              },
+              {
+                icon: School,
+                label: 'Schools',
+                route: '/dashboard/hei-mentor/mentoring/schools'
+              },
+              {
+                icon: Users,
+                label: 'Chat',
+                route: '/dashboard/hei-mentor/mentoring/chat'
+              }
             ]
           },
           {
-            icon: School,
-            label: 'Schools',
-            route: '/dashboard/hei-mentor/schools',
-          },
-          {
-            icon: FileText,
-            label: 'Content Creation',
-            route: '/dashboard/hei-mentor/content-creation',
+            icon: BookOpen,
+            label: 'Assignments',
+            route: '/dashboard/hei-mentor/content',
             children: [
-              { icon: Brain, label: 'AI Assistant', route: '/dashboard/hei-mentor/content-creation/ai-assistant' },
-              { icon: FileText, label: 'Resources', route: '/dashboard/hei-mentor/content-creation/resources' },
+              {
+                icon: BookOpen,
+                label: 'All Assignments',
+                route: '/dashboard/hei-mentor/content/assignments'
+              },
+              {
+                icon: BookOpen,
+                label: 'Create Assignment',
+                route: '/dashboard/hei-mentor/content/assignments/create'
+              },
+              {
+                icon: FileText,
+                label: 'Resources',
+                route: '/dashboard/hei-mentor/content/resources'
+              }
             ]
           },
+          {
+            icon: GraduationCap,
+            label: 'Career Guidance',
+            route: '/dashboard/hei-mentor/career-guidance',
+            children: [
+              {
+                icon: GraduationCap,
+                label: 'Student Progress',
+                route: '/dashboard/hei-mentor/career-guidance/progress'
+              },
+              {
+                icon: Trophy,
+                label: 'Holland Results',
+                route: '/dashboard/hei-mentor/career-guidance/holland-results'
+              }
+            ]
+          }
         ];
+
+
 
       case 'hei_admin':
         return [
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/hei_admin',
+            route: '/dashboard/hei-admin',
           },
           {
             icon: UsersIcon,
             label: 'Mentors',
-            route: '/dashboard/hei_admin/mentors',
-            children: [
-              { icon: UsersIcon, label: 'Assign', route: '/dashboard/hei_admin/mentors/assign' },
-              { icon: BarChart3, label: 'Performance', route: '/dashboard/hei_admin/mentors/performance' },
-            ]
+            route: '/dashboard/hei-admin/mentors',
+            // children: [
+            //   { icon: UsersIcon, label: 'Assign', route: '/dashboard/hei-admin/mentors/assign' },
+            //   { icon: BarChart3, label: 'Performance', route: '/dashboard/hei-admin/mentors/performance' },
+            // ]
           },
           {
             icon: Building2,
             label: 'Partnerships',
-            route: '/dashboard/hei_admin/partnerships',
-            children: [
-              { icon: Building2, label: 'Active', route: '/dashboard/hei_admin/partnerships/active' },
-            ]
+            route: '/dashboard/hei-admin/partnerships',
+            // children: [
+            //   { icon: Building2, label: 'Active', route: '/dashboard/hei-admin/partnerships/active' },
+            // ]
           },
-          {
-            icon: Target,
-            label: 'Programs',
-            route: '/dashboard/hei_admin/programs',
-            children: [
-              { icon: Award, label: 'CPD', route: '/dashboard/hei_admin/programs/cpd' },
-              { icon: Microscope, label: 'STEM', route: '/dashboard/hei_admin/programs/stem' },
-            ]
-          },
-          {
-            icon: TrendingUp,
-            label: 'Analytics',
-            route: '/dashboard/hei_admin/analytics',
-            badge: 'Live',
-            children: [
-              { icon: TrendingUp, label: 'Impact Metrics', route: '/dashboard/hei_admin/analytics/impact-metrics' },
-              { icon: Users, label: 'Mentoring Effectiveness', route: '/dashboard/hei_admin/analytics/mentoring-effectiveness' },
-              { icon: BarChart3, label: 'Partnership Health', route: '/dashboard/hei_admin/analytics/partnership-health' },
-            ]
-          },
+          // {
+          //   icon: Target,
+          //   label: 'Programs',
+          //   route: '/dashboard/hei-admin/programs',
+          //   children: [
+          //     { icon: Award, label: 'CPD', route: '/dashboard/hei-admin/programs/cpd' },
+          //     { icon: Microscope, label: 'STEM', route: '/dashboard/hei-admin/programs/stem' },
+          //   ]
+          // },
+          // {
+          //   icon: TrendingUp,
+          //   label: 'Analytics',
+          //   route: '/dashboard/hei-admin/analytics',
+          //   badge: 'Live',
+          //   children: [
+          //     { icon: TrendingUp, label: 'Impact Metrics', route: '/dashboard/hei_admin/analytics/impact-metrics' },
+          //     { icon: Users, label: 'Mentoring Effectiveness', route: '/dashboard/hei_admin/analytics/mentoring-effectiveness' },
+          //     { icon: BarChart3, label: 'Partnership Health', route: '/dashboard/hei_admin/analytics/partnership-health' },
+          //   ]
+          // },
         ];
 
       case 'school_admin':
@@ -273,9 +322,10 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             icon: Building2,
             label: 'HEI Partnerships',
             route: '/dashboard/school-admin/hei-partnerships',
-
+            
+            
           },
-         
+          
         ];
 
       default:
