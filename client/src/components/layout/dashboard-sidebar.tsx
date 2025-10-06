@@ -140,16 +140,16 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
             route: '/dashboard/teacher/students',
            
           },
-          {
-            icon: Presentation,
-            label: 'Assessments',
-            route: '/dashboard/teacher/assessments',
-            children: [
-              { icon: Presentation, label: 'Formative', route: '/dashboard/teacher/assessments/formative' },
-              // { icon: Presentation, label: 'Summative', route: '/dashboard/teacher/assessments/summative' },
-              // { icon: Presentation, label: 'Diagnostic', route: '/dashboard/teacher/assessments/diagnostic' },
-            ]
-          },
+          // {
+          //   icon: Presentation,
+          //   label: 'Assessments',
+          //   route: '/dashboard/teacher/assessments',
+          //   children: [
+          //     { icon: Presentation, label: 'Formative', route: '/dashboard/teacher/assessments/formative' },
+          //     // { icon: Presentation, label: 'Summative', route: '/dashboard/teacher/assessments/summative' },
+          //     // { icon: Presentation, label: 'Diagnostic', route: '/dashboard/teacher/assessments/diagnostic' },
+          //   ]
+          // },
           {
             icon: Award,
             label: 'Professional Development',
@@ -160,11 +160,15 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
               // { icon: Award, label: 'Certificates', route: '/dashboard/teacher/cpd/certificates' },
             ]
           },
-          // {
-          //   icon: Building2,
-          //   label: 'HEI Collaboration',
-          //   route: '/dashboard/teacher/hei-collaboration',
-          // },
+           {
+            icon: Users,
+            label: 'Mentoring',
+            route: '/dashboard/student/mentoring',
+            children: [
+              { icon: Users, label: 'Sessions', route: '/dashboard/student/mentoring/sessions' },
+              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/student/mentoring/chat' },
+            ]
+          },
         ];
 
       case 'hei_mentor':
