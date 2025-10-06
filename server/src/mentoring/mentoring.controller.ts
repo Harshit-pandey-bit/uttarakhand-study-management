@@ -61,6 +61,11 @@ import {
   BookSessionDto,
   SessionStatus,
   SessionType,
+  SchoolDetailDto,
+  AssignedSchoolsResponseDto,
+  StudentDetailDto,
+  AssignedStudentsResponseDto,
+  SchoolFiltersDto
 } from './dto/mentoring.dto';
 
 // Import new integration services
@@ -69,8 +74,96 @@ import { GoogleMeetService } from '../integrations/google-meet/google-meet.servi
 import { ChatGateway } from './gateways/chat.gateway';
 
 // New DTOs for integration features
-import { IsString, IsOptional, IsUrl, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsArray, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+export class UpdateMentorProfileDto {
+  @ApiProperty({ example: 'Associate Professor' })
+  @IsOptional()
+  @IsString()
+  designation?: string;
+
+  @ApiProperty({ example: 'Computer Science Engineering' })
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @ApiProperty({ example: ['Machine Learning', 'Data Science'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  expertise?: string[];
+
+  @ApiProperty({ example: 'Ph.D. in Computer Science' })
+  @IsOptional()
+  @IsString()
+  qualification?: string;
+
+  @ApiProperty({ example: 10 })
+  @IsOptional()
+  @IsNumber()
+  experience_years?: number;
+
+  @ApiProperty({ example: ['AI', 'Deep Learning'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  research_interests?: string[];
+
+  @ApiProperty({ example: 50 })
+  @IsOptional()
+  @IsNumber()
+  max_students?: number;
+}
+
+export class CreateAssignmentDto {
+  @ApiProperty({ example: 'Introduction to Python' })
+  @IsString()
+  title: string;
+
+  @ApiProperty({ example: 'Create a calculator app' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ example: 'Computer Science' })
+  @IsString()
+  subject: string;
+
+  @ApiProperty({ example: 'Class 10' })
+  @IsString()
+  class_level: string;
+
+  @ApiProperty({ example: '2025-10-15T23:59:59.000Z' })
+  @IsString()
+  due_date: string;
+
+  @ApiProperty({ example: 100 })
+  @IsOptional()
+  @IsNumber()
+  total_marks?: number;
+
+  @ApiProperty({ example: 'medium' })
+  @IsOptional()
+  @IsEnum(['easy', 'medium', 'hard'])
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
+export class GradeSubmissionDto {
+  @ApiProperty({ example: 85 })
+  @IsNumber()
+  score: number;
+
+  @ApiProperty({ example: 'Good work!' })
+  @IsOptional()
+  @IsString()
+  feedback?: string;
+
+  @ApiProperty({ example: 'A-' })
+  @IsOptional()
+  @IsString()
+  grade?: string;
+}
 
 export class CreateWhatsAppGroupDto {
   @ApiProperty({ example: 'Mathematics Study Group' })
@@ -1365,4 +1458,437 @@ export class MentoringController {
       apiEndpoints: 65, // Total number of endpoints
     };
   }
+
+  // Add these endpoints to your existing mentoring.controller.ts
+
+// =============================================
+// HEI-MENTOR SPECIFIC ENDPOINTS 
+// =============================================
+
+@Get('hei-mentor/dashboard')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get HEI mentor dashboard',
+  description: 'Get mentor-specific dashboard with assigned students and analytics'
+})
+@ApiResponse({
+  status: 200,
+  description: 'HEI mentor dashboard retrieved successfully'
+})
+async getHEIMentorDashboard(@Request() req) {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting HEI mentor dashboard for mentor: ${mentorId}`);
+  
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  
+  return this.mentoringService.getHEIMentorDashboard(mentorId);
+}
+
+@Get('hei-mentor/students')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get assigned students for HEI mentor',
+  description: 'Get list of students assigned to this HEI mentor'
+})
+@ApiQuery({ name: 'school_id', type: 'string', required: false })
+@ApiQuery({ name: 'class_level', type: 'string', required: false })
+@ApiQuery({ name: 'page', type: 'number', required: false, example: 1 })
+@ApiQuery({ name: 'limit', type: 'number', required: false, example: 20 })
+async getAssignedStudents(
+  @Request() req,
+  @Query('school_id') schoolId?: string,
+  @Query('class_level') classLevel?: string,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 20
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting assigned students for mentor: ${mentorId}`);
+  
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  
+  return this.mentoringService.getAssignedStudents(mentorId, {
+    schoolId,
+    classLevel,
+    page,
+    limit
+  });
+}
+
+@Get('hei-mentor/students/:studentId/progress')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get student progress analytics',
+  description: 'Get detailed progress analytics for a specific student'
+})
+@ApiParam({ name: 'studentId', type: 'string', description: 'Student UUID' })
+async getStudentProgress(
+  @Request() req,
+  @Param('studentId', ParseUUIDPipe) studentId: string
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting progress for student: ${studentId}`);
+  
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  
+  return this.mentoringService.getStudentProgress(mentorId, studentId);
+}
+
+
+@Get('hei-mentor/analytics')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get HEI mentor analytics overview',
+  description: 'Get comprehensive analytics for mentor performance and student progress'
+})
+async getHEIMentorAnalytics(@Request() req) {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting analytics for mentor: ${mentorId}`);
+  
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  
+  return this.mentoringService.getHEIMentorAnalytics(mentorId);
+}
+
+// =============================================
+// NEW HEI-MENTOR SPECIFIC ENDPOINTS
+// =============================================
+
+// New DTOs for HEI-Mentor Endpoints
+
+// Profile endpoints
+@Get('hei-mentor/profile')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Get HEI mentor profile details' })
+async getHeiMentorProfile(@Request() req) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getMentorProfile(mentorId);
+}
+
+@Put('hei-mentor/profile')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Update HEI mentor profile' })
+async updateHeiMentorProfile(
+  @Request() req,
+  @Body(ValidationPipe) updateData: UpdateMentorProfileDto
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.updateMentorProfile(mentorId, updateData);
+}
+
+// Student endpoints
+@Get('hei-mentor/students/:studentId')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Get specific assigned student details' })
+@ApiParam({ name: 'studentId', type: 'string', description: 'Student UUID' })
+async getAssignedStudentById(
+  @Request() req,
+  @Param('studentId', ParseUUIDPipe) studentId: string
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getStudentById(mentorId, studentId);
+}
+
+// Assignment endpoints
+@Get('hei-mentor/assignments')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Get assignments created by HEI mentor' })
+@ApiQuery({ name: 'subject', type: 'string', required: false })
+@ApiQuery({ name: 'class_level', type: 'string', required: false })
+@ApiQuery({ name: 'difficulty', type: 'string', required: false })
+@ApiQuery({ name: 'page', type: 'number', required: false, example: 1 })
+@ApiQuery({ name: 'limit', type: 'number', required: false, example: 20 })
+async getHeiMentorAssignments(
+  @Request() req,
+  @Query('subject') subject?: string,
+  @Query('class_level') classLevel?: string,
+  @Query('difficulty') difficulty?: string,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 20
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getAssignments(mentorId, {
+    subject, classLevel, difficulty, page, limit
+  });
+}
+
+@Post('hei-mentor/assignments')
+@HttpCode(HttpStatus.CREATED)
+@ApiOperation({ summary: 'Create new assignment' })
+async createHeiMentorAssignment(
+  @Request() req,
+  @Body(ValidationPipe) assignmentData: CreateAssignmentDto
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.createAssignment(mentorId, assignmentData);
+}
+
+@Get('hei-mentor/assignments/:assignmentId/submissions')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Get assignment submissions for grading' })
+@ApiParam({ name: 'assignmentId', type: 'string', description: 'Assignment UUID' })
+@ApiQuery({ name: 'status', type: 'string', required: false })
+@ApiQuery({ name: 'page', type: 'number', required: false, example: 1 })
+@ApiQuery({ name: 'limit', type: 'number', required: false, example: 20 })
+async getAssignmentSubmissions(
+  @Request() req,
+  @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+  @Query('status') status?: string,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 20
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getSubmissions(mentorId, assignmentId, { 
+    status, page, limit 
+  });
+}
+
+@Put('hei-mentor/submissions/:submissionId/grade')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Grade assignment submission' })
+@ApiParam({ name: 'submissionId', type: 'string', description: 'Submission UUID' })
+async gradeAssignmentSubmission(
+  @Request() req,
+  @Param('submissionId', ParseUUIDPipe) submissionId: string,
+  @Body(ValidationPipe) gradeData: GradeSubmissionDto
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.gradeSubmission(mentorId, submissionId, gradeData);
+}
+
+// School endpoint
+@Get('hei-mentor/schools/:schoolId')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Get assigned school details' })
+@ApiParam({ name: 'schoolId', type: 'string', description: 'School UUID' })
+async getAssignedSchoolById(
+  @Request() req,
+  @Param('schoolId', ParseUUIDPipe) schoolId: string
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getSchoolById(mentorId, schoolId);
+}
+
+// Add these to your controller:
+
+@Get('hei-mentor/sessions')
+@ApiOperation({ summary: 'Get HEI mentor sessions' })
+@ApiQuery({ name: 'status', required: false })
+@ApiQuery({ name: 'limit', required: false, example: 20 })
+async getHeiMentorSessions(
+  @Request() req,
+  @Query('status') status?: string,
+  @Query('limit') limit: number = 20
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getMentorSessions(mentorId, { status, limit });
+}
+
+@Get('hei-mentor/sessions/:sessionId')
+@ApiOperation({ summary: 'Get specific HEI mentor session' })
+@ApiParam({ name: 'sessionId', description: 'Session UUID' })
+async getHeiMentorSession(
+  @Request() req,
+  @Param('sessionId', ParseUUIDPipe) sessionId: string
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getMentorSessionById(mentorId, sessionId);
+}
+
+@Post('hei-mentor/sessions')
+@HttpCode(HttpStatus.CREATED)
+@ApiOperation({ summary: 'Create new HEI mentor session' })
+async createHeiMentorSession(
+  @Request() req,
+  @Body(ValidationPipe) sessionData: CreateSessionDto
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.createMentorSession(mentorId, sessionData);
+}
+
+@Put('hei-mentor/sessions/:sessionId')
+@ApiOperation({ summary: 'Update HEI mentor session' })
+@ApiParam({ name: 'sessionId', description: 'Session UUID' })
+async updateHeiMentorSession(
+  @Request() req,
+  @Param('sessionId', ParseUUIDPipe) sessionId: string,
+  @Body(ValidationPipe) updateData: UpdateSessionDto
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.updateMentorSession(mentorId, sessionId, updateData);
+}
+
+// Add these chat endpoints:
+
+@Get('hei-mentor/chat/rooms')
+@ApiOperation({ summary: 'Get HEI mentor chat rooms' })
+async getHeiMentorChatRooms(@Request() req) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getMentorChatRooms(mentorId);
+}
+
+@Get('hei-mentor/chat/rooms/:roomId/messages')
+@ApiOperation({ summary: 'Get chat room messages' })
+@ApiParam({ name: 'roomId', description: 'Room UUID' })
+@ApiQuery({ name: 'limit', required: false, example: 50 })
+async getHeiMentorChatMessages(
+  @Request() req,
+  @Param('roomId', ParseUUIDPipe) roomId: string,
+  @Query('limit') limit: number = 50
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.getMentorChatMessages(mentorId, roomId, limit);
+}
+
+@Post('hei-mentor/chat/rooms/:roomId/messages')
+@HttpCode(HttpStatus.CREATED)
+@ApiOperation({ summary: 'Send message to chat room' })
+@ApiParam({ name: 'roomId', description: 'Room UUID' })
+async sendHeiMentorChatMessage(
+  @Request() req,
+  @Param('roomId', ParseUUIDPipe) roomId: string,
+  @Body(ValidationPipe) messageData: SendMessageDto
+) {
+  const mentorId = req.user?.sub || req.user?.id;
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+  return this.mentoringService.sendMentorChatMessage(mentorId, roomId, messageData);
+}
+
+// Add these missing endpoints to complete HEI-mentor coverage
+
+@Get('hei-mentor/students/:studentId')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get detailed student information',
+  description: 'Get comprehensive details about a specific assigned student'
+})
+@ApiParam({ name: 'studentId', type: 'string', description: 'Student UUID' })
+@ApiResponse({
+  status: 200,
+  description: 'Student details retrieved successfully',
+  type: StudentDetailDto
+})
+async getStudentById(
+  @Request() req,
+  @Param('studentId', ParseUUIDPipe) studentId: string
+): Promise<StudentDetailDto> {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting student details: ${studentId} for mentor: ${mentorId}`);
+
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+
+  return this.mentoringService.getStudentById(mentorId, studentId);
+}
+
+@Get('hei-mentor/schools')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get assigned schools for HEI mentor',
+  description: 'Get list of schools where this mentor has assigned students'
+})
+@ApiQuery({ name: 'city', type: 'string', required: false })
+@ApiQuery({ name: 'state', type: 'string', required: false })
+@ApiQuery({ name: 'board', type: 'string', required: false })
+@ApiQuery({ name: 'type', type: 'string', required: false })
+@ApiQuery({ name: 'page', type: 'number', required: false, example: 1 })
+@ApiQuery({ name: 'limit', type: 'number', required: false, example: 20 })
+@ApiResponse({
+  status: 200,
+  description: 'Assigned schools retrieved successfully',
+  type: AssignedSchoolsResponseDto
+})
+async getAssignedSchools(
+  @Request() req,
+  @Query() filters: SchoolFiltersDto
+): Promise<AssignedSchoolsResponseDto> {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting assigned schools for mentor: ${mentorId}`);
+
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+
+  return this.mentoringService.getAssignedSchools(mentorId, filters);
+}
+
+@Get('hei-mentor/schools/:schoolId')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Get detailed school information',
+  description: 'Get comprehensive details about a specific assigned school'
+})
+@ApiParam({ name: 'schoolId', type: 'string', description: 'School UUID' })
+@ApiResponse({
+  status: 200,
+  description: 'School details retrieved successfully',
+  type: SchoolDetailDto
+})
+async getSchoolById(
+  @Request() req,
+  @Param('schoolId', ParseUUIDPipe) schoolId: string
+): Promise<SchoolDetailDto> {
+  const mentorId = req.user?.sub || req.user?.id;
+  this.logger.log(`Getting school details: ${schoolId} for mentor: ${mentorId}`);
+
+  if (req.user?.role !== 'hei_mentor') {
+    throw new BadRequestException('This endpoint is only for HEI mentors');
+  }
+
+  return this.mentoringService.getSchoolById(mentorId, schoolId);
+}
+
+
 }

@@ -13,6 +13,7 @@ import { CareersModule } from './careers/careers.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MentoringModule } from './mentoring/mentoring.module';
 import { CommonModule } from './common/common.module';
+import { SchoolAdminModule } from './school-admin/school-admin.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CommonModule } from './common/common.module';
     DashboardModule,
     MentoringModule,
     CommonModule,
+    SchoolAdminModule,
     
     // Feature modules
     //AuthModule,

@@ -176,33 +176,81 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
           {
             icon: Home,
             label: 'Dashboard',
-            route: '/dashboard/hei_mentor',
+            route: '/dashboard/hei-mentor',
+          },
+          {
+            icon: User,
+            label: 'Profile',
+            route: '/dashboard/hei-mentor/profile',
           },
           {
             icon: Users,
             label: 'Mentoring',
-            route: '/dashboard/hei_mentor/mentoring',
+            route: '/dashboard/hei-mentor/mentoring/sessions',
             children: [
-              { icon: Calendar, label: 'Sessions', route: '/dashboard/hei_mentor/mentoring/sessions' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/hei_mentor/mentoring/doubt-clearing' },
-              { icon: GraduationCap, label: 'Career Guidance', route: '/dashboard/hei_mentor/mentoring/career-guidance' },
+              {
+                icon: Calendar,
+                label: 'Sessions',
+                route: '/dashboard/hei-mentor/mentoring/sessions'
+              },
+              {
+                icon: Users,
+                label: 'Students',
+                route: '/dashboard/hei-mentor/mentoring/students'
+              },
+              {
+                icon: School,
+                label: 'Schools',
+                route: '/dashboard/hei-mentor/mentoring/schools'
+              },
+              {
+                icon: Users,
+                label: 'Chat',
+                route: '/dashboard/hei-mentor/mentoring/chat'
+              }
             ]
           },
           {
-            icon: School,
-            label: 'Schools',
-            route: '/dashboard/hei_mentor/schools',
-          },
-          {
-            icon: FileText,
-            label: 'Content Creation',
-            route: '/dashboard/hei_mentor/content-creation',
+            icon: BookOpen,
+            label: 'Assignments',
+            route: '/dashboard/hei-mentor/content',
             children: [
-              { icon: Brain, label: 'AI Assistant', route: '/dashboard/hei_mentor/content-creation/ai-assistant' },
-              { icon: FileText, label: 'Resources', route: '/dashboard/hei_mentor/content-creation/resources' },
+              {
+                icon: BookOpen,
+                label: 'All Assignments',
+                route: '/dashboard/hei-mentor/content/assignments'
+              },
+              {
+                icon: BookOpen,
+                label: 'Create Assignment',
+                route: '/dashboard/hei-mentor/content/assignments/create'
+              },
+              {
+                icon: FileText,
+                label: 'Resources',
+                route: '/dashboard/hei-mentor/content/resources'
+              }
             ]
           },
+          {
+            icon: GraduationCap,
+            label: 'Career Guidance',
+            route: '/dashboard/hei-mentor/career-guidance',
+            children: [
+              {
+                icon: GraduationCap,
+                label: 'Student Progress',
+                route: '/dashboard/hei-mentor/career-guidance/progress'
+              },
+              {
+                icon: Trophy,
+                label: 'Holland Results',
+                route: '/dashboard/hei-mentor/career-guidance/holland-results'
+              }
+            ]
+          }
         ];
+
 
       case 'hei_admin':
         return [

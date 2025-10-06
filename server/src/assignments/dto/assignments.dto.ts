@@ -1,27 +1,52 @@
 // server/src/assignments/dto/assignments.dto.ts
+// ✅ REWORKED FOR HEI-MENTOR FUNCTIONALITY
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsArray, IsBoolean, IsOptional, IsEnum, IsUUID, IsDateString } from 'class-validator';
+import { 
+  IsString, 
+  IsNumber, 
+  IsArray, 
+  IsOptional, 
+  IsEnum, 
+  IsUUID, 
+  IsDateString, 
+  IsBoolean,
+  ValidateNested 
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+// ===============================================
+// ENUMS & BASIC TYPES
+// ===============================================
 
 export enum DifficultyLevel {
   EASY = 'easy',
-  MEDIUM = 'medium',
+  MEDIUM = 'medium', 
   HARD = 'hard'
 }
 
 export enum AssignmentStatus {
-  PENDING = 'pending',
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
+}
+
+export enum SubmissionStatus {
   SUBMITTED = 'submitted',
   GRADED = 'graded',
-  OVERDUE = 'overdue'
+  RETURNED = 'returned'
 }
 
 export enum SubmissionFormat {
   PDF = 'pdf',
-  DOC = 'doc',
+  DOC = 'doc', 
   IMAGE = 'image',
   TEXT = 'text'
 }
+
+// ===============================================
+// ASSIGNMENT QUESTION STRUCTURE
+// ===============================================
 
 export class AssignmentQuestionDto {
   @ApiProperty({ example: 1 })
@@ -30,18 +55,152 @@ export class AssignmentQuestionDto {
   @ApiProperty({ example: 'What is the square root of 144?' })
   question: string;
 
-  @ApiProperty({ example: 'short-answer', enum: ['mcq', 'short-answer', 'long-answer', 'numerical'] })
+  @ApiProperty({ 
+    example: 'short-answer', 
+    enum: ['mcq', 'short-answer', 'long-answer', 'numerical'] 
+  })
   type: string;
 
   @ApiProperty({ example: 5 })
   marks: number;
 
-  @ApiProperty({ type: [String], required: false, example: ['12', '14', '16', '18'] })
+  @ApiProperty({ 
+    type: [String], 
+    required: false, 
+    example: ['12', '14', '16', '18'] 
+  })
   options?: string[];
 
   @ApiProperty({ required: false })
   correctAnswer?: string;
 }
+
+// ===============================================
+// HEI-MENTOR ASSIGNMENT DTOs
+// ===============================================
+
+export class CreateAssignmentDto {
+  @ApiProperty({ example: 'Linear Equations Worksheet' })
+  @IsString()
+  title: string;
+
+  @ApiProperty({ example: 'Solve the following linear equations in one variable.' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ example: 'Mathematics' })
+  @IsString()
+  subject: string;
+
+  @ApiProperty({ example: '10th' })
+  @IsString()
+  class_level: string;
+
+  @ApiProperty({ example: '2025-10-20T23:59:59.000Z' })
+  @IsDateString()
+  due_date: string;
+
+  @ApiProperty({ enum: DifficultyLevel, default: DifficultyLevel.MEDIUM })
+  @IsEnum(DifficultyLevel)
+  @IsOptional()
+  difficulty?: DifficultyLevel;
+
+  @ApiProperty({ example: 'Chapter 2: Linear Equations in One Variable' })
+  @IsOptional()
+  @IsString()
+  ncert_chapter?: string;
+
+  @ApiProperty({ example: 100, default: 100 })
+  @IsOptional()
+  @IsNumber()
+  total_marks?: number;
+
+  @ApiProperty({ example: 45, description: 'Time estimate in minutes' })
+  @IsOptional()
+  @IsNumber()
+  time_estimate?: number;
+
+  @ApiProperty({ type: [AssignmentQuestionDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssignmentQuestionDto)
+  questions?: AssignmentQuestionDto[];
+
+  @ApiProperty({ 
+    type: [String], 
+    enum: SubmissionFormat, 
+    isArray: true,
+    example: ['pdf', 'text']
+  })
+  @IsOptional()
+  @IsArray()
+  submission_format?: SubmissionFormat[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  teacher_notes?: string;
+}
+
+export class UpdateAssignmentDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsDateString()
+  due_date?: string;
+
+  @ApiProperty({ enum: DifficultyLevel, required: false })
+  @IsOptional()
+  @IsEnum(DifficultyLevel)
+  difficulty?: DifficultyLevel;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  ncert_chapter?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  total_marks?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  time_estimate?: number;
+
+  @ApiProperty({ type: [AssignmentQuestionDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssignmentQuestionDto)
+  questions?: AssignmentQuestionDto[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  teacher_notes?: string;
+
+  @ApiProperty({ enum: AssignmentStatus, required: false })
+  @IsOptional()
+  @IsEnum(AssignmentStatus)
+  status?: AssignmentStatus;
+}
+
+// ===============================================
+// ASSIGNMENT RESPONSE DTOs
+// ===============================================
 
 export class AssignmentDto {
   @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
@@ -51,59 +210,52 @@ export class AssignmentDto {
   title: string;
 
   @ApiProperty({ example: 'Solve the given quadratic equations and show your working.' })
-  description: string;
+  description?: string;
 
   @ApiProperty({ example: 'Mathematics' })
   subject: string;
 
   @ApiProperty({ example: '10th' })
-  class: string;
+  class_level: string;
 
   @ApiProperty({ example: '2025-10-15T23:59:59.000Z' })
-  dueDate: string;
-
-  @ApiProperty({ enum: AssignmentStatus })
-  status: AssignmentStatus;
-
-  @ApiProperty({ example: true })
-  aiGenerated: boolean;
-
-  @ApiProperty({ example: 'Chapter 4: Quadratic Equations' })
-  ncertChapter: string;
+  due_date: string;
 
   @ApiProperty({ enum: DifficultyLevel })
   difficulty: DifficultyLevel;
 
-  @ApiProperty({ example: 50 })
-  totalMarks: number;
+  @ApiProperty({ example: 'Chapter 4: Quadratic Equations' })
+  ncert_chapter?: string;
 
-  @ApiProperty({ example: '60 minutes' })
-  timeEstimate: string;
+  @ApiProperty({ example: 100 })
+  total_marks: number;
+
+  @ApiProperty({ example: 60, description: 'Time estimate in minutes' })
+  time_estimate?: number;
 
   @ApiProperty({ type: [AssignmentQuestionDto] })
   questions: AssignmentQuestionDto[];
 
   @ApiProperty({ type: [String], enum: SubmissionFormat, isArray: true })
-  submissionFormat: SubmissionFormat[];
+  submission_format: SubmissionFormat[];
 
   @ApiProperty({ required: false })
-  teacherNotes?: string;
+  teacher_notes?: string;
 
-  @ApiProperty({ required: false })
-  aiInsights?: string;
+  @ApiProperty({ example: false })
+  ai_generated: boolean;
 
-  // For submitted assignments
-  @ApiProperty({ required: false })
-  score?: number;
+  @ApiProperty({ example: true })
+  is_active: boolean;
 
-  @ApiProperty({ required: false })
-  feedback?: string;
+  @ApiProperty({ example: 5, description: 'Number of submissions received' })
+  submission_count?: number;
 
-  @ApiProperty({ required: false })
-  grade?: string;
+  @ApiProperty({ example: '2025-10-01T10:30:00.000Z' })
+  created_at: string;
 
-  @ApiProperty({ required: false })
-  submittedAt?: string;
+  @ApiProperty({ example: '2025-10-01T10:30:00.000Z' })
+  updated_at: string;
 }
 
 export class AssignmentListResponseDto {
@@ -113,358 +265,179 @@ export class AssignmentListResponseDto {
   @ApiProperty({ example: 15 })
   total: number;
 
-  @ApiProperty({ example: 5 })
-  pending: number;
+  @ApiProperty({ example: 10 })
+  published: number;
 
-  @ApiProperty({ example: 8 })
-  completed: number;
+  @ApiProperty({ example: 3 })
+  draft: number;
 
   @ApiProperty({ example: 2 })
-  overdue: number;
+  archived: number;
 }
 
-export class CreateAssignmentDto {
-  @ApiProperty({ example: 'Linear Equations Worksheet' })
-  @IsString()
-  title: string;
+// ===============================================
+// SUBMISSION MANAGEMENT DTOs
+// ===============================================
 
-  @ApiProperty({ example: 'Solve the following linear equations in one variable.' })
-  @IsString()
-  description: string;
-
-  @ApiProperty({ example: 'Mathematics' })
-  @IsString()
-  subject: string;
-
-  @ApiProperty({ example: '8th' })
-  @IsString()
-  classLevel: string;
-
-  @ApiProperty({ example: '2025-10-20T23:59:59.000Z' })
-  @IsDateString()
-  dueDate: string;
-
-  @ApiProperty({ enum: DifficultyLevel, default: DifficultyLevel.MEDIUM })
-  @IsEnum(DifficultyLevel)
-  difficulty: DifficultyLevel;
-
-  @ApiProperty({ example: 'Chapter 2: Linear Equations in One Variable' })
-  @IsString()
-  ncertChapter: string;
-
-  @ApiProperty({ example: 30, default: 100 })
-  @IsNumber()
-  totalMarks: number;
-
-  @ApiProperty({ example: 45, description: 'Time estimate in minutes' })
-  @IsNumber()
-  timeEstimate: number;
-
-  @ApiProperty({ type: [AssignmentQuestionDto] })
-  @IsArray()
-  questions: AssignmentQuestionDto[];
-
-  @ApiProperty({ type: [String], enum: SubmissionFormat, isArray: true })
-  @IsArray()
-  submissionFormat: SubmissionFormat[];
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  teacherNotes?: string;
-}
-
-export class AIGenerateAssignmentDto {
-  @ApiProperty({ example: 'Mathematics' })
-  @IsString()
-  subject: string;
-
-  @ApiProperty({ example: '9th' })
-  @IsString()
-  classLevel: string;
-
-  @ApiProperty({ example: 'Chapter 1: Number Systems' })
-  @IsString()
-  ncertChapter: string;
-
-  @ApiProperty({ enum: DifficultyLevel, default: DifficultyLevel.MEDIUM })
-  @IsEnum(DifficultyLevel)
-  difficulty: DifficultyLevel;
-
-  @ApiProperty({ example: 10, description: 'Number of questions' })
-  @IsNumber()
-  questionCount: number;
-
-  @ApiProperty({ example: 50, description: 'Total marks' })
-  @IsNumber()
-  totalMarks: number;
-
-  @ApiProperty({ type: [String], example: ['mcq', 'short-answer'], description: 'Types of questions to include' })
-  @IsArray()
-  questionTypes: string[];
-}
-
-// =============================================
-// UPDATED SUBMISSION DTOs WITH FILE SUPPORT
-// =============================================
-
-export class SubmitAssignmentDto {
-  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
-  @IsUUID()
-  assignmentId: string;
-
-  @ApiProperty({ type: [String], required: false, description: 'Array of file URLs uploaded to storage' })
-  @IsOptional()
-  @IsArray()
-  fileUrls?: string[];
-
-  @ApiProperty({ required: false, description: 'Text-based submission content' })
-  @IsOptional()
-  @IsString()
-  submissionText?: string;
-}
-
-export class AssignmentSubmissionDto {
+export class SubmissionDto {
   @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
   id: string;
 
   @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
-  assignmentId: string;
+  assignment_id: string;
 
-  @ApiProperty({ example: 'Quadratic Equations Practice Set' })
-  assignmentTitle: string;
+  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
+  student_id: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  student_name: string;
+
+  @ApiProperty({ example: 'john.doe@email.com' })
+  student_email: string;
 
   @ApiProperty({ type: [String], description: 'Array of submitted file URLs' })
-  fileUrls: string[];
+  submission_files?: string[];
 
   @ApiProperty({ required: false })
-  submissionText?: string;
+  submission_text?: string;
 
   @ApiProperty({ example: '2025-10-10T15:30:00.000Z' })
-  submittedAt: string;
+  submitted_at: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: 85 })
   score?: number;
 
   @ApiProperty({ required: false })
   feedback?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: 'B+' })
   grade?: string;
 
-  @ApiProperty({ enum: ['submitted', 'graded', 'returned'] })
-  status: string;
+  @ApiProperty({ enum: SubmissionStatus, example: 'submitted' })
+  status: SubmissionStatus;
 
   @ApiProperty({ example: '2025-10-10T15:30:00.000Z' })
-  createdAt: string;
+  created_at: string;
 
-  @ApiProperty({ example: '2025-10-10T15:30:00.000Z' })
-  updatedAt?: string;
+  @ApiProperty({ required: false })
+  graded_at?: string;
 }
 
-// =============================================
-// NEW FILE UPLOAD DTOs
-// =============================================
-
-export class FileUploadDto {
-  @ApiProperty({ example: 'assignment_solution.pdf' })
-  @IsString()
-  filename: string;
-
-  @ApiProperty({ example: 'application/pdf' })
-  @IsString()
-  mimeType: string;
-
-  @ApiProperty({ example: 245760, description: 'File size in bytes' })
+export class GradeSubmissionDto {
+  @ApiProperty({ example: 85, minimum: 0 })
   @IsNumber()
-  fileSize: number;
-}
+  score: number;
 
-export class FileUploadResponseDto {
-  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
-  fileId: string;
-
-  @ApiProperty({ example: 'assignment_solution.pdf' })
-  filename: string;
-
-  @ApiProperty({ example: 'https://storage.supabase.co/object/public/assignments/student1/solution.pdf' })
-  fileUrl: string;
-
-  @ApiProperty({ example: 'https://storage.supabase.co/object/sign/assignments/student1/solution.pdf?token=abc123' })
-  signedUrl?: string;
-
-  @ApiProperty({ example: '2025-10-10T15:30:00.000Z' })
-  uploadedAt: string;
-}
-
-export class NCERTChapterDto {
-  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
-  id: string;
-
-  @ApiProperty({ example: 'Mathematics' })
-  subject: string;
-
-  @ApiProperty({ example: '10th' })
-  classLevel: string;
-
-  @ApiProperty({ example: 1 })
-  chapterNumber: number;
-
-  @ApiProperty({ example: 'Real Numbers' })
-  chapterTitle: string;
-
-  @ApiProperty({ type: [String] })
-  topics: string[];
-
-  @ApiProperty({ type: [String] })
-  learningObjectives: string[];
-
-  @ApiProperty({ type: [String] })
-  keywords: string[];
-}
-
-export class AssignmentStatsDto {
-  @ApiProperty({ example: 25 })
-  totalAssignments: number;
-
-  @ApiProperty({ example: 18 })
-  completedAssignments: number;
-
-  @ApiProperty({ example: 5 })
-  pendingAssignments: number;
-
-  @ApiProperty({ example: 2 })
-  overdueAssignments: number;
-
-  @ApiProperty({ example: 85.5 })
-  averageScore: number;
-
-  @ApiProperty({ example: 'B+' })
-  overallGrade: string;
-}
-
-export class AssignmentDashboardSummaryDto {
-  @ApiProperty({ example: 25 })
-  totalAssignments: number;
-
-  @ApiProperty({ example: 5 })
-  pendingAssignments: number;
-
-  @ApiProperty({ example: 18 })
-  completedAssignments: number;
-
-  @ApiProperty({ example: 2 })
-  overdueAssignments: number;
-
-  @ApiProperty({ example: 1 })
-  dueToday: number;
-
-  @ApiProperty({ example: 3 })
-  dueThisWeek: number;
-
-  @ApiProperty({ example: 85.5 })
-  averageScore: number;
-
-  @ApiProperty({ example: 'A-' })
-  overallGrade: string;
-
-  subjectDistribution: Record<string, number>;
-  recentActivity: Record<string, number>;
-}
-
-export class SubjectProgressDto {
-  @ApiProperty({ example: 'Mathematics' })
-  subject: string;
-
-  @ApiProperty({ example: 12 })
-  totalAssignments: number;
-
-  @ApiProperty({ example: 8 })
-  completedAssignments: number;
-
-  @ApiProperty({ example: 3 })
-  pendingAssignments: number;
-
-  @ApiProperty({ example: 1 })
-  overdueAssignments: number;
-
-  @ApiProperty({ example: 87.2 })
-  averageScore: number;
-
-  @ApiProperty({ example: 'A' })
-  gradeInSubject: string;
-
-  @ApiProperty({ example: 95.0 })
-  completionRate: number;
-
-  @ApiProperty({ example: '2025-09-20T15:30:00.000Z' })
-  lastSubmission: string;
-
-  @ApiProperty({ example: 2 })
-  improvementTrend: number; // +/- percentage change
-}
-
-export class SearchAssignmentsDto {
-  @ApiProperty({ required: false, example: 'quadratic' })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  query?: string;
+  feedback?: string;
 
-  @ApiProperty({ required: false, example: 'Mathematics' })
+  @ApiProperty({ required: false, example: 'B+' })
+  @IsOptional()
+  @IsString()
+  grade?: string;
+}
+
+export class SubmissionListResponseDto {
+  @ApiProperty({ type: [SubmissionDto] })
+  submissions: SubmissionDto[];
+
+  @ApiProperty({ example: 25 })
+  total: number;
+
+  @ApiProperty({ example: 15 })
+  graded: number;
+
+  @ApiProperty({ example: 10 })
+  pending: number;
+
+  @ApiProperty({ example: 82.5 })
+  average_score?: number;
+}
+
+// ===============================================
+// FILTER & QUERY DTOs
+// ===============================================
+
+export class AssignmentFiltersDto {
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   subject?: string;
 
-  @ApiProperty({ enum: AssignmentStatus, required: false })
-  @IsOptional()
-  @IsEnum(AssignmentStatus)
-  status?: AssignmentStatus;
+  @ApiProperty({ required: false })
+  @IsOptional()  
+  @IsString()
+  class_level?: string;
 
   @ApiProperty({ enum: DifficultyLevel, required: false })
   @IsOptional()
   @IsEnum(DifficultyLevel)
   difficulty?: DifficultyLevel;
 
-  @ApiProperty({ required: false, example: '2025-09-01' })
+  @ApiProperty({ enum: AssignmentStatus, required: false })
   @IsOptional()
-  @IsString()
-  dueDateFrom?: string;
+  @IsEnum(AssignmentStatus)
+  status?: AssignmentStatus;
 
-  @ApiProperty({ required: false, example: '2025-10-31' })
+  @ApiProperty({ required: false, example: 20 })
   @IsOptional()
-  @IsString()
-  dueDateTo?: string;
+  @IsNumber()
+  limit?: number;
 
-  @ApiProperty({ required: false, example: true })
+  @ApiProperty({ required: false, example: 0 })
   @IsOptional()
-  @IsBoolean()
-  aiGenerated?: boolean;
-
-  @ApiProperty({ required: false, example: 'Chapter 1: Real Numbers' })
-  @IsOptional()
-  @IsString()
-  ncertChapter?: string;
+  @IsNumber()
+  offset?: number;
 }
 
-export class AssignmentAttachmentDto {
-  @ApiProperty({ example: 'c8f4d2e1-8b5a-4c3d-9e2f-1a6b7c8d9e0f' })
-  id: string;
+export class SubmissionFiltersDto {
+  @ApiProperty({ enum: SubmissionStatus, required: false })
+  @IsOptional()
+  @IsEnum(SubmissionStatus)
+  status?: SubmissionStatus;
 
-  @ApiProperty({ example: 'assignment_worksheet.pdf' })
-  filename: string;
+  @ApiProperty({ required: false, example: 20 })
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
 
-  @ApiProperty({ example: 'application/pdf' })
-  fileType: string;
+  @ApiProperty({ required: false, example: 0 })
+  @IsOptional()
+  @IsNumber()
+  offset?: number;
+}
 
-  @ApiProperty({ example: 245760 })
-  fileSize: number;
+// ===============================================
+// STATISTICS DTOs
+// ===============================================
 
-  @ApiProperty({ example: 'https://storage.example.com/assignments/worksheet.pdf' })
-  downloadUrl: string;
+export class AssignmentStatsDto {
+  @ApiProperty({ example: 25 })
+  total_assignments: number;
 
-  @ApiProperty({ example: '2025-09-15T10:30:00.000Z' })
-  uploadedAt: string;
+  @ApiProperty({ example: 15 })
+  published_assignments: number;
 
-  @ApiProperty({ example: 'teacher' })
-  uploadedBy: string;
+  @ApiProperty({ example: 5 })
+  draft_assignments: number;
+
+  @ApiProperty({ example: 150 })
+  total_submissions: number;
+
+  @ApiProperty({ example: 120 })
+  graded_submissions: number;
+
+  @ApiProperty({ example: 30 })
+  pending_submissions: number;
+
+  @ApiProperty({ example: 78.5 })
+  average_score: number;
+
+  @ApiProperty({ 
+    example: { 'Mathematics': 10, 'Science': 8, 'English': 7 },
+    description: 'Subject-wise assignment counts'
+  })
+  subject_breakdown: Record<string, number>;
 }
