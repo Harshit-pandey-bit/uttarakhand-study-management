@@ -19,6 +19,7 @@ import {
   UserCheck,
   Award,
   Settings,
+  Bell,
   
   // HEI Mentor Icons
   School,
@@ -117,59 +118,53 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
           },
         ];
 
-      case 'teacher':
-        return [
-          {
-            icon: Home,
-            label: 'Dashboard',
-            route: '/dashboard/teacher',
-          },
-          // {
-          //   icon: Brain,
-          //   label: 'AI Assistant',
-          //   route: '/dashboard/teacher/ai-assistant',
-          //   badge: 'New',
-          //   children: [
-          //     { icon: Brain, label: 'Assignment Generator', route: '/dashboard/teacher/ai-assistant/assignment-generator' },
-          //     { icon: Brain, label: 'Lesson Planner', route: '/dashboard/teacher/ai-assistant/lesson-planner' },
-          //   ]
-          // },
-          {
-            icon: UserCheck,
-            label: 'Students',
-            route: '/dashboard/teacher/students',
-           
-          },
-          // {
-          //   icon: Presentation,
-          //   label: 'Assessments',
-          //   route: '/dashboard/teacher/assessments',
-          //   children: [
-          //     { icon: Presentation, label: 'Formative', route: '/dashboard/teacher/assessments/formative' },
-          //     // { icon: Presentation, label: 'Summative', route: '/dashboard/teacher/assessments/summative' },
-          //     // { icon: Presentation, label: 'Diagnostic', route: '/dashboard/teacher/assessments/diagnostic' },
-          //   ]
-          // },
-          {
-            icon: Award,
-            label: 'Professional Development',
-            route: '/dashboard/teacher/cpd',
-            children: [
-              { icon: Award, label: 'DIKSHA', route: '/dashboard/teacher/cpd/diksha' },
-              { icon: Award, label: 'NISHTHA', route: '/dashboard/teacher/cpd/nishtha' },
-              // { icon: Award, label: 'Certificates', route: '/dashboard/teacher/cpd/certificates' },
-            ]
-          },
-           {
-            icon: Users,
-            label: 'Mentoring',
-            route: '/dashboard/student/mentoring',
-            children: [
-              { icon: Users, label: 'Sessions', route: '/dashboard/student/mentoring/sessions' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/student/mentoring/chat' },
-            ]
-          },
-        ];
+    case 'teacher': 
+return [
+  {
+    icon: Home,
+    label: 'Dashboard',
+    route: '/dashboard/teacher',
+  },
+  {
+    icon: Brain,
+    label: 'AI Assistant',
+    route: '/dashboard/teacher/ai-assistant',
+    badge: 'New',
+    children: [
+      { icon: BookOpen, label: 'NCERT Generator', route: '/dashboard/teacher/ai-assistant/ncert-generator' },
+      { icon: FileText, label: 'Assignment Creator', route: '/dashboard/teacher/ai-assistant/assignment-creator' },
+    ]
+  },
+  {
+    icon: Award,
+    label: 'Professional Development',
+    route: '/dashboard/teacher/cpd',
+    children: [
+      { icon: Award, label: 'DIKSHA', route: '/dashboard/teacher/cpd/diksha' },
+      { icon: Award, label: 'NISHTHA', route: '/dashboard/teacher/cpd/nishtha' },
+      { icon: GraduationCap, label: 'Swayam', route: '/dashboard/teacher/cpd/swayam' },
+    ]
+  },
+  {
+    icon: Presentation,
+    label: 'Assessments',
+    route: '/dashboard/teacher/assessments',
+    children: [
+      { icon: Brain, label: 'Formative Tools', route: '/dashboard/teacher/assessments/formative-tools' },
+      { icon: BarChart3, label: 'Summative Tracking', route: '/dashboard/teacher/assessments/summative-tracking' },
+    ]
+  },
+  {
+    icon: Users,
+    label: 'HEI Coordination',
+    route: '/dashboard/teacher/virtual-collaboration/hei-coordination',
+    children: [
+      { icon: Calendar, label: 'Schedule Sessions', route: '/dashboard/teacher/virtual-collaboration/hei-coordination' },
+      { icon: Bell, label: 'Announcements', route: '/dashboard/teacher/virtual-collaboration/hei-coordination/announcements' },
+    ]
+  },
+];
+
 
       case 'hei_mentor':
         return [
@@ -252,51 +247,45 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
         ];
 
 
-      case 'hei_admin':
-        return [
-          {
-            icon: Home,
-            label: 'Dashboard',
-            route: '/dashboard/hei-admin',
-          },
-          {
-            icon: UsersIcon,
-            label: 'Mentors',
-            route: '/dashboard/hei-admin/mentors',
-            // children: [
-            //   { icon: UsersIcon, label: 'Assign', route: '/dashboard/hei-admin/mentors/assign' },
-            //   { icon: BarChart3, label: 'Performance', route: '/dashboard/hei-admin/mentors/performance' },
-            // ]
-          },
-          {
-            icon: Building2,
-            label: 'Partnerships',
-            route: '/dashboard/hei-admin/partnerships',
-            // children: [
-            //   { icon: Building2, label: 'Active', route: '/dashboard/hei-admin/partnerships/active' },
-            // ]
-          },
-          // {
-          //   icon: Target,
-          //   label: 'Programs',
-          //   route: '/dashboard/hei-admin/programs',
-          //   children: [
-          //     { icon: Award, label: 'CPD', route: '/dashboard/hei-admin/programs/cpd' },
-          //     { icon: Microscope, label: 'STEM', route: '/dashboard/hei-admin/programs/stem' },
-          //   ]
-          // },
-          // {
-          //   icon: TrendingUp,
-          //   label: 'Analytics',
-          //   route: '/dashboard/hei-admin/analytics',
-          //   badge: 'Live',
-          //   children: [
-          //     { icon: TrendingUp, label: 'Impact Metrics', route: '/dashboard/hei_admin/analytics/impact-metrics' },
-          //     { icon: Users, label: 'Mentoring Effectiveness', route: '/dashboard/hei_admin/analytics/mentoring-effectiveness' },
-          //     { icon: BarChart3, label: 'Partnership Health', route: '/dashboard/hei_admin/analytics/partnership-health' },
-          //   ]
-          // },
-        ];
+      // Add this to the existing dashboard-sidebar.tsx under hei_admin case:
+
+case 'hei_admin':
+  return [
+    {
+      icon: Home,
+      label: 'Dashboard',
+      route: '/dashboard/hei-admin',
+    },
+    {
+      icon: UsersIcon,
+      label: 'Mentors',
+      route: '/dashboard/hei-admin/mentors',
+      children: [
+        { 
+          icon: UsersIcon, 
+          label: 'All Mentors', 
+          route: '/dashboard/hei-admin/mentors' 
+        },
+        { 
+          icon: UserCheck, 
+          label: 'Assign Mentors', 
+          route: '/dashboard/hei-admin/mentors/assign' 
+        },
+      ]
+    },
+    {
+      icon: Building2,
+      label: 'Partnerships',
+      route: '/dashboard/hei-admin/partnerships',
+    },
+    {
+      icon: Bell,
+      label: 'Announcements',
+      route: '/dashboard/hei-admin/announcements',
+      badge: 'New',
+    },
+  ];
+
 
       case 'school_admin':
         return [
