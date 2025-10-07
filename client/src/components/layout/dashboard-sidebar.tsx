@@ -314,18 +314,10 @@ case 'hei_admin':
             icon: Building2,
             label: 'HEI Partnerships',
             route: '/dashboard/school-admin/hei-partnerships',
-            children: [
-              { icon: Building2, label: 'Active', route: '/dashboard/school-admin/hei-partnerships/active' },
-            ]
+            
+            
           },
-          {
-            icon: Settings,
-            label: 'Infrastructure',
-            route: '/dashboard/school-admin/infrastructure',
-            children: [
-              { icon: Settings, label: 'Smart Classrooms', route: '/dashboard/school-admin/infrastructure/smart-classrooms' },
-            ]
-          },
+          
         ];
 
       default:
