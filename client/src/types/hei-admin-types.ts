@@ -1,4 +1,4 @@
-// src/types/hei-admin-types.ts
+// client/src/types/hei-admin-types.ts
 
 /* ---------- ENUMS ---------- */
 
@@ -7,7 +7,6 @@ export enum MentorStatus {
   AWAY = 'away',
   INACTIVE = 'inactive'
 }
-
 
 export enum PartnershipStatus {
   ACTIVE = 'active',
@@ -182,8 +181,9 @@ export interface MentorCapacity {
 
 /* ---------- PARTNERSHIP TYPES ---------- */
 
+// ✅ FIXED: Changed 'id' to 'schoolId' and added missing 'status' field
 export interface SchoolPartnership {
-  id: string; // school id
+  schoolId: string; // Changed from 'id'
   schoolName: string;
   schoolLogo?: string;
   location: string;
@@ -191,66 +191,45 @@ export interface SchoolPartnership {
   state: string;
   principalName?: string;
   principalContact?: string;
-  assignedMentorId?: string;
-  assignedMentorName?: string;
-  assignedMentorAvatar?: string;
-  assignedMentorEmail?: string;
+  mentorId?: string; // Added - was missing
+  mentorName?: string; // Changed from 'assignedMentorName'
+  mentorAvatar?: string; // Changed from 'assignedMentorAvatar'
+  mentorEmail?: string; // Changed from 'assignedMentorEmail'
   studentsCount: number;
   teachersCount: number;
-  partnershipStartDate?: string;
-  partnershipStatus: PartnershipStatus;
+  partnershipDate?: string; // Changed from 'partnershipStartDate'
+  status: string; // Added - was missing (using string instead of PartnershipStatus for flexibility)
   lastContactDate?: string;
-  programsEnrolled: string[];
+  programsEnrolled?: string[];
 }
 
+// ✅ FIXED: Flattened structure to match backend response
 export interface PartnershipDetails {
-  school: {
-    id: string;
-    name: string;
-    logo?: string;
-    location: string;
-    district: string;
-    state: string;
-    principalName?: string;
-    principalContact?: string;
-    principalEmail?: string;
-    establishedYear?: string;
-    schoolType?: string;
-    infrastructure?: any;
-    partnershipStatus: PartnershipStatus;
-    partnershipStartDate?: string;
-  };
-  assignedMentor?: {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-    designation: string;
-    department: string;
-    contactNumber?: string;
-    assignmentDate: string;
-  };
-  mentorHistory: Array<{
-    mentorId: string;
-    mentorName: string;
-    assignedDate: string;
-    endDate?: string;
-    reason?: string;
-  }>;
-  students: {
-    total: number;
-    gradeDistribution: Array<{ grade: string; count: number }>;
-  };
-  teachers: {
-    total: number;
-    subjectDistribution: Array<{ subject: string; count: number }>;
-  };
-  statistics: {
-    totalMentoringSessions: number;
-    totalAssignmentsCreated: number;
-    studentEngagementRate: number;
-    teacherParticipationRate: number;
-  };
+  schoolId: string;
+  schoolName: string;
+  schoolLogo?: string;
+  location: string;
+  district: string;
+  state: string;
+  principalName?: string;
+  principalContact?: string;
+  principalEmail?: string;
+  establishedYear?: string;
+  schoolType?: string;
+  infrastructure?: any;
+  status: string; // Changed from partnershipStatus
+  partnershipDate?: string; // Changed from partnershipStartDate
+  studentsCount: number;
+  teachersCount: number;
+  mentorId?: string;
+  mentorName?: string;
+  mentorEmail?: string;
+  mentorAvatar?: string;
+  mentorDesignation?: string;
+  mentorDepartment?: string;
+  mentorContactNumber?: string;
+  mentorAssignmentDate?: string;
+  notes?: string;
 }
 
 export interface PartnershipOverviewStats {
@@ -260,7 +239,7 @@ export interface PartnershipOverviewStats {
   totalTeachers: number;
   activePartnerships: number;
   pendingRequests: number;
-  inactivePartnerships: number;
+  inactivePartnerships?: number;
   growthRate: number;
 }
 
@@ -302,7 +281,8 @@ export interface AnnouncementRecipientSummary {
     schools: number;
     teachers: number;
     students: number;
-  }; }
+  };
+}
 
 /* ---------- FILTERS & PAGINATION ---------- */
 
@@ -315,11 +295,13 @@ export interface MentorFilters {
 }
 
 export interface PartnershipFilters {
-  status?: PartnershipStatus;
+  status?: PartnershipStatus | string;
   mentorId?: string;
   district?: string;
   state?: string;
   search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface PaginationParams {

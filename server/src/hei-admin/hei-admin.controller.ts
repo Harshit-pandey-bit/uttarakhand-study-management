@@ -1,21 +1,18 @@
-
-
-
 // server/src/hei-admin/hei-admin.controller.ts
 
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
-  Query, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
   Request,
   HttpCode,
-  HttpStatus 
+  HttpStatus
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -51,17 +48,18 @@ export class HeiAdminController {
 
   /* ---------- DASHBOARD ---------- */
 
-  @Get('dashboard')
-  @ApiOperation({ summary: 'Get HEI Admin dashboard data' })
-  @ApiResponse({
-    status: 200,
-    description: 'Dashboard data retrieved successfully',
-    type: HEIAdminDashboardDto,
-  })
-  async getDashboard(@Request() req): Promise<HEIAdminDashboardDto> {
-    const userId = req.user?.sub || req.user?.id;
-    return this.heiAdminService.getDashboard(userId);
-  }
+@Get('dashboard')
+@ApiOperation({ summary: 'Get HEI Admin dashboard data' })
+@ApiResponse({
+  status: 200,
+  description: 'Dashboard data retrieved successfully',
+  type: HEIAdminDashboardDto,
+})
+async getDashboard(@Request() req): Promise<HEIAdminDashboardDto> {
+  const userId = req.user?.sub || req.user?.id;
+  return this.heiAdminService.getDashboard(userId);
+}
+
 
   /* ---------- MENTORS ---------- */
 
@@ -88,21 +86,39 @@ export class HeiAdminController {
     @Query('search') search?: string,
   ): Promise<PaginatedMentorListDto> {
     const userId = req.user?.sub || req.user?.id;
-    
-    // Get admin's HEI ID
-    const adminProfile = await this.heiAdminService['supabase']
-      .from('heiadminprofiles')
+
+    const { data: adminProfile } = await this.heiAdminService['supabase']
+      .from('hei_admin_profiles')
       .select('hei_id')
       .eq('user_id', userId)
       .single();
 
-    const heiId = adminProfile.data?.hei_id;
+    const heiId = adminProfile?.hei_id;
 
     return this.heiAdminService.getMentors(
       heiId,
       { status, workload, expertise, search },
       { page: Number(page), limit: Number(limit) }
     );
+  }
+
+  // ✅ FIXED: Moved BEFORE :mentorId route to fix 404 error
+  @Get('mentors/available')
+  @ApiOperation({ summary: 'Get list of available mentors' })
+  @ApiResponse({
+    status: 200,
+    description: 'Available mentors retrieved successfully',
+  })
+  async getAvailableMentors(@Request() req) {
+    const userId = req.user?.sub || req.user?.id;
+    const { data: adminProfile } = await this.heiAdminService['supabase']
+      .from('hei_admin_profiles')
+      .select('hei_id')
+      .eq('user_id', userId)
+      .single();
+
+    const heiId = adminProfile?.hei_id;
+    return this.heiAdminService.getAvailableMentors(heiId);
   }
 
   @Get('mentors/:mentorId')
@@ -139,25 +155,6 @@ export class HeiAdminController {
   })
   async getMentorCapacity(@Param('mentorId') mentorId: string): Promise<MentorCapacityDto> {
     return this.heiAdminService.getMentorCapacity(mentorId);
-  }
-
-  @Get('mentors/available')
-  @ApiOperation({ summary: 'Get list of available mentors' })
-  @ApiResponse({
-    status: 200,
-    description: 'Available mentors retrieved successfully',
-  })
-  async getAvailableMentors(@Request() req) {
-    const userId = req.user?.sub || req.user?.id;
-    
-    const adminProfile = await this.heiAdminService['supabase']
-      .from('heiadminprofiles')
-      .select('hei_id')
-      .eq('user_id', userId)
-      .single();
-
-    const heiId = adminProfile.data?.hei_id;
-    return this.heiAdminService.getAvailableMentors(heiId);
   }
 
   /* ---------- ASSIGNMENTS ---------- */

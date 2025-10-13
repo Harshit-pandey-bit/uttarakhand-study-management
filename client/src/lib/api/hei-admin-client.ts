@@ -1,4 +1,4 @@
-// src/lib/api/hei-admin-client.ts
+// client/src/lib/api/hei-admin-client.ts
 
 import {
   APIResponse,
@@ -69,15 +69,15 @@ class HEIAdminAPIClient {
   /* ---------- DASHBOARD ---------- */
 
   async getDashboard(): Promise<APIResponse<HEIAdminDashboard>> {
-    return this.request('/hei-admin/dashboard');
+    return this.request<HEIAdminDashboard>('/hei-admin/dashboard');
   }
 
   async getStats(): Promise<APIResponse<DashboardStats>> {
-    return this.request('/hei-admin/stats');
+    return this.request<DashboardStats>('/hei-admin/stats');
   }
 
   async getTrendsData(): Promise<APIResponse<TrendsData>> {
-    return this.request('/hei-admin/trends');
+    return this.request<TrendsData>('/hei-admin/trends');
   }
 
   /* ---------- MENTORS ---------- */
@@ -101,42 +101,42 @@ class HEIAdminAPIClient {
   }
 
   async getMentor(mentorId: string): Promise<APIResponse<MentorDetails>> {
-    return this.request(`/hei-admin/mentors/${mentorId}`);
+    return this.request<MentorDetails>(`/hei-admin/mentors/${mentorId}`);
   }
 
   async updateMentorStatus(
     mentorId: string,
     status: MentorStatus
-  ): Promise<APIResponse<void>> {
-    return this.request(`/hei-admin/mentors/${mentorId}/status`, {
+  ): Promise<APIResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/hei-admin/mentors/${mentorId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
   }
 
   async getMentorCapacity(mentorId: string): Promise<APIResponse<MentorCapacity>> {
-    return this.request(`/hei-admin/mentors/${mentorId}/capacity`);
+    return this.request<MentorCapacity>(`/hei-admin/mentors/${mentorId}/capacity`);
   }
 
-  async getAvailableMentors(): Promise<APIResponse<HEIMentor[]>> {
-    return this.request('/hei-admin/mentors/available');
+  async getAvailableMentors(): Promise<APIResponse<any[]>> {
+    return this.request<any[]>('/hei-admin/mentors/available');
   }
 
   /* ---------- ASSIGNMENTS ---------- */
 
   async getUnassignedSchools(): Promise<APIResponse<UnassignedSchool[]>> {
-    return this.request('/hei-admin/assignments/unassigned-schools');
+    return this.request<UnassignedSchool[]>('/hei-admin/assignments/unassigned-schools');
   }
 
   async createAssignment(data: CreateAssignment): Promise<APIResponse<MentorAssignment[]>> {
-    return this.request('/hei-admin/assignments', {
+    return this.request<MentorAssignment[]>('/hei-admin/assignments', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async reassignMentor(data: ReassignMentor): Promise<APIResponse<MentorAssignment>> {
-    return this.request('/hei-admin/assignments/reassign', {
+    return this.request<MentorAssignment>('/hei-admin/assignments/reassign', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -145,8 +145,8 @@ class HEIAdminAPIClient {
   async removeAssignment(
     assignmentId: string,
     reason?: string
-  ): Promise<APIResponse<void>> {
-    return this.request(`/hei-admin/assignments/${assignmentId}`, {
+  ): Promise<APIResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/hei-admin/assignments/${assignmentId}`, {
       method: 'DELETE',
       body: JSON.stringify({ reason }),
     });
@@ -159,8 +159,9 @@ class HEIAdminAPIClient {
     const queryParams = new URLSearchParams();
     if (schoolId) queryParams.append('schoolId', schoolId);
     if (mentorId) queryParams.append('mentorId', mentorId);
+
     const query = queryParams.toString();
-    return this.request(
+    return this.request<MentorAssignment[]>(
       `/hei-admin/assignments/history${query ? `?${query}` : ''}`
     );
   }
@@ -168,37 +169,43 @@ class HEIAdminAPIClient {
   /* ---------- PARTNERSHIPS ---------- */
 
   async getPartnerships(
-    filters?: PartnershipFilters,
-    pagination?: PaginationParams
-  ): Promise<APIResponse<PaginatedResponse<SchoolPartnership>>> {
+    params?: PartnershipFilters & PaginationParams
+  ): Promise<APIResponse<{ partnerships: SchoolPartnership[]; total: number; page: number; limit: number }>> {
     const queryParams = new URLSearchParams();
-    if (filters?.status) queryParams.append('status', filters.status);
-    if (filters?.mentorId) queryParams.append('mentorId', filters.mentorId);
-    if (filters?.district) queryParams.append('district', filters.district);
-    if (filters?.state) queryParams.append('state', filters.state);
-    if (filters?.search) queryParams.append('search', filters.search);
-    if (pagination?.page) queryParams.append('page', pagination.page.toString());
-    if (pagination?.limit) queryParams.append('limit', pagination.limit.toString());
+    
+    if (params?.status) queryParams.append('status', params.status as string);
+    if (params?.mentorId) queryParams.append('mentorId', params.mentorId);
+    if (params?.district) queryParams.append('district', params.district);
+    if (params?.state) queryParams.append('state', params.state);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const query = queryParams.toString();
-    return this.request<PaginatedResponse<SchoolPartnership>>(
+    return this.request<{ partnerships: SchoolPartnership[]; total: number; page: number; limit: number }>(
       `/hei-admin/partnerships${query ? `?${query}` : ''}`
     );
   }
 
   async getPartnership(schoolId: string): Promise<APIResponse<PartnershipDetails>> {
-    return this.request(`/hei-admin/partnerships/${schoolId}`);
+    return this.request<PartnershipDetails>(`/hei-admin/partnerships/${schoolId}`);
   }
 
+  // ✅ FIXED: Added both method names for compatibility
+  async getPartnershipStats(): Promise<APIResponse<PartnershipOverviewStats>> {
+    return this.request<PartnershipOverviewStats>('/hei-admin/partnerships/overview-stats');
+  }
+
+  // ✅ FIXED: Alias method for backward compatibility
   async getPartnershipOverviewStats(): Promise<APIResponse<PartnershipOverviewStats>> {
-    return this.request('/hei-admin/partnerships/overview-stats');
+    return this.getPartnershipStats();
   }
 
   async updatePartnershipStatus(
     schoolId: string,
     status: PartnershipStatus
-  ): Promise<APIResponse<void>> {
-    return this.request(`/hei-admin/partnerships/${schoolId}/status`, {
+  ): Promise<APIResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/hei-admin/partnerships/${schoolId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     });
@@ -213,14 +220,14 @@ class HEIAdminAPIClient {
     const queryParams = new URLSearchParams();
     queryParams.append('page', page.toString());
     queryParams.append('limit', limit.toString());
-    
+
     return this.request<PaginatedResponse<Announcement>>(
       `/hei-admin/announcements?${queryParams.toString()}`
     );
   }
 
   async createAnnouncement(data: CreateAnnouncement): Promise<APIResponse<Announcement>> {
-    return this.request('/hei-admin/announcements', {
+    return this.request<Announcement>('/hei-admin/announcements', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -229,30 +236,30 @@ class HEIAdminAPIClient {
   async getAnnouncementRecipientCount(
     data: Partial<CreateAnnouncement>
   ): Promise<APIResponse<AnnouncementRecipientSummary>> {
-    return this.request('/hei-admin/announcements/recipient-count', {
+    return this.request<AnnouncementRecipientSummary>('/hei-admin/announcements/recipient-count', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteAnnouncement(announcementId: string): Promise<APIResponse<void>> {
-    return this.request(`/hei-admin/announcements/${announcementId}`, {
+  async deleteAnnouncement(announcementId: string): Promise<APIResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/hei-admin/announcements/${announcementId}`, {
       method: 'DELETE',
     });
   }
 
   /* ---------- EXPORT FUNCTIONS ---------- */
 
-  async exportMentorsData(): Promise<APIResponse<string>> {
-    return this.request('/hei-admin/mentors/export', {
+  async exportMentorsData(): Promise<APIResponse<Blob>> {
+    return this.request<Blob>('/hei-admin/mentors/export', {
       headers: {
         'Accept': 'text/csv',
       },
     });
   }
 
-  async exportPartnershipsData(): Promise<APIResponse<string>> {
-    return this.request('/hei-admin/partnerships/export', {
+  async exportPartnershipsData(): Promise<APIResponse<Blob>> {
+    return this.request<Blob>('/hei-admin/partnerships/export', {
       headers: {
         'Accept': 'text/csv',
       },

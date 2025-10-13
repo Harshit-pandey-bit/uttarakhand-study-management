@@ -1,46 +1,48 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Users,
-  Building2,
-  GraduationCap,
-  UserCheck,
-  TrendingUp,
-  AlertCircle,
-  Bell,
-  Calendar,
-  BarChart3,
-  ArrowRight,
-  Pin,
-} from 'lucide-react';
+import { Bell, Plus, Users, GraduationCap, School, UserCheck, Calendar, AlertCircle } from 'lucide-react';
+import { heiAdminAPI } from '@/lib/api/hei-admin-client';
+import { PartnershipOverviewStats, MentorAssignment, Announcement } from '@/types/hei-admin-types';
 import Link from 'next/link';
-import heiAdminAPI from '@/lib/api/hei-admin-client';
-import { HEIAdminDashboard, DashboardStats } from '@/types/hei-admin-types';
 
-export default function HEIAdminDashboardPage() {
+export default function HEIAdminDashboard() {
+  const [stats, setStats] = useState<PartnershipOverviewStats | null>(null);
+  const [recentAssignments, setRecentAssignments] = useState<MentorAssignment[]>([]);
+  const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dashboardData, setDashboardData] = useState<HEIAdminDashboard | null>(null);
 
   useEffect(() => {
-    loadDashboard();
+    fetchDashboardData();
   }, []);
 
-  const loadDashboard = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await heiAdminAPI.getDashboard();
-      
-      if (response.success && response.data) {
-        setDashboardData(response.data);
-      } else {
-        setError(response.error || 'Failed to load dashboard');
+      setError(null);
+
+      const [statsResponse, dashboardResponse] = await Promise.all([
+        heiAdminAPI.getPartnershipOverviewStats(),
+        heiAdminAPI.getDashboard()
+      ]);
+
+      if (statsResponse.success && statsResponse.data) {
+        setStats(statsResponse.data);
+      }
+
+      if (dashboardResponse.success && dashboardResponse.data) {
+        setRecentAssignments(dashboardResponse.data.recentAssignments || []);
+        setRecentAnnouncements(dashboardResponse.data.recentAnnouncements || []);
+      }
+
+      if (!statsResponse.success) {
+        setError(statsResponse.error || 'Failed to load statistics');
       }
     } catch (err: any) {
+      console.error('Dashboard error:', err);
       setError(err.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -49,401 +51,190 @@ export default function HEIAdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading HEI Admin Dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading HEI Admin Dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !dashboardData) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Unable to Load Dashboard</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={loadDashboard}>Try Again</Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+          <p className="mt-4 text-red-600">{error}</p>
+          <Button onClick={fetchDashboardData} className="mt-4">
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
-
-  const { stats, recentAssignments, recentAnnouncements, trendsData } = dashboardData;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">HEI Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Manage mentors, schools, and partnerships
-          </p>
+          <p className="text-gray-600 mt-1">Manage mentors, schools, and partnerships</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/dashboard/hei-admin/announcements">
-            <Button variant="outline" className="gap-2">
-              <Bell className="h-4 w-4" />
-              Create Announcement
-            </Button>
-          </Link>
-          <Link href="/dashboard/hei-admin/mentors/assign">
-            <Button className="gap-2">
-              <UserCheck className="h-4 w-4" />
-              Assign Mentor
-            </Button>
-          </Link>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Create Announcement
+          </Button>
+          <Button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
+            <Plus className="h-4 w-4" />
+            Assign Mentor
+          </Button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Mentors"
-          value={stats.totalMentors}
-          subtitle={`${stats.activeMentors} active`}
-          icon={Users}
+      {/* Stats Grid - Only 4 main stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total HEI Mentors"
+          value={stats?.totalMentors || 0}
+          icon={<Users className="h-5 w-5" />}
+          iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
-          iconBg="bg-blue-100"
         />
-        <StatsCard
+        <StatCard
           title="Partner Schools"
-          value={stats.partnerSchools}
-          subtitle={`${stats.totalSchools} total schools`}
-          icon={Building2}
+          value={stats?.totalSchools || 0}
+          icon={<School className="h-5 w-5" />}
+          iconBgColor="bg-green-100"
           iconColor="text-green-600"
-          iconBg="bg-green-100"
         />
-        <StatsCard
+        <StatCard
           title="Total Students"
-          value={stats.totalStudents}
-          subtitle="Under supervision"
-          icon={GraduationCap}
+          value={stats?.totalStudents || 0}
+          icon={<GraduationCap className="h-5 w-5" />}
+          iconBgColor="bg-purple-100"
           iconColor="text-purple-600"
-          iconBg="bg-purple-100"
         />
-        <StatsCard
+        <StatCard
           title="Total Teachers"
-          value={stats.totalTeachers}
-          subtitle="Across partnerships"
-          icon={UserCheck}
+          value={stats?.totalTeachers || 0}
+          icon={<UserCheck className="h-5 w-5" />}
+          iconBgColor="bg-orange-100"
           iconColor="text-orange-600"
-          iconBg="bg-orange-100"
         />
       </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Assignments</p>
-                <p className="text-2xl font-bold mt-1">{stats.activeAssignments}</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            {stats.pendingAssignments > 0 && (
-              <div className="mt-3 flex items-center gap-2">
-                <Badge variant="outline" className="text-orange-600">
-                  {stats.pendingAssignments} pending
-                </Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Recent Announcements</p>
-                <p className="text-2xl font-bold mt-1">{stats.recentAnnouncementsCount}</p>
-              </div>
-              <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Bell className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <Link href="/dashboard/hei-admin/announcements">
-                <Button variant="link" size="sm" className="p-0 h-auto">
-                  View all announcements
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Inactive Mentors</p>
-                <p className="text-2xl font-bold mt-1">{stats.inactiveMentors}</p>
-              </div>
-              <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                <AlertCircle className="h-6 w-6 text-gray-600" />
-              </div>
-            </div>
-            {stats.inactiveMentors > 0 && (
-              <div className="mt-3">
-                <Link href="/dashboard/hei-admin/mentors?status=inactive">
-                  <Button variant="link" size="sm" className="p-0 h-auto">
-                    Review inactive mentors
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* Recent Assignments & Announcements */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Assignments */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Recent Assignments</span>
-              <Link href="/dashboard/hei-admin/mentors/assign">
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!recentAssignments || recentAssignments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <p>No recent assignments</p>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold">Recent Assignments</h3>
               </div>
+              <Link href="/dashboard/hei-admin/mentors">
+                <Button variant="ghost" size="sm">View All →</Button>
+              </Link>
+            </div>
+            {recentAssignments.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No recent assignments</p>
             ) : (
               <div className="space-y-3">
-                {recentAssignments.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
+                {recentAssignments.slice(0, 5).map((assignment) => (
+                  <div key={assignment.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{assignment.mentorName}</p>
+                      <p className="font-medium text-gray-900">{assignment.mentorName}</p>
                       <p className="text-sm text-gray-600">{assignment.schoolName}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">
                         {new Date(assignment.assignmentDate).toLocaleDateString()}
                       </p>
+                      <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full mt-1">
+                        {assignment.status}
+                      </span>
                     </div>
-                    <Badge
-                      variant={assignment.status === 'active' ? 'default' : 'secondary'}
-                    >
-                      {assignment.status}
-                    </Badge>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
+          </div>
         </Card>
 
-        {/* Recent Announcements - FIXED */}
+        {/* Recent Announcements */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Recent Announcements</span>
-              <Link href="/dashboard/hei-admin/announcements">
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!recentAnnouncements || recentAnnouncements.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Bell className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <p>No recent announcements</p>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold">Recent Announcements</h3>
               </div>
+              <Link href="/dashboard/hei-admin/announcements">
+                <Button variant="ghost" size="sm">View All →</Button>
+              </Link>
+            </div>
+            {recentAnnouncements.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No recent announcements</p>
             ) : (
               <div className="space-y-3">
-                {recentAnnouncements.map((announcement) => (
-                  <div
-                    key={announcement.id}
-                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
+                {recentAnnouncements.slice(0, 5).map((announcement) => (
+                  <div key={announcement.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm">{announcement.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900 line-clamp-1">{announcement.title}</p>
                           {announcement.isPinned && (
-                            <Pin className="h-3 w-3 text-purple-600" />
-                          )}
-                          {announcement.isNew && (
-                            <Badge variant="outline" className="text-xs">NEW</Badge>
+                            <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">
+                              Pinned
+                            </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                          {announcement.description}
-                        </p>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{announcement.description}</p>
                       </div>
-                      <Badge
-                        variant={
-                          announcement.priority === 'critical' || announcement.priority === 'urgent'
-                            ? 'destructive'
-                            : 'secondary'
-                        }
-                        className="ml-2"
-                      >
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 ${
+                        announcement.priority === 'high' ? 'bg-red-100 text-red-700' :
+                        announcement.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
                         {announcement.priority}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className="px-2 py-0.5 rounded text-xs"
-                        style={{
-                          backgroundColor: announcement.badgeColor || '#6366f1',
-                          color: '#ffffff',
-                        }}
-                      >
-                        {announcement.badgeType}
                       </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <p className="text-xs text-gray-500">
-                        By {announcement.authorName}
-                      </p>
-                      <span className="text-xs text-gray-400">•</span>
-                      <p className="text-xs text-gray-500">
-                        {new Date(announcement.createdAt).toLocaleDateString()}
-                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
+          </div>
         </Card>
       </div>
-
-      {/* Trends Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Trends & Analytics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Mentor Assignment Trend */}
-            <div>
-              <h4 className="text-sm font-medium mb-3">Mentor Assignments (Monthly)</h4>
-              <div className="space-y-2">
-                {trendsData.mentorAssignmentTrend.slice(-6).map((item) => (
-                  <div key={item.month} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{item.month}</span>
-                    <Badge variant="outline">{item.count}</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* School Partnerships by Region */}
-            <div>
-              <h4 className="text-sm font-medium mb-3">Schools by Region</h4>
-              <div className="space-y-2">
-                {trendsData.schoolPartnershipsByRegion.slice(0, 6).map((item) => (
-                  <div key={item.region} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{item.region}</span>
-                    <Badge variant="outline">{item.count}</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Mentor Workload Distribution */}
-            <div>
-              <h4 className="text-sm font-medium mb-3">Mentor Workload</h4>
-              <div className="space-y-2">
-                {trendsData.mentorWorkloadDistribution.map((item) => (
-                  <div key={item.range} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{item.range}</span>
-                    <Badge variant="outline">{item.count} mentors</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <Link href="/dashboard/hei-admin/mentors">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Users className="h-4 w-4" />
-                View All Mentors
-              </Button>
-            </Link>
-            <Link href="/dashboard/hei-admin/mentors/assign">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <UserCheck className="h-4 w-4" />
-                Assign Mentor
-              </Button>
-            </Link>
-            <Link href="/dashboard/hei-admin/partnerships">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Building2 className="h-4 w-4" />
-                View Partnerships
-              </Button>
-            </Link>
-            <Link href="/dashboard/hei-admin/announcements">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Bell className="h-4 w-4" />
-                Send Announcement
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-// Stats Card Component
-interface StatsCardProps {
+interface StatCardProps {
   title: string;
-  value: number;
-  subtitle: string;
-  icon: React.ElementType;
+  value: number | string;
+  icon: React.ReactNode;
+  iconBgColor: string;
   iconColor: string;
-  iconBg: string;
 }
 
-function StatsCard({ title, value, subtitle, icon: Icon, iconColor, iconBg }: StatsCardProps) {
+function StatCard({ title, value, icon, iconBgColor, iconColor }: StatCardProps) {
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600">{title}</p>
-            <p className="text-3xl font-bold mt-2">{value.toLocaleString()}</p>
-            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </p>
           </div>
-          <div className={`h-14 w-14 ${iconBg} rounded-lg flex items-center justify-center`}>
-            <Icon className={`h-7 w-7 ${iconColor}`} />
+          <div className={`p-3 rounded-full ${iconBgColor}`}>
+            <div className={iconColor}>{icon}</div>
           </div>
         </div>
       </CardContent>

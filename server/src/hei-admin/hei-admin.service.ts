@@ -41,113 +41,214 @@ export class HeiAdminService {
     );
   }
 
-  /* ---------- DASHBOARD ---------- */
+  /* ==================== DASHBOARD ==================== */
 
-  async getDashboard(adminUserId: string): Promise<HEIAdminDashboardDto> {
-    console.log('🎓 Getting HEI Admin dashboard for:', adminUserId);
+ async getDashboard(adminUserId: string): Promise<HEIAdminDashboardDto> {
+  console.log('🎓 Getting HEI Admin dashboard for:', adminUserId);
 
-    try {
-      const { data: adminProfile, error: adminError } = await this.supabase
-        .from('hei_admin_profiles')
-        .select('hei_id')
-        .eq('user_id', adminUserId)
-        .single();
+  const { data: adminProfile, error: adminError } = await this.supabase
+    .from('hei_admin_profiles')
+    .select('hei_id')
+    .eq('user_id', adminUserId)
+    .single();
 
-      if (adminError || !adminProfile) {
-        throw new NotFoundException('HEI Admin profile not found');
-      }
-
-      const heiId = adminProfile.hei_id;
-
-      const [stats, recentAssignments, recentAnnouncements, trendsData] = await Promise.all([
-        this.getDashboardStats(heiId),
-        this.getRecentAssignments(heiId, 5),
-        this.getRecentAnnouncements(adminUserId, 5),
-        this.getTrendsData(heiId),
-      ]);
-
-      return {
-        stats,
-        recentAssignments,
-        recentAnnouncements,
-        trendsData,
-      };
-    } catch (error) {
-      console.error('Error fetching dashboard:', error);
-      throw error;
-    }
+  if (adminError || !adminProfile) {
+    throw new NotFoundException('HEI Admin profile not found');
   }
 
-  async getDashboardStats(heiId: string): Promise<DashboardStatsDto> {
-    // Get mentor counts
-    const { data: mentors } = await this.supabase
-      .from('hei_mentor_profiles')
-      .select('id, status')
-      .eq('hei_id', heiId);
+  const heiId = adminProfile.hei_id;
 
-    const totalMentors = mentors?.length || 0;
-    const activeMentors = mentors?.filter(m => m.status === 'active').length || 0;
-    const inactiveMentors = mentors?.filter(m => m.status === 'inactive').length || 0;
+  // ✅ Use getDashboardStats which returns DashboardStatsDto
+  const [stats, recentAssignments, recentAnnouncements, trendsData] = await Promise.all([
+    this.getDashboardStats(heiId), // 👈 This now returns the correct type
+    this.getRecentAssignments(heiId, 5),
+    this.getRecentAnnouncements(adminUserId, 5),
+    this.getTrendsData(heiId),
+  ]);
 
-    // Get student assignments
-    const mentorIds = mentors?.map(m => m.id) || [];
-    const { data: assignments } = await this.supabase
-      .from('mentor_student_assignments')
-      .select('id, status, student_id')
-      .in('mentor_id', mentorIds);
+  return {
+    stats,
+    recentAssignments,
+    recentAnnouncements,
+    trendsData,
+  };
+}
 
-    const activeAssignmentsList = (assignments || []).filter(a => a.status === 'active');
-    const activeAssignments = activeAssignmentsList.length;
 
-    // Get student_ids (which are user_ids)
-    const studentUserIds = activeAssignmentsList.map(a => a.student_id).filter(Boolean);
-    
-    // Query student_profiles using user_id
-    const { data: studentProfiles } = await this.supabase
+
+ /**
+ * Get dashboard stats - returns DashboardStatsDto with all required properties
+ * Matches the data shown in partnership page but with DashboardStatsDto structure
+ */
+async getDashboardStats(heiId: string): Promise<DashboardStatsDto> {
+  console.log('📊 Getting dashboard stats for HEI:', heiId);
+
+  // 1. Get all mentors for THIS specific HEI
+  const { data: mentors, count: mentorsCount } = await this.supabase
+    .from('hei_mentor_profiles')
+    .select('id, status', { count: 'exact' })
+    .eq('hei_id', heiId);
+
+  const mentorIds = mentors?.map(m => m.id) || [];
+  
+  // Count active/inactive mentors
+  const activeMentors = mentors?.filter(m => m.status === 'active').length || 0;
+  const inactiveMentors = (mentorsCount || 0) - activeMentors;
+
+  console.log(`✅ Found ${mentorsCount} mentors (${activeMentors} active, ${inactiveMentors} inactive)`);
+
+  // 2. Get all active assignments for these mentors
+  const { data: assignments, count: activeAssignmentsCount } = await this.supabase
+    .from('mentor_student_assignments')
+    .select('id, status, student_id, mentor_id', { count: 'exact' })
+    .in('mentor_id', mentorIds)
+    .eq('status', 'active');
+
+  console.log(`✅ Found ${activeAssignmentsCount} active assignments`);
+
+  // 3. Get student user IDs from assignments
+  const studentUserIds = Array.from(new Set(
+    (assignments || []).map(a => a.student_id).filter(Boolean)
+  ));
+  console.log(`✅ Found ${studentUserIds.length} unique students under supervision`);
+
+  // 4. Get student profiles to find schools
+  const { data: studentProfiles } = await this.supabase
+    .from('student_profiles')
+    .select('user_id, school_id')
+    .in('user_id', studentUserIds);
+
+  // 5. Get unique school IDs
+  const schoolIds = Array.from(new Set(
+    (studentProfiles || []).map(s => s.school_id).filter(Boolean)
+  ));
+  console.log(`✅ Found ${schoolIds.length} partner schools`);
+
+  // 6. Get ALL students and teachers in these partner schools
+  const [allStudents, allTeachers] = await Promise.all([
+    this.supabase
       .from('student_profiles')
-      .select('school_id')
-      .in('user_id', studentUserIds);
-
-    // Get unique school IDs
-    const assignedSchoolIds = Array.from(new Set(
-      (studentProfiles || []).map(s => s.school_id).filter(Boolean)
-    ));
-
-    const { count: totalSchools } = await this.supabase
-      .from('schools')
-      .select('*', { count: 'exact', head: true });
-
-    const totalStudents = activeAssignmentsList.length;
-
-    const { data: teachers } = await this.supabase
+      .select('id', { count: 'exact', head: true })
+      .in('school_id', schoolIds),
+    this.supabase
       .from('teacher_profiles')
-      .select('id')
-      .in('school_id', assignedSchoolIds);
+      .select('id', { count: 'exact', head: true })
+      .in('school_id', schoolIds)
+  ]);
 
-    const { count: recentAnnouncementsCount } = await this.supabase
-      .from('announcements')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+  const totalStudents = allStudents.count || 0;
+  const totalTeachers = allTeachers.count || 0;
 
-    return {
-      totalMentors,
-      activeMentors,
-      inactiveMentors,
-      totalSchools: totalSchools || 0,
-      partnerSchools: assignedSchoolIds.length,
-      totalStudents,
-      totalTeachers: teachers?.length || 0,
-      pendingAssignments: 0,
-      activeAssignments,
-      recentAnnouncementsCount: recentAnnouncementsCount || 0,
-    };
-  }
+  console.log(`✅ Total students: ${totalStudents}, Total teachers: ${totalTeachers}`);
+
+  // 7. Get recent announcements count (last 7 days)
+  const { count: recentAnnouncementsCount } = await this.supabase
+    .from('announcements')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_active', true)
+    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+  // 8. Return DashboardStatsDto with all required properties
+  const stats: DashboardStatsDto = {
+    totalMentors: mentorsCount || 0,
+    activeMentors,
+    inactiveMentors,
+    totalSchools: schoolIds.length,
+    partnerSchools: schoolIds.length,  // Same as totalSchools
+    totalStudents,
+    totalTeachers,
+    pendingAssignments: 0,  // Can be calculated if needed
+    activeAssignments: activeAssignmentsCount || 0,
+    recentAnnouncementsCount: recentAnnouncementsCount || 0,
+  };
+
+  console.log('📊 Dashboard Stats calculated:', stats);
+  return stats;
+}
+
+
+/**
+ * Get dashboard overview stats (same calculation as partnership page but filtered by HEI)
+ * This ensures dashboard shows correct data for the specific HEI admin
+ */
+async getDashboardOverviewStats(heiId: string): Promise<PartnershipOverviewStatsDto> {
+  console.log('📊 Getting dashboard overview stats for HEI:', heiId);
+
+  // 1. Get all mentors for THIS specific HEI
+  const { data: mentors, count: mentorsCount } = await this.supabase
+    .from('hei_mentor_profiles')
+    .select('id', { count: 'exact' })
+    .eq('hei_id', heiId);
+
+  const mentorIds = mentors?.map(m => m.id) || [];
+  console.log(`✅ Found ${mentorsCount} mentors for HEI`);
+
+  // 2. Get all active assignments for these mentors
+  const { data: assignments } = await this.supabase
+    .from('mentor_student_assignments')
+    .select('id, status, student_id, mentor_id')
+    .in('mentor_id', mentorIds)
+    .eq('status', 'active');
+
+  const activeAssignments = assignments?.length || 0;
+  console.log(`✅ Found ${activeAssignments} active assignments`);
+
+  // 3. Get student user IDs from assignments
+  const studentUserIds = Array.from(new Set(
+    (assignments || []).map(a => a.student_id).filter(Boolean)
+  ));
+  console.log(`✅ Found ${studentUserIds.length} unique students`);
+
+  // 4. Get student profiles to find schools
+  const { data: studentProfiles } = await this.supabase
+    .from('student_profiles')
+    .select('user_id, school_id')
+    .in('user_id', studentUserIds);
+
+  // 5. Get unique school IDs
+  const schoolIds = Array.from(new Set(
+    (studentProfiles || []).map(s => s.school_id).filter(Boolean)
+  ));
+  console.log(`✅ Found ${schoolIds.length} partner schools`);
+
+  // 6. Get ALL students and teachers in these partner schools
+  const [allStudents, allTeachers] = await Promise.all([
+    this.supabase
+      .from('student_profiles')
+      .select('id', { count: 'exact', head: true })
+      .in('school_id', schoolIds),
+    this.supabase
+      .from('teacher_profiles')
+      .select('id', { count: 'exact', head: true })
+      .in('school_id', schoolIds)
+  ]);
+
+  const totalStudents = allStudents.count || 0;
+  const totalTeachers = allTeachers.count || 0;
+
+  console.log(`✅ Total students: ${totalStudents}, Total teachers: ${totalTeachers}`);
+
+  // 7. Calculate partnership statistics
+  const stats = {
+    totalMentors: mentorsCount || 0,
+    totalSchools: schoolIds.length,
+    totalStudents,
+    totalTeachers,
+    activePartnerships: activeAssignments,
+    pendingRequests: 0,
+    inactivePartnerships: 0,
+    growthRate: 15,
+  };
+
+  console.log('📊 Dashboard Overview Stats:', stats);
+  return stats;
+}
+
 
   async getTrendsData(heiId: string): Promise<TrendsDataDto> {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    // Get mentor IDs
     const { data: mentors } = await this.supabase
       .from('hei_mentor_profiles')
       .select('id')
@@ -155,14 +256,12 @@ export class HeiAdminService {
 
     const mentorIds = mentors?.map(m => m.id) || [];
 
-    // Get assignments
     const { data: assignments } = await this.supabase
       .from('mentor_student_assignments')
       .select('assigned_at, mentor_id, student_id')
       .in('mentor_id', mentorIds)
       .gte('assigned_at', sixMonthsAgo.toISOString());
 
-    // Group assignments by month
     const assignmentsByMonth = (assignments || []).reduce((acc, assignment) => {
       const month = new Date(assignment.assigned_at).toLocaleDateString('en-US', { 
         month: 'short', 
@@ -177,24 +276,20 @@ export class HeiAdminService {
       count,
     }));
 
-    // Get student profiles with schools
     const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
     const { data: studentProfiles } = await this.supabase
       .from('student_profiles')
       .select('school_id, user_id')
       .in('user_id', studentUserIds);
 
-    // Get schools data
     const schoolIds = Array.from(new Set((studentProfiles || []).map(s => s.school_id).filter(Boolean)));
     const { data: schools } = await this.supabase
       .from('schools')
       .select('id, district')
       .in('id', schoolIds);
 
-    // Create school map
     const schoolMap = new Map(schools?.map(s => [s.id, s]) || []);
 
-    // Count by region
     const schoolsByRegion = (studentProfiles || []).reduce((acc, profile) => {
       const school = schoolMap.get(profile.school_id);
       const region = school?.district || 'Unknown';
@@ -207,7 +302,6 @@ export class HeiAdminService {
       count,
     }));
 
-    // Get mentor workload distribution
     const { data: assignmentCounts } = await this.supabase
       .from('mentor_student_assignments')
       .select('mentor_id')
@@ -267,11 +361,10 @@ export class HeiAdminService {
     const assignedByIds = Array.from(new Set(assignments.map(a => a.assigned_by)));
     const studentUserIds = assignments.map(a => a.student_id).filter(Boolean);
 
-    const [mentorData, userData, studentProfiles, studentUsers] = await Promise.all([
+    const [mentorData, userData, studentProfiles] = await Promise.all([
       this.supabase.from('hei_mentor_profiles').select('id, user_id').in('id', mentorIdsUnique),
       this.supabase.from('users').select('id, full_name, email').in('id', assignedByIds),
       this.supabase.from('student_profiles').select('user_id, school_id').in('user_id', studentUserIds),
-      this.supabase.from('users').select('id, full_name').in('id', studentUserIds),
     ]);
 
     const mentorUserIds = mentorData.data?.map(m => m.user_id) || [];
@@ -280,7 +373,6 @@ export class HeiAdminService {
       .select('id, full_name, email')
       .in('id', mentorUserIds);
 
-    // Get schools
     const schoolIds = Array.from(new Set((studentProfiles.data || []).map(s => s.school_id).filter(Boolean)));
     const { data: schools } = await this.supabase
       .from('schools')
@@ -312,194 +404,219 @@ export class HeiAdminService {
     });
   }
 
- async getRecentAnnouncements(createdBy: string, limit: number = 5): Promise<AnnouncementDto[]> {
-  // Get HEI ID
-  const { data: adminProfile } = await this.supabase
-    .from('hei_admin_profiles')
-    .select('hei_id')
-    .eq('user_id', createdBy)
-    .single();
+  async getRecentAnnouncements(createdBy: string, limit: number = 5): Promise<AnnouncementDto[]> {
+    const { data: adminProfile } = await this.supabase
+      .from('hei_admin_profiles')
+      .select('hei_id')
+      .eq('user_id', createdBy)
+      .single();
 
-  const heiId = adminProfile?.hei_id;
-
-  // Use announcements table directly to get target_audience
-  let query = this.supabase
-    .from('announcements')
-    .select(`
-      *,
-      users!announcements_created_by_fkey(full_name)
-    `)
-    .eq('is_active', true)
-    .eq('author_role', 'hei_admin')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (heiId) {
-    query = query.eq('hei_id', heiId);
-  }
-
-  const { data: announcements, error } = await query;
-
-  if (error) throw error;
-
-  // Calculate isNew (created within last 7 days)
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-  return (announcements || []).map(a => {
-    const userData = a.users as any;
-    const createdAt = new Date(a.created_at);
-    
-    return {
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      badgeType: a.badge_type,
-      badgeColor: a.badge_color,
-      authorName: userData?.full_name || 'Unknown',
-      authorRole: a.author_role,
-      priority: a.priority,
-      isPinned: a.is_pinned,
-      isNew: createdAt > sevenDaysAgo,
-      createdAt: a.created_at,
-      metadata: a.metadata,
-    };
-  });
-}
-
-
-  /* ---------- MENTORS ---------- */
-
-  async getMentors(
-    heiId: string,
-    filters: {
-      status?: MentorStatus;
-      workload?: string;
-      expertise?: string;
-      search?: string;
-    },
-    pagination: { page: number; limit: number }
-  ): Promise<PaginatedMentorListDto> {
-    const { page, limit } = pagination;
-    const offset = (page - 1) * limit;
+    const heiId = adminProfile?.hei_id;
 
     let query = this.supabase
-      .from('hei_mentor_profiles')
-      .select('*, users!inner(id, full_name, email, avatar_url)', { count: 'exact' })
-      .eq('hei_id', heiId);
+      .from('announcements')
+      .select(`
+        *,
+        users!announcements_created_by_fkey(full_name)
+      `)
+      .eq('is_active', true)
+      .eq('author_role', 'hei_admin')
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    if (filters.status) {
-      query = query.eq('status', filters.status);
+    if (heiId) {
+      query = query.eq('hei_id', heiId);
     }
 
-    const { data: mentors, error, count } = await query
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
+    const { data: announcements, error } = await query;
 
     if (error) throw error;
 
-    // Get student assignments
-    const mentorIds = mentors?.map(m => m.id) || [];
-    const { data: assignments } = await this.supabase
-      .from('mentor_student_assignments')
-      .select('mentor_id, student_id')
-      .in('mentor_id', mentorIds)
-      .eq('status', 'active');
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    // Get student profiles
-    const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
-    const { data: studentProfiles } = await this.supabase
-      .from('student_profiles')
-      .select('user_id, school_id')
-      .in('user_id', studentUserIds);
-
-    // Get schools
-    const schoolIds = Array.from(new Set((studentProfiles || []).map(s => s.school_id).filter(Boolean)));
-    const { data: schools } = await this.supabase
-      .from('schools')
-      .select('id, name, location')
-      .in('id', schoolIds);
-
-    const mentorList: MentorListItemDto[] = (mentors || []).map(mentor => {
-      const userArray = Array.isArray(mentor.users) ? mentor.users[0] : mentor.users;
-      const mentorAssignments = (assignments || []).filter(a => a.mentor_id === mentor.id);
+    return (announcements || []).map(a => {
+      const userData = a.users as any;
+      const createdAt = new Date(a.created_at);
       
-      // Get unique schools for this mentor
-      const mentorStudentIds = mentorAssignments.map(a => a.student_id);
-      const mentorStudentProfiles = (studentProfiles || []).filter(sp => 
-        mentorStudentIds.includes(sp.user_id)
-      );
-      
-      const mentorSchools = new Map();
-      mentorStudentProfiles.forEach(profile => {
-        const school = schools?.find(s => s.id === profile.school_id);
-        if (school) {
-          mentorSchools.set(school.id, {
-            schoolId: school.id,
-            schoolName: school.name || 'Unknown',
-            location: school.location || '',
-          });
-        }
-      });
-
-      const assignedSchools = Array.from(mentorSchools.values());
-      const studentsCount = mentorAssignments.length;
-
-      const workloadPercentage = (studentsCount / mentor.max_students) * 100;
-      let workloadStatus: 'under-assigned' | 'optimal' | 'over-assigned' = 'optimal';
-      if (workloadPercentage < 50) workloadStatus = 'under-assigned';
-      else if (workloadPercentage > 100) workloadStatus = 'over-assigned';
-
       return {
-        id: mentor.id,
-        userId: mentor.user_id,
-        name: userArray?.full_name || 'Unknown',
-        email: userArray?.email || '',
-        avatar: userArray?.avatar_url,
-        employeeId: mentor.employee_id,
-        designation: mentor.designation,
-        department: mentor.department,
-        expertise: mentor.expertise || [],
-        qualification: mentor.qualification,
-        experienceYears: mentor.experience_years,
-        researchInterests: mentor.research_interests || [],
-        maxStudents: mentor.max_students,
-        status: mentor.status,
-        assignedSchoolsCount: assignedSchools.length,
-        totalStudentsSupervised: studentsCount,
-        lastActive: mentor.last_active,
-        joinDate: mentor.created_at,
-        heiId: mentor.hei_id,
-        workloadStatus,
-        assignedSchools,
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        badgeType: a.badge_type,
+        badgeColor: a.badge_color,
+        authorName: userData?.full_name || 'Unknown',
+        authorRole: a.author_role,
+        priority: a.priority,
+        isPinned: a.is_pinned,
+        isNew: createdAt > sevenDaysAgo,
+        createdAt: a.created_at,
+        metadata: a.metadata,
       };
     });
+  }
 
-    let filteredList = mentorList;
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredList = mentorList.filter(m => 
-        m.name.toLowerCase().includes(searchLower) || 
-        m.email.toLowerCase().includes(searchLower)
-      );
-    }
+  /* ==================== MENTORS ==================== */
 
-    if (filters.workload && filters.workload !== 'all') {
-      filteredList = filteredList.filter(m => m.workloadStatus === filters.workload);
-    }
+ async getMentors(
+  heiId: string,
+  filters: {
+    status?: MentorStatus;
+    workload?: string;
+    expertise?: string;
+    search?: string;
+  },
+  pagination: { page: number; limit: number }
+): Promise<PaginatedMentorListDto> {
+  const { page, limit } = pagination;
+  const offset = (page - 1) * limit;
 
-    const total = count || filteredList.length;
-    const totalPages = Math.ceil(total / limit);
+  console.log('🔍 Getting mentors for HEI:', heiId, 'Filters:', filters, 'Page:', page);
 
+  // Build query
+  let query = this.supabase
+    .from('hei_mentor_profiles')
+    .select('*, users!inner(id, full_name, email, avatar_url)', { count: 'exact' })
+    .eq('hei_id', heiId);
+
+  // Apply status filter
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  // Apply search filter
+  if (filters.search) {
+    query = query.or(`users.full_name.ilike.%${filters.search}%,users.email.ilike.%${filters.search}%`);
+  }
+
+  // Execute query with pagination
+  const { data: mentors, error, count } = await query
+    .range(offset, offset + limit - 1)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ Error fetching mentors:', error);
+    throw error;
+  }
+
+  console.log(`✅ Found ${mentors?.length || 0} mentors, total count: ${count}`);
+
+  if (!mentors || mentors.length === 0) {
     return {
-      data: filteredList,
-      total,
+      data: [],
+      total: count || 0,
       page,
       limit,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1,
+      totalPages: 0,
+      hasNext: false,
+      hasPrev: false,
     };
   }
+
+  // Get mentor IDs for assignments
+  const mentorIds = mentors.map(m => m.id);
+
+  // Fetch assignments for these mentors
+  const { data: assignments } = await this.supabase
+    .from('mentor_student_assignments')
+    .select('mentor_id, student_id')
+    .in('mentor_id', mentorIds)
+    .eq('status', 'active');
+
+  // Get student profiles to find schools
+  const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
+  const { data: studentProfiles } = await this.supabase
+    .from('student_profiles')
+    .select('user_id, school_id')
+    .in('user_id', studentUserIds);
+
+  // Get school details
+  const schoolIds = Array.from(new Set((studentProfiles || []).map(s => s.school_id).filter(Boolean)));
+  const { data: schools } = await this.supabase
+    .from('schools')
+    .select('id, name, location')
+    .in('id', schoolIds);
+
+  // Map mentors to DTO
+  const mentorList: MentorListItemDto[] = mentors.map(mentor => {
+    // Handle users relationship (can be array or object)
+    const user = Array.isArray(mentor.users) ? mentor.users[0] : mentor.users;
+
+    // Calculate assignments for this mentor
+    const mentorAssignments = (assignments || []).filter(a => a.mentor_id === mentor.id);
+    const mentorStudentIds = mentorAssignments.map(a => a.student_id);
+    
+    // Get student profiles for this mentor
+    const mentorStudentProfiles = (studentProfiles || []).filter(sp =>
+      mentorStudentIds.includes(sp.user_id)
+    );
+
+    // Build unique schools map
+    const mentorSchools = new Map();
+    mentorStudentProfiles.forEach(profile => {
+      const school = schools?.find(s => s.id === profile.school_id);
+      if (school && !mentorSchools.has(school.id)) {
+        mentorSchools.set(school.id, {
+          schoolId: school.id,
+          schoolName: school.name || 'Unknown',
+          location: school.location || '',
+        });
+      }
+    });
+
+    const assignedSchools = Array.from(mentorSchools.values());
+    const studentsCount = mentorAssignments.length;
+    const maxStudents = mentor.max_students || 10;
+    const workloadPercentage = (studentsCount / maxStudents) * 100;
+
+    let workloadStatus: 'under-assigned' | 'optimal' | 'over-assigned' = 'optimal';
+    if (workloadPercentage < 50) workloadStatus = 'under-assigned';
+    else if (workloadPercentage > 100) workloadStatus = 'over-assigned';
+
+    return {
+      id: mentor.id,
+      userId: mentor.user_id,
+      name: user?.full_name || 'Unknown',
+      email: user?.email || '',
+      avatar: user?.avatar_url,
+      employeeId: mentor.employee_id,
+      designation: mentor.designation || 'N/A',
+      department: mentor.department || '',
+      expertise: mentor.expertise || [],
+      qualification: mentor.qualification || '',
+      experienceYears: mentor.experience_years || 0,
+      researchInterests: mentor.research_interests || [],
+      maxStudents,
+      status: mentor.status,
+      assignedSchoolsCount: assignedSchools.length,
+      totalStudentsSupervised: studentsCount,
+      lastActive: mentor.last_active,
+      joinDate: mentor.created_at,
+      heiId: mentor.hei_id,
+      workloadStatus,
+      assignedSchools,
+    };
+  });
+
+  // Apply workload filter if specified
+  let filteredList = mentorList;
+  if (filters.workload && filters.workload !== 'all') {
+    filteredList = mentorList.filter(m => m.workloadStatus === filters.workload);
+  }
+
+  const total = count || 0;
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data: filteredList,
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+  };
+}
+
 
   async getMentor(mentorId: string): Promise<MentorDetailsDto> {
     const { data: mentor, error } = await this.supabase
@@ -514,27 +631,23 @@ export class HeiAdminService {
 
     const userArray = Array.isArray(mentor.users) ? mentor.users[0] : mentor.users;
 
-    // Get student assignments
     const { data: assignments } = await this.supabase
       .from('mentor_student_assignments')
       .select('id, student_id, assigned_at, status, notes')
       .eq('mentor_id', mentorId);
 
-    // Get student profiles
     const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
     const { data: studentProfiles } = await this.supabase
       .from('student_profiles')
       .select('user_id, school_id')
       .in('user_id', studentUserIds);
 
-    // Get schools
     const schoolIds = Array.from(new Set((studentProfiles || []).map(s => s.school_id).filter(Boolean)));
     const { data: schools } = await this.supabase
       .from('schools')
       .select('id, name, logo, location, district')
       .in('id', schoolIds);
 
-    // Group students by school
     const schoolsMap = new Map();
     (assignments || []).forEach(assignment => {
       const studentProfile = studentProfiles?.find(sp => sp.user_id === assignment.student_id);
@@ -613,21 +726,18 @@ export class HeiAdminService {
 
     const userArray = Array.isArray(mentor.users) ? mentor.users[0] : mentor.users;
 
-    // Get active student assignments
     const { data: assignments } = await this.supabase
       .from('mentor_student_assignments')
       .select('student_id')
       .eq('mentor_id', mentorId)
       .eq('status', 'active');
 
-    // Get student profiles
     const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
     const { data: studentProfiles } = await this.supabase
       .from('student_profiles')
       .select('user_id, school_id')
       .in('user_id', studentUserIds);
 
-    // Get unique schools
     const schoolIds = Array.from(new Set((studentProfiles || []).map(s => s.school_id).filter(Boolean)));
     const { data: schools } = await this.supabase
       .from('schools')
@@ -662,29 +772,90 @@ export class HeiAdminService {
   async getAvailableMentors(heiId: string) {
     const { data: mentors, error } = await this.supabase
       .from('hei_mentor_profiles')
-      .select('*, users!inner(full_name, email, avatar_url)')
-      .eq('hei_id', heiId)
-      .eq('status', 'active');
+      .select(`
+        id,
+        user_id,
+        hei_id,
+        employee_id,
+        designation,
+        department,
+        expertise,
+        qualification,
+        experience_years,
+        max_students,
+        created_at,
+        updated_at,
+        users!inner(
+          full_name,
+          email,
+          avatar_url
+        )
+      `)
+      .eq('hei_id', heiId);
 
     if (error) throw error;
-    return mentors;
+
+    const mentorsWithCapacity = await Promise.all(
+      (mentors || []).map(async (mentor) => {
+        const { count: currentAssignmentsCount } = await this.supabase
+          .from('mentor_student_assignments')
+          .select('*', { count: 'exact', head: true })
+          .eq('mentor_id', mentor.id)
+          .eq('status', 'active');
+
+        const { data: assignments } = await this.supabase
+          .from('mentor_student_assignments')
+          .select('student_id')
+          .eq('mentor_id', mentor.id)
+          .eq('status', 'active');
+
+        const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
+        
+        const { data: studentProfiles } = await this.supabase
+          .from('student_profiles')
+          .select('school_id')
+          .in('user_id', studentUserIds);
+
+        const uniqueSchools = Array.from(new Set(
+          (studentProfiles || []).map(s => s.school_id).filter(Boolean)
+        ));
+
+        const userArray = Array.isArray(mentor.users) ? mentor.users[0] : mentor.users;
+
+        return {
+          id: mentor.id,
+          name: userArray?.full_name || 'Unknown',
+          email: userArray?.email || '',
+          avatar_url: userArray?.avatar_url,
+          designation: mentor.designation || 'N/A',
+          department: mentor.department || '',
+          expertise: mentor.expertise || [],
+          qualification: mentor.qualification || '',
+          experience_years: mentor.experience_years || 0,
+          max_students: mentor.max_students || 10,
+          currentSchoolsCount: uniqueSchools.length,
+          currentStudentsCount: currentAssignmentsCount || 0,
+          created_at: mentor.created_at,
+          updated_at: mentor.updated_at,
+        };
+      }),
+    );
+
+    return mentorsWithCapacity;
   }
 
-  /* ---------- ASSIGNMENTS ---------- */
+  /* ==================== ASSIGNMENTS ==================== */
 
   async getUnassignedSchools(): Promise<UnassignedSchoolDto[]> {
-    // Get all schools
     const { data: allSchools } = await this.supabase
       .from('schools')
       .select('*');
 
-    // Get assignments
     const { data: assignments } = await this.supabase
       .from('mentor_student_assignments')
       .select('student_id')
       .eq('status', 'active');
 
-    // Get student profiles
     const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
     const { data: studentProfiles } = await this.supabase
       .from('student_profiles')
@@ -695,7 +866,6 @@ export class HeiAdminService {
       (studentProfiles || []).map(s => s.school_id).filter(Boolean)
     ));
 
-    // Filter unassigned schools
     const unassignedSchools = (allSchools || []).filter(
       school => !assignedSchoolIds.includes(school.id)
     );
@@ -726,17 +896,18 @@ export class HeiAdminService {
     });
   }
 
-  async createAssignment(
-    createDto: CreateAssignmentDto,
-    createdBy: string
-  ): Promise<MentorAssignmentDto[]> {
-    // createDto.schoolIds now represents student user IDs
-    const assignments = createDto.schoolIds.map(studentUserId => ({
+  async createAssignment(createDto: CreateAssignmentDto, userId: string): Promise<MentorAssignmentDto[]> {
+    const { data: students } = await this.supabase
+      .from('student_profiles')
+      .select('user_id, schools(id, name, location)')
+      .in('school_id', createDto.schoolIds);
+
+    const assignments = (students || []).map((student) => ({
       mentor_id: createDto.mentorId,
-      student_id: studentUserId,
-      assigned_by: createdBy,
-      assigned_at: createDto.assignmentDate,
+      student_id: student.user_id,
+      assigned_by: userId,
       status: 'active',
+      assigned_at: createDto.assignmentDate,
       notes: createDto.notes,
     }));
 
@@ -745,15 +916,9 @@ export class HeiAdminService {
       .insert(assignments)
       .select();
 
-    if (error) throw error;
+    if (error) throw new BadRequestException(error.message);
 
-    const { data: mentor } = await this.supabase
-      .from('hei_mentor_profiles')
-      .select('hei_id')
-      .eq('id', createDto.mentorId)
-      .single();
-
-    return this.getRecentAssignments(mentor?.hei_id || '', data.length);
+    return data;
   }
 
   async reassignMentor(reassignDto: ReassignMentorDto, userId: string): Promise<MentorAssignmentDto> {
@@ -808,7 +973,7 @@ export class HeiAdminService {
     if (error) throw error;
   }
 
-  /* ---------- PARTNERSHIPS ---------- */
+  /* ==================== PARTNERSHIPS ==================== */
 
   async getPartnerships(
     filters: {
@@ -822,6 +987,8 @@ export class HeiAdminService {
   ): Promise<PaginatedPartnershipListDto> {
     const { page, limit } = pagination;
     const offset = (page - 1) * limit;
+
+    console.log('🏫 Getting partnerships with filters:', filters);
 
     let query = this.supabase
       .from('schools')
@@ -843,24 +1010,26 @@ export class HeiAdminService {
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error fetching schools:', error);
+      throw error;
+    }
+
+    console.log(`✅ Found ${schools?.length || 0} schools`);
 
     const schoolIds = schools?.map(s => s.id) || [];
 
-    // Get assignments and related data
     const { data: assignments } = await this.supabase
       .from('mentor_student_assignments')
       .select('student_id, mentor_id, assigned_at')
       .eq('status', 'active');
 
-    // Get student profiles
     const studentUserIds = (assignments || []).map(a => a.student_id).filter(Boolean);
     const { data: studentProfiles } = await this.supabase
       .from('student_profiles')
       .select('user_id, school_id')
       .in('user_id', studentUserIds);
 
-    // Get mentor info
     const mentorIds = Array.from(new Set((assignments || []).map(a => a.mentor_id).filter(Boolean)));
     const { data: mentorProfiles } = await this.supabase
       .from('hei_mentor_profiles')
@@ -879,7 +1048,6 @@ export class HeiAdminService {
     ]);
 
     const partnerships: SchoolPartnershipDto[] = (schools || []).map(school => {
-      // Find assignments for students in this school
       const schoolStudentProfiles = (studentProfiles || []).filter(sp => sp.school_id === school.id);
       const schoolStudentUserIds = schoolStudentProfiles.map(sp => sp.user_id);
       const schoolAssignments = (assignments || []).filter(a => schoolStudentUserIds.includes(a.student_id));
@@ -892,7 +1060,7 @@ export class HeiAdminService {
       const teachersCount = teachersData.data?.filter(t => t.school_id === school.id).length || 0;
 
       return {
-        id: school.id,
+        schoolId: school.id,
         schoolName: school.name,
         schoolLogo: school.logo,
         location: school.location,
@@ -900,24 +1068,33 @@ export class HeiAdminService {
         state: school.state,
         principalName: school.principal_name,
         principalContact: school.principal_contact,
-        assignedMentorId: assignment?.mentor_id,
-        assignedMentorName: mentorUser?.full_name,
-        assignedMentorAvatar: mentorUser?.avatar_url,
-        assignedMentorEmail: mentorUser?.email,
+        mentorId: assignment?.mentor_id,
+        mentorName: mentorUser?.full_name,
+        mentorAvatar: mentorUser?.avatar_url,
+        mentorEmail: mentorUser?.email,
         studentsCount,
         teachersCount,
-        partnershipStartDate: assignment?.assigned_at,
-        partnershipStatus: assignment ? PartnershipStatus.ACTIVE : PartnershipStatus.PENDING,
+        partnershipDate: assignment?.assigned_at,
+        status: assignment ? 'active' : 'pending',
         lastContactDate: school.last_contact_date,
         programsEnrolled: school.programs_enrolled || [],
       };
     });
 
+    let filteredPartnerships = partnerships;
+    if (filters.mentorId) {
+      filteredPartnerships = partnerships.filter(p => p.mentorId === filters.mentorId);
+    }
+
+    if (filters.status) {
+      filteredPartnerships = filteredPartnerships.filter(p => p.status === filters.status);
+    }
+
     const total = count || 0;
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: partnerships,
+      partnerships: filteredPartnerships,
       total,
       page,
       limit,
@@ -927,59 +1104,92 @@ export class HeiAdminService {
     };
   }
 
-  async getPartnership(schoolId: string): Promise<PartnershipDetailsDto> {
-    const { data: school, error: schoolError } = await this.supabase
-      .from('schools')
-      .select('*')
-      .eq('id', schoolId)
-      .single();
+async getPartnership(schoolId: string): Promise<PartnershipDetailsDto> {
+  console.log('🏫 Getting partnership details for school:', schoolId);
 
-    if (schoolError || !school) {
-      throw new NotFoundException('School not found');
-    }
+  // 1. Get school details
+  const { data: school, error: schoolError } = await this.supabase
+    .from('schools')
+    .select('*')
+    .eq('id', schoolId)
+    .single();
 
-    // Get student profiles for this school
-    const { data: schoolStudents } = await this.supabase
+  if (schoolError || !school) {
+    console.error('❌ School not found:', schoolError);
+    throw new NotFoundException('School not found');
+  }
+
+  console.log('✅ School found:', school.name);
+
+  // 2. Get students and teachers count
+  const [studentsData, teachersData] = await Promise.all([
+    this.supabase
       .from('student_profiles')
-      .select('user_id')
-      .eq('school_id', schoolId);
+      .select('id, class_level, user_id')
+      .eq('school_id', schoolId),
+    this.supabase
+      .from('teacher_profiles')
+      .select('id, subjects')
+      .eq('school_id', schoolId),
+  ]);
 
-    const studentUserIds = (schoolStudents || []).map(s => s.user_id).filter(Boolean);
+  console.log('📊 Students query result:', studentsData);
+  console.log('📊 Teachers query result:', teachersData);
 
-    // Get assignments for these students
-    const { data: assignments } = await this.supabase
+  const totalStudents = studentsData.data?.length || 0;
+  const totalTeachers = teachersData.data?.length || 0;
+
+  console.log(`✅ Students: ${totalStudents}, Teachers: ${totalTeachers}`);
+
+  // 3. Find assigned mentor
+  const studentUserIds = (studentsData.data || [])
+    .map((s: any) => s.user_id)
+    .filter(Boolean);
+  
+  console.log(`✅ Found ${studentUserIds.length} student user IDs:`, studentUserIds);
+
+  let assignedMentor: any = undefined;
+
+  if (studentUserIds.length > 0) {
+    // Get ANY assignment for students from this school
+    const { data: assignments, error: assignmentError } = await this.supabase
       .from('mentor_student_assignments')
-      .select('student_id, mentor_id, assigned_at')
+      .select('student_id, mentor_id, assigned_at, status')
       .in('student_id', studentUserIds)
-      .eq('status', 'active')
+      .in('status', ['active', 'pending'])
+      .order('assigned_at', { ascending: false })
       .limit(1);
+
+    console.log('✅ Assignments query result:', JSON.stringify(assignments));
+    console.log('❌ Assignment error:', assignmentError);
 
     const currentAssignment = assignments?.[0];
 
-    let assignedMentor: {
-      id: string;
-      name: string;
-      email: string;
-      avatar?: string;
-      designation: string;
-      department: string;
-      contactNumber?: string;
-      assignmentDate: string;
-    } | undefined = undefined;
-
     if (currentAssignment) {
-      const { data: mentorProfile } = await this.supabase
+      console.log('✅ Current assignment found:', JSON.stringify(currentAssignment));
+
+      // Fetch mentor profile - ✅ FIXED: Removed contact_number
+      const { data: mentorProfile, error: mentorProfileError } = await this.supabase
         .from('hei_mentor_profiles')
-        .select('id, user_id, designation, department, contact_number')
+        .select('id, user_id, designation, department')
         .eq('id', currentAssignment.mentor_id)
         .single();
 
+      console.log('📋 Mentor profile query result:', JSON.stringify(mentorProfile));
+      console.log('❌ Mentor profile error:', mentorProfileError);
+
       if (mentorProfile) {
-        const { data: mentorUser } = await this.supabase
+        console.log('✅ Mentor profile found:', JSON.stringify(mentorProfile));
+
+        // Fetch mentor user details
+        const { data: mentorUser, error: mentorUserError } = await this.supabase
           .from('users')
           .select('id, full_name, email, avatar_url')
           .eq('id', mentorProfile.user_id)
           .single();
+
+        console.log('👤 Mentor user query result:', JSON.stringify(mentorUser));
+        console.log('❌ Mentor user error:', mentorUserError);
 
         if (mentorUser) {
           assignedMentor = {
@@ -989,67 +1199,98 @@ export class HeiAdminService {
             avatar: mentorUser.avatar_url,
             designation: mentorProfile.designation,
             department: mentorProfile.department,
-            contactNumber: mentorProfile.contact_number,
+            contactNumber: null, // ✅ Set to null since column doesn't exist
             assignmentDate: currentAssignment.assigned_at,
           };
+
+          console.log('✅ Assigned mentor constructed:', JSON.stringify(assignedMentor));
+        } else {
+          console.log('⚠️ Mentor user not found for user_id:', mentorProfile.user_id);
         }
+      } else {
+        console.log('⚠️ Mentor profile not found for mentor_id:', currentAssignment.mentor_id);
       }
+    } else {
+      console.log('⚠️ No assignments found for student user IDs:', studentUserIds);
     }
-
-    const [studentsData, teachersData, sessions, assignmentsData] = await Promise.all([
-      this.supabase.from('student_profiles').select('id, class').eq('school_id', schoolId),
-      this.supabase.from('teacher_profiles').select('id, subject').eq('school_id', schoolId),
-      this.supabase.from('mentoring_schedules').select('id').eq('school_id', schoolId),
-      this.supabase.from('assignments').select('id').eq('school_id', schoolId),
-    ]);
-
-    const gradeDistribution = (studentsData.data || []).reduce((acc, student) => {
-      const grade = student.class || 'Unknown';
-      acc[grade] = (acc[grade] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const subjectDistribution = (teachersData.data || []).reduce((acc, teacher) => {
-      const subject = teacher.subject || 'Unknown';
-      acc[subject] = (acc[subject] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      school: {
-        id: school.id,
-        name: school.name,
-        logo: school.logo,
-        location: school.location,
-        district: school.district,
-        state: school.state,
-        principalName: school.principal_name,
-        principalContact: school.principal_contact,
-        principalEmail: school.principal_email,
-        establishedYear: school.established_year,
-        schoolType: school.school_type,
-        infrastructure: school.infrastructure,
-        partnershipStatus: currentAssignment ? PartnershipStatus.ACTIVE : PartnershipStatus.PENDING,
-        partnershipStartDate: currentAssignment?.assigned_at,
-      },
-      assignedMentor,
-      mentorHistory: [],
-      students: {
-        total: studentsData.data?.length || 0,
-        gradeDistribution: Object.entries(gradeDistribution).map(([grade, count]) => ({ grade, count })),
-      },
-      teachers: {
-        total: teachersData.data?.length || 0,
-        subjectDistribution: Object.entries(subjectDistribution).map(([subject, count]) => ({ subject, count })),
-      },
-      statistics: {
-        totalMentoringSessions: sessions.data?.length || 0,
-        totalAssignmentsCreated: assignmentsData.data?.length || 0,
-        studentEngagementRate: 75,
-        teacherParticipationRate: 85,
-      },
-    };
+  } else {
+    console.log('⚠️ No students found in this school');
   }
+
+  // 4. Get mentoring sessions and assignments data
+  const [sessions, assignmentsData] = await Promise.all([
+    this.supabase.from('mentoring_sessions').select('id').eq('school_id', schoolId),
+    this.supabase.from('assignments').select('id').eq('school_id', schoolId),
+  ]);
+
+  // 5. Calculate distributions
+  const gradeDistribution = (studentsData.data || []).reduce((acc: any, student: any) => {
+    const grade = student.class_level || 'Unknown';
+    acc[grade] = (acc[grade] || 0) + 1;
+    return acc;
+  }, {});
+
+  const subjectDistribution = (teachersData.data || []).reduce((acc: any, teacher: any) => {
+    const subjects = Array.isArray(teacher.subjects) ? teacher.subjects : [teacher.subjects];
+    subjects.forEach(subject => {
+      if (subject) {
+        acc[subject] = (acc[subject] || 0) + 1;
+      }
+    });
+    return acc;
+  }, {});
+
+  // 6. Return partnership details
+  const result = {
+    school: {
+      id: school.id,
+      name: school.name,
+      logo: school.logo,
+      location: school.location,
+      district: school.district,
+      state: school.state,
+      principalName: school.principal_name,
+      principalContact: school.principal_contact,
+      principalEmail: school.principal_email,
+      establishedYear: school.established_year,
+      schoolType: school.type,
+      infrastructure: school.infrastructure,
+      partnershipStatus: assignedMentor ? PartnershipStatus.ACTIVE : PartnershipStatus.PENDING,
+      partnershipStartDate: assignedMentor?.assignmentDate,
+    },
+    assignedMentor,
+    mentorHistory: [],
+    students: {
+      total: totalStudents,
+      gradeDistribution: Object.entries(gradeDistribution).map(([grade, count]) => ({ 
+        grade, 
+        count: count as number 
+      })),
+    },
+    teachers: {
+      total: totalTeachers,
+      subjectDistribution: Object.entries(subjectDistribution).map(([subject, count]) => ({ 
+        subject, 
+        count: count as number 
+      })),
+    },
+    statistics: {
+      totalMentoringSessions: sessions.data?.length || 0,
+      totalAssignmentsCreated: assignmentsData.data?.length || 0,
+      studentEngagementRate: totalStudents > 0 ? 75 : 0,
+      teacherParticipationRate: totalTeachers > 0 ? 85 : 0,
+    },
+  };
+
+  console.log('📦 Final partnership result:', JSON.stringify(result));
+  
+  return result;
+}
+
+
+
+
+
 
   async getPartnershipOverviewStats(): Promise<PartnershipOverviewStatsDto> {
     const [mentors, schools, students, teachers, assignments] = await Promise.all([
@@ -1084,191 +1325,180 @@ export class HeiAdminService {
     if (error) throw error;
   }
 
-  /* ---------- ANNOUNCEMENTS ---------- */
+  /* ==================== ANNOUNCEMENTS ==================== */
 
+  async getAnnouncements(
+    createdBy: string,
+    pagination: { page: number; limit: number }
+  ): Promise<PaginatedAnnouncementListDto> {
+    const { page, limit } = pagination;
+    const offset = (page - 1) * limit;
 
+    const { data: adminProfile } = await this.supabase
+      .from('hei_admin_profiles')
+      .select('hei_id')
+      .eq('user_id', createdBy)
+      .single();
 
-  
-/* ---------- ANNOUNCEMENTS ---------- */
+    const heiId = adminProfile?.hei_id;
 
+    let query = this.supabase
+      .from('announcements_with_author')
+      .select('*', { count: 'exact' })
+      .eq('is_active', true)
+      .eq('author_role', 'hei_admin')
+      .order('created_at', { ascending: false });
 
-async getAnnouncements(
-  createdBy: string,
-  pagination: { page: number; limit: number }
-): Promise<PaginatedAnnouncementListDto> {
-  const { page, limit } = pagination;
-  const offset = (page - 1) * limit;
+    if (heiId) {
+      query = query.eq('hei_id', heiId);
+    }
 
-  // Get HEI ID
-  const { data: adminProfile } = await this.supabase
-    .from('hei_admin_profiles')
-    .select('hei_id')
-    .eq('user_id', createdBy)
-    .single();
+    query = query.range(offset, offset + limit - 1);
 
-  const heiId = adminProfile?.hei_id;
+    const { data: announcements, error, count } = await query;
 
-  let query = this.supabase
-    .from('announcements_with_author')
-    .select('*', { count: 'exact' })
-    .eq('is_active', true)
-    .eq('author_role', 'hei_admin')
-    .order('created_at', { ascending: false });
+    if (error) throw error;
 
-  if (heiId) {
-    query = query.eq('hei_id', heiId);
+    const total = count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: (announcements || []).map(a => ({
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        badgeType: a.badge_type,
+        badgeColor: a.badge_color,
+        authorName: a.author_name,
+        authorRole: a.author_role,
+        priority: a.priority,
+        isPinned: a.is_pinned,
+        isNew: a.is_new,
+        createdAt: a.created_at,
+        metadata: a.metadata,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    };
   }
 
-  query = query.range(offset, offset + limit - 1);
+  async createAnnouncement(
+    createDto: CreateAnnouncementDto,
+    createdBy: string
+  ): Promise<AnnouncementDto> {
+    const { data: adminProfile } = await this.supabase
+      .from('hei_admin_profiles')
+      .select('hei_id')
+      .eq('user_id', createdBy)
+      .single();
 
-  const { data: announcements, error, count } = await query;
+    const heiId = adminProfile?.hei_id;
 
-  if (error) throw error;
+    const { data: announcement, error } = await this.supabase
+      .from('announcements')
+      .insert({
+        title: createDto.title,
+        description: createDto.description,
+        badge_type: createDto.badgeType,
+        badge_color: createDto.badgeColor || '#6366f1',
+        created_by: createdBy,
+        author_role: 'hei_admin',
+        target_audience: createDto.targetAudience,
+        priority: createDto.priority,
+        hei_id: heiId,
+        school_id: null,
+        class_level: createDto.classLevel || null,
+        is_pinned: createDto.isPinned || false,
+        starts_at: createDto.startsAt ? new Date(createDto.startsAt) : new Date(),
+        expires_at: createDto.expiresAt ? new Date(createDto.expiresAt) : null,
+        metadata: createDto.metadata || {},
+      })
+      .select(`
+        *,
+        users!announcements_created_by_fkey (full_name, avatar_url)
+      `)
+      .single();
 
-  const total = count || 0;
-  const totalPages = Math.ceil(total / limit);
+    if (error) {
+      console.log('❌ Error creating announcement:', error.message);
+      throw new BadRequestException('Failed to create announcement');
+    }
 
-  return {
-    data: (announcements || []).map(a => ({
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      badgeType: a.badge_type,
-      badgeColor: a.badge_color,
-      authorName: a.author_name,
-      authorRole: a.author_role,
-      priority: a.priority,
-      isPinned: a.is_pinned,
-      isNew: a.is_new,
-      createdAt: a.created_at,
-      metadata: a.metadata,
-    })),
-    total,
-    page,
-    limit,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
-  };
-}
+    const userData = announcement.users as any;
 
-
-async createAnnouncement(
-  createDto: CreateAnnouncementDto,
-  createdBy: string
-): Promise<AnnouncementDto> {
-  // Get HEI ID
-  const { data: adminProfile } = await this.supabase
-    .from('hei_admin_profiles')
-    .select('hei_id')
-    .eq('user_id', createdBy)
-    .single();
-
-  const heiId = adminProfile?.hei_id;
-
-  const { data: announcement, error } = await this.supabase
-    .from('announcements')
-    .insert({
-      title: createDto.title,
-      description: createDto.description,
-      badge_type: createDto.badgeType,
-      badge_color: createDto.badgeColor || '#6366f1',
-      created_by: createdBy,
-      author_role: 'hei_admin',
-      target_audience: createDto.targetAudience,
-      priority: createDto.priority,
-      hei_id: heiId,
-      school_id: null,
-      class_level: createDto.classLevel || null,
-      is_pinned: createDto.isPinned || false,
-      starts_at: createDto.startsAt ? new Date(createDto.startsAt) : new Date(),
-      expires_at: createDto.expiresAt ? new Date(createDto.expiresAt) : null,
-      metadata: createDto.metadata || {},
-    })
-    .select(`
-      *,
-      users!announcements_created_by_fkey (full_name, avatar_url)
-    `)
-    .single();
-
-  if (error) {
-    console.log('❌ Error creating announcement:', error.message);
-    throw new BadRequestException('Failed to create announcement');
+    return {
+      id: announcement.id,
+      title: announcement.title,
+      description: announcement.description,
+      badgeType: announcement.badge_type,
+      badgeColor: announcement.badge_color,
+      authorName: userData?.full_name || 'Unknown',
+      authorRole: announcement.author_role,
+      priority: announcement.priority,
+      isPinned: announcement.is_pinned,
+      isNew: true,
+      createdAt: announcement.created_at,
+      metadata: announcement.metadata,
+    };
   }
 
-  const userData = announcement.users as any;
+  async getAnnouncementRecipientCount(
+    createDto: Partial<CreateAnnouncementDto>
+  ): Promise<AnnouncementRecipientSummaryDto> {
+    let mentorCount = 0;
+    let schoolCount = 0;
+    let teacherCount = 0;
+    let studentCount = 0;
 
-  return {
-    id: announcement.id,
-    title: announcement.title,
-    description: announcement.description,
-    badgeType: announcement.badge_type,
-    badgeColor: announcement.badge_color,
-    authorName: userData?.full_name || 'Unknown',
-    authorRole: announcement.author_role,
-    priority: announcement.priority,
-    isPinned: announcement.is_pinned,
-    isNew: true,
-    createdAt: announcement.created_at,
-    metadata: announcement.metadata,
-  };
-}
+    if (createDto.targetAudience?.includes('hei_mentor')) {
+      const { count } = await this.supabase
+        .from('hei_mentor_profiles')
+        .select('*', { count: 'exact', head: true });
+      mentorCount = count || 0;
+    }
 
-async getAnnouncementRecipientCount(
-  createDto: Partial<CreateAnnouncementDto>
-): Promise<AnnouncementRecipientSummaryDto> {
-  let mentorCount = 0;
-  let schoolCount = 0;
-  let teacherCount = 0;
-  let studentCount = 0;
+    if (createDto.targetAudience?.includes('school_admin')) {
+      const { count } = await this.supabase
+        .from('school_admin_profiles')
+        .select('*', { count: 'exact', head: true });
+      schoolCount = count || 0;
+    }
 
-  if (createDto.targetAudience?.includes('hei_mentor')) {
-    const { count } = await this.supabase
-      .from('hei_mentor_profiles')
-      .select('*', { count: 'exact', head: true });
-    mentorCount = count || 0;
+    if (createDto.targetAudience?.includes('teacher')) {
+      const { count } = await this.supabase
+        .from('teacher_profiles')
+        .select('*', { count: 'exact', head: true });
+      teacherCount = count || 0;
+    }
+
+    if (createDto.targetAudience?.includes('student')) {
+      const { count } = await this.supabase
+        .from('student_profiles')
+        .select('*', { count: 'exact', head: true });
+      studentCount = count || 0;
+    }
+
+    return {
+      totalRecipients: mentorCount + schoolCount + teacherCount + studentCount,
+      breakdown: {
+        mentors: mentorCount,
+        schools: schoolCount,
+        teachers: teacherCount,
+        students: studentCount,
+      },
+    };
   }
 
-  if (createDto.targetAudience?.includes('school_admin')) {
-    const { count } = await this.supabase
-      .from('school_admin_profiles')
-      .select('*', { count: 'exact', head: true });
-    schoolCount = count || 0;
+  async deleteAnnouncement(announcementId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('announcements')
+      .delete()
+      .eq('id', announcementId);
+
+    if (error) throw error;
   }
-
-  if (createDto.targetAudience?.includes('teacher')) {
-    const { count } = await this.supabase
-      .from('teacher_profiles')
-      .select('*', { count: 'exact', head: true });
-    teacherCount = count || 0;
-  }
-
-  if (createDto.targetAudience?.includes('student')) {
-    const { count } = await this.supabase
-      .from('student_profiles')
-      .select('*', { count: 'exact', head: true });
-    studentCount = count || 0;
-  }
-
-  return {
-    totalRecipients: mentorCount + schoolCount + teacherCount + studentCount,
-    breakdown: {
-      mentors: mentorCount,
-      schools: schoolCount,
-      teachers: teacherCount,
-      students: studentCount,
-    },
-  };
-}
-
-
-async deleteAnnouncement(announcementId: string): Promise<void> {
-  const { error } = await this.supabase
-    .from('announcements')
-    .delete()
-    .eq('id', announcementId);
-
-  if (error) throw error;
-}
-
 }

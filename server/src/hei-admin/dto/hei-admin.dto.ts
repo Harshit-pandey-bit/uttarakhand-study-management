@@ -456,7 +456,7 @@ export class UpdateMentorStatusDto {
 
 export class SchoolPartnershipDto {
   @ApiProperty()
-  id: string;
+  schoolId: string;
 
   @ApiProperty()
   schoolName: string;
@@ -480,16 +480,16 @@ export class SchoolPartnershipDto {
   principalContact?: string;
 
   @ApiPropertyOptional()
-  assignedMentorId?: string;
+  mentorId?: string;
 
   @ApiPropertyOptional()
-  assignedMentorName?: string;
+  mentorName?: string;
 
   @ApiPropertyOptional()
-  assignedMentorAvatar?: string;
+  mentorAvatar?: string;
 
   @ApiPropertyOptional()
-  assignedMentorEmail?: string;
+  mentorEmail?: string;
 
   @ApiProperty()
   studentsCount: number;
@@ -498,21 +498,21 @@ export class SchoolPartnershipDto {
   teachersCount: number;
 
   @ApiPropertyOptional()
-  partnershipStartDate?: string;
+  partnershipDate?: string;
 
-  @ApiProperty({ enum: PartnershipStatus })
-  partnershipStatus: PartnershipStatus;
+  @ApiProperty()
+  status: string;
 
   @ApiPropertyOptional()
   lastContactDate?: string;
 
   @ApiProperty({ type: [String] })
-  programsEnrolled: string[];
+  programsEnrolled?: string[];
 }
 
 export class PaginatedPartnershipListDto {
   @ApiProperty({ type: [SchoolPartnershipDto] })
-  data: SchoolPartnershipDto[];
+  partnerships: SchoolPartnershipDto[];
 
   @ApiProperty()
   total: number;

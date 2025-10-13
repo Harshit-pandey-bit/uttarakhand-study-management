@@ -1,156 +1,94 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Building2,
   Search,
-  MapPin,
+  Filter,
   Users,
   GraduationCap,
-  Eye,
-  Download,
+  TrendingUp,
+  Building2,
+  MapPin,
+  UserCheck,
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
-  AlertCircle,
-  UserCheck,
-  Calendar,
-  TrendingUp,
 } from 'lucide-react';
-import Link from 'next/link';
 import heiAdminAPI from '@/lib/api/hei-admin-client';
-import {
-  SchoolPartnership,
-  PartnershipFilters,
-  PartnershipStatus,
-  PartnershipOverviewStats,
-  PaginatedResponse,
-} from '@/types/hei-admin-types';
 
 export default function PartnershipsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [partnerships, setPartnerships] = useState<PaginatedResponse<SchoolPartnership> | null>(
-    null
-  );
-  const [stats, setStats] = useState<PartnershipOverviewStats | null>(null);
-
-  // Filters
+  
+  const [partnerships, setPartnerships] = useState<any>({ partnerships: [], total: 0 });
+  const [stats, setStats] = useState<any>({});
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PartnershipStatus | 'all'>('all');
-  const [districtFilter, setDistrictFilter] = useState('all');
-  const [mentorFilter, setMentorFilter] = useState('all');
-
-  // Pagination
+  const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    loadPartnerships();
-    loadStats();
-  }, [currentPage, statusFilter, districtFilter, searchQuery]);
+    loadData();
+  }, [currentPage, statusFilter, searchQuery]);
 
-  const loadPartnerships = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const filters: PartnershipFilters = {};
+      setError(null);
 
-      if (statusFilter !== 'all') {
-        filters.status = statusFilter as PartnershipStatus;
-      }
-      if (districtFilter !== 'all') {
-        filters.district = districtFilter;
-      }
-      if (searchQuery.trim()) {
-        filters.search = searchQuery;
-      }
+      const [partnershipsResponse, statsResponse] = await Promise.all([
+        heiAdminAPI.getPartnerships(
+          {
+            status: statusFilter !== 'all' ? statusFilter : undefined,
+            search: searchQuery || undefined,
+          },
+          { page: currentPage, limit: itemsPerPage }
+        ),
+        heiAdminAPI.getPartnershipOverviewStats(),
+      ]);
 
-      const response = await heiAdminAPI.getPartnerships(filters, {
-        page: currentPage,
-        limit: itemsPerPage,
-      });
-
-      if (response.success && response.data) {
-        setPartnerships(response.data);
-        setError(null);
+      if (partnershipsResponse.success) {
+        setPartnerships(partnershipsResponse.data);
       } else {
-        setError(response.error || 'Failed to load partnerships');
+        setError(partnershipsResponse.error || 'Failed to load partnerships');
+      }
+
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
       }
     } catch (err: any) {
+      console.error('Error loading partnerships:', err);
       setError(err.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadStats = async () => {
-    try {
-      const response = await heiAdminAPI.getPartnershipOverviewStats();
-      if (response.success && response.data) {
-        setStats(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to load stats:', err);
-    }
-  };
+  const getStatusBadge = (status: string) => {
+    const statusColors: Record<string, string> = {
+      active: 'bg-green-100 text-green-800 border-green-200',
+      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      inactive: 'bg-gray-100 text-gray-800 border-gray-200',
+      suspended: 'bg-red-100 text-red-800 border-red-200',
+    };
 
-  const handleExport = async () => {
-    try {
-      const response = await heiAdminAPI.exportPartnershipsData();
-      if (response.success && response.data) {
-        const url = window.URL.createObjectURL(response.data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `partnerships-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-      }
-    } catch (err) {
-      console.error('Export failed:', err);
-    }
-  };
-
-  const getStatusBadgeVariant = (status: PartnershipStatus) => {
-    switch (status) {
-      case PartnershipStatus.ACTIVE:
-        return 'default';
-      case PartnershipStatus.PENDING:
-        return 'secondary';
-      case PartnershipStatus.INACTIVE:
-        return 'outline';
-      case PartnershipStatus.SUSPENDED:
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  // Get unique districts for filter
-  const uniqueDistricts = partnerships
-    ? Array.from(new Set(partnerships.data.map((p) => p.district)))
-    : [];
-
-  if (loading && !partnerships) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <Badge className={`${statusColors[status?.toLowerCase()] || statusColors.pending}`}>
+        {status || 'Pending'}
+      </Badge>
+    );
+  };
+
+  if (loading && currentPage === 1) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading partnerships...</p>
@@ -162,347 +100,272 @@ export default function PartnershipsPage() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">School Partnerships</h1>
-          <p className="text-gray-600 mt-1">Manage school partnerships and collaborations</p>
-        </div>
-        <Button variant="outline" onClick={handleExport} className="gap-2">
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">School Partnerships</h1>
+        <p className="text-gray-600 mt-2">Manage school partnerships and collaborations</p>
       </div>
 
-      {/* Overview Stats */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total HEI Mentors</p>
-                  <p className="text-2xl font-bold mt-1">{stats.totalMentors}</p>
-                </div>
-                <UserCheck className="h-8 w-8 text-blue-600" />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total HEI Mentors</p>
+                <p className="text-3xl font-bold">{stats.totalMentors || 0}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Partner Schools</p>
-                  <p className="text-2xl font-bold mt-1">{stats.totalSchools}</p>
-                </div>
-                <Building2 className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Students</p>
-                  <p className="text-2xl font-bold mt-1">{stats.totalStudents}</p>
-                </div>
-                <GraduationCap className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Teachers</p>
-                  <p className="text-2xl font-bold mt-1">{stats.totalTeachers}</p>
-                </div>
-                <Users className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              <UserCheck className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Secondary Stats */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active Partnerships</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">
-                    {stats.activePartnerships}
-                  </p>
-                </div>
-                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-green-600" />
-                </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Partner Schools</p>
+                <p className="text-3xl font-bold">{stats.totalSchools || 0}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Pending Requests</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-600">
-                    {stats.pendingRequests}
-                  </p>
-                </div>
-                <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-orange-600" />
-                </div>
+              <Building2 className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Students</p>
+                <p className="text-3xl font-bold">{stats.totalStudents || 0}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Growth Rate</p>
-                  <p className="text-2xl font-bold mt-1 text-blue-600">
-                    {stats.growthRate}%
-                  </p>
-                </div>
-                <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-blue-600" />
-                </div>
+              <Users className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Teachers</p>
+                <p className="text-3xl font-bold">{stats.totalTeachers || 0}</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              <GraduationCap className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active Partnerships</p>
+                <p className="text-3xl font-bold">{stats.activePartnerships || 0}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Pending Requests</p>
+                <p className="text-3xl font-bold">{stats.pendingRequests || 0}</p>
+              </div>
+              <AlertCircle className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Growth Rate</p>
+                <p className="text-3xl font-bold">{stats.growthRate || 0}%</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by school name or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search by school name or location..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value={PartnershipStatus.ACTIVE}>Active</SelectItem>
-                <SelectItem value={PartnershipStatus.PENDING}>Pending</SelectItem>
-                <SelectItem value={PartnershipStatus.INACTIVE}>Inactive</SelectItem>
-                <SelectItem value={PartnershipStatus.SUSPENDED}>Suspended</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="inactive">Inactive</option>
+              </select>
 
-            {/* District Filter */}
-            {uniqueDistricts.length > 0 && (
-              <Select value={districtFilter} onValueChange={setDistrictFilter}>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="Filter by district" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Districts</SelectItem>
-                  {uniqueDistricts.map((district) => (
-                    <SelectItem key={district} value={district}>
-                      {district}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+              <Button variant="outline" onClick={loadData}>
+                <Filter className="h-4 w-4 mr-2" />
+                Apply Filters
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Partnerships Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Partnerships List
-            {partnerships && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                ({partnerships.total} total)
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error ? (
-            <div className="text-center py-8">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-gray-600">{error}</p>
-              <Button onClick={loadPartnerships} className="mt-4">
-                Try Again
-              </Button>
+      {/* Partnerships List */}
+      {error ? (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
             </div>
-          ) : !partnerships || partnerships.data.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">No partnerships found</p>
-              <p className="text-sm text-gray-500">
-                Try adjusting your filters or search query
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>School</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Assigned Mentor</TableHead>
-                      <TableHead>Students</TableHead>
-                      <TableHead>Teachers</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Partnership Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {partnerships.data.map((partnership) => (
-                      <TableRow key={partnership.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {partnership.schoolLogo ? (
-                              <img
-                                src={partnership.schoolLogo}
-                                alt={partnership.schoolName}
-                                className="h-10 w-10 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <Building2 className="h-5 w-5 text-gray-500" />
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium">{partnership.schoolName}</p>
-                              {partnership.principalName && (
-                                <p className="text-xs text-gray-500">
-                                  Principal: {partnership.principalName}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-start gap-1 text-sm">
-                            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p>{partnership.location}</p>
-                              <p className="text-xs text-gray-500">{partnership.district}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {partnership.assignedMentorName ? (
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={partnership.assignedMentorAvatar} />
-                                <AvatarFallback className="text-xs">
-                                  {partnership.assignedMentorName
-                                    .split(' ')
-                                    .map((n) => n[0])
-                                    .join('')
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {partnership.assignedMentorName}
-                                </p>
-                                {partnership.assignedMentorEmail && (
-                                  <p className="text-xs text-gray-500">
-                                    {partnership.assignedMentorEmail}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">Not assigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <GraduationCap className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{partnership.studentsCount}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{partnership.teachersCount}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(partnership.partnershipStatus)}>
-                            {partnership.partnershipStatus}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {partnership.partnershipStartDate ? (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3 text-gray-400" />
-                              {new Date(partnership.partnershipStartDate).toLocaleDateString()}
-                            </div>
-                          ) : (
-                            <span className="text-gray-500">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/dashboard/hei-admin/partnerships/${partnership.id}`}>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+          </CardContent>
+        </Card>
+      ) : partnerships.partnerships && partnerships.partnerships.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Partnership Schools ({partnerships.total})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {partnerships.partnerships.map((school: any) => (
+                <div
+                  key={school.schoolId}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Building2 className="h-5 w-5 text-gray-400" />
+                        <h3 className="font-semibold text-lg">{school.schoolName}</h3>
+                        {getStatusBadge(school.status)}
+                      </div>
 
-              {/* Pagination */}
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-gray-600">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <MapPin className="h-4 w-4" />
+                          <span>
+                            {school.location}, {school.district}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Users className="h-4 w-4" />
+                          <span>{school.studentsCount} Students</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <GraduationCap className="h-4 w-4" />
+                          <span>{school.teachersCount} Teachers</span>
+                        </div>
+                      </div>
+
+                      {school.mentorName && (
+                        <div className="mt-3 flex items-center gap-2 text-sm">
+                          <UserCheck className="h-4 w-4 text-green-600" />
+                          <span className="text-gray-600">
+                            Mentor: <span className="font-medium text-gray-900">{school.mentorName}</span>
+                          </span>
+                        </div>
+                      )}
+
+                      {school.principalName && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          Principal: {school.principalName}
+                          {school.principalContact && ` • ${school.principalContact}`}
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push(`/dashboard/hei-admin/partnerships/${school.schoolId}`)}
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {partnerships.total > itemsPerPage && (
+              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                <div className="text-sm text-gray-600">
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
                   {Math.min(currentPage * itemsPerPage, partnerships.total)} of{' '}
                   {partnerships.total} partnerships
-                </p>
+                </div>
+
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={!partnerships.hasPrev}
+                    disabled={currentPage === 1 || loading}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 mr-1" />
                     Previous
                   </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.ceil(partnerships.total / itemsPerPage) }).map((_, i) => (
+                      <Button
+                        key={i}
+                        variant={currentPage === i + 1 ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(i + 1)}
+                        disabled={loading}
+                        className="w-10"
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                  </div>
+
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage((p) => p + 1)}
-                    disabled={!partnerships.hasNext}
+                    disabled={currentPage >= Math.ceil(partnerships.total / itemsPerPage) || loading}
                   >
                     Next
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No partnerships found</h3>
+              <p className="text-gray-600 mb-4">Try adjusting your filters or search query</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

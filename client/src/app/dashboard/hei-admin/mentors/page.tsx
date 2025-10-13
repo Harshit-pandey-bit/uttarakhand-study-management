@@ -5,67 +5,39 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Users,
-  Search,
-  Filter,
-  MoreVertical,
-  Eye,
   UserCheck,
   UserX,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
+  Search,
+  Filter,
+  Building2,
+  GraduationCap,
   Mail,
-  Phone,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import heiAdminAPI from '@/lib/api/hei-admin-client';
-import {
-  MentorListItem,
-  MentorFilters,
-  MentorStatus,
-  PaginatedResponse,
-} from '@/types/hei-admin-types';
+import { MentorStatus, PaginatedResponse, MentorListItem } from '@/types/hei-admin-types';
 
 export default function MentorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mentors, setMentors] = useState<PaginatedResponse<MentorListItem> | null>(null);
+  const [mentors, setMentors] = useState<PaginatedResponse<MentorListItem>>({
+    data: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
   
-  // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<MentorStatus | 'all'>('all');
-  const [workloadFilter, setWorkloadFilter] = useState<string>('all');
-  
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<MentorStatus | ''>('');
+  const [workloadFilter, setWorkloadFilter] = useState('');
 
   useEffect(() => {
     loadMentors();
@@ -74,90 +46,80 @@ export default function MentorsPage() {
   const loadMentors = async () => {
     try {
       setLoading(true);
-      const filters: MentorFilters = {};
+      setError(null);
       
-      if (statusFilter !== 'all') {
-        filters.status = statusFilter as MentorStatus;
-      }
-      if (workloadFilter !== 'all') {
-        filters.workload = workloadFilter as any;
-      }
-      if (searchQuery.trim()) {
-        filters.search = searchQuery;
-      }
+      const response = await heiAdminAPI.getMentors(
+        {
+          status: statusFilter || undefined,
+          workload: (workloadFilter as any) || undefined,
+          search: searchQuery || undefined,
+        },
+        {
+          page: currentPage,
+          limit: itemsPerPage,
+        }
+      );
 
-      const response = await heiAdminAPI.getMentors(filters, {
-        page: currentPage,
-        limit: itemsPerPage,
-      });
+      console.log('Mentors API Response:', response);
 
       if (response.success && response.data) {
         setMentors(response.data);
-        setError(null);
       } else {
         setError(response.error || 'Failed to load mentors');
+        setMentors({
+          data: [],
+          total: 0,
+          page: 1,
+          limit: 10,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        });
       }
     } catch (err: any) {
+      console.error('Error loading mentors:', err);
       setError(err.message || 'An unexpected error occurred');
+      setMentors({
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const response = await heiAdminAPI.exportMentorsData();
-      if (response.success && response.data) {
-        // Handle blob download
-        const url = window.URL.createObjectURL(response.data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `mentors-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-      }
-    } catch (err) {
-      console.error('Export failed:', err);
-    }
-  };
-
-  const handleStatusChange = async (mentorId: string, newStatus: MentorStatus) => {
-    try {
-      const response = await heiAdminAPI.updateMentorStatus(mentorId, newStatus);
-      if (response.success) {
-        loadMentors(); // Reload the list
-      }
-    } catch (err) {
-      console.error('Status update failed:', err);
-    }
-  };
-
-  const getWorkloadBadgeVariant = (status: string) => {
-    switch (status) {
+  const getWorkloadBadge = (mentor: MentorListItem) => {
+    switch (mentor.workloadStatus) {
       case 'under-assigned':
-        return 'secondary';
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Under Assigned</Badge>;
       case 'optimal':
-        return 'default';
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Optimal</Badge>;
       case 'over-assigned':
-        return 'destructive';
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Over Assigned</Badge>;
       default:
-        return 'outline';
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
-  const getStatusBadgeVariant = (status: MentorStatus) => {
+  const getStatusBadge = (status: MentorStatus) => {
     switch (status) {
       case MentorStatus.ACTIVE:
-        return 'default';
+        return <Badge variant="default" className="bg-green-600">Active</Badge>;
       case MentorStatus.AWAY:
-        return 'secondary';
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Away</Badge>;
       case MentorStatus.INACTIVE:
-        return 'outline';
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
       default:
-        return 'outline';
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
-  if (loading && !mentors) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -168,323 +130,268 @@ export default function MentorsPage() {
     );
   }
 
+  const activeCount = mentors.data?.filter((m) => m.status === MentorStatus.ACTIVE).length || 0;
+  const awayCount = mentors.data?.filter((m) => m.status === MentorStatus.AWAY).length || 0;
+  const inactiveCount = mentors.data?.filter((m) => m.status === MentorStatus.INACTIVE).length || 0;
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mentors Management</h1>
-          <p className="text-gray-600 mt-1">
-            Manage HEI mentors and their school assignments
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Mentors</h1>
+          <p className="text-gray-600 mt-1">Manage HEI mentors and their school assignments</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
+        <Link href="/dashboard/hei-admin/mentors/assign">
+          <Button className="gap-2">
+            <UserCheck className="h-4 w-4" />
+            Assign Mentor
           </Button>
-          <Link href="/dashboard/hei-admin/mentors/assign">
-            <Button className="gap-2">
-              <UserCheck className="h-4 w-4" />
-              Assign Mentor
-            </Button>
-          </Link>
-        </div>
+        </Link>
       </div>
 
       {/* Stats Cards */}
-      {mentors && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Mentors</p>
-                  <p className="text-2xl font-bold mt-1">{mentors.total}</p>
-                </div>
-                <Users className="h-8 w-8 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Mentors</p>
+                <p className="text-2xl font-bold mt-1">{mentors.total || 0}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold mt-1 text-green-600">
-                    {mentors.data.filter((m) => m.status === MentorStatus.ACTIVE).length}
-                  </p>
-                </div>
-                <UserCheck className="h-8 w-8 text-green-600" />
+              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Away</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-600">
-                    {mentors.data.filter((m) => m.status === MentorStatus.AWAY).length}
-                  </p>
-                </div>
-                <AlertCircle className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active</p>
+                <p className="text-2xl font-bold mt-1">{activeCount}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Inactive</p>
-                  <p className="text-2xl font-bold mt-1 text-gray-600">
-                    {mentors.data.filter((m) => m.status === MentorStatus.INACTIVE).length}
-                  </p>
-                </div>
-                <UserX className="h-8 w-8 text-gray-600" />
+              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <UserCheck className="h-6 w-6 text-green-600" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Away</p>
+                <p className="text-2xl font-bold mt-1">{awayCount}</p>
+              </div>
+              <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <UserX className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Inactive</p>
+                <p className="text-2xl font-bold mt-1">{inactiveCount}</p>
+              </div>
+              <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-gray-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by name or email..."
+                placeholder="Search mentors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
 
-            {/* Status Filter */}
-            <Select
+            <select
               value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as MentorStatus | '')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value={MentorStatus.ACTIVE}>Active</SelectItem>
-                <SelectItem value={MentorStatus.AWAY}>Away</SelectItem>
-                <SelectItem value={MentorStatus.INACTIVE}>Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="">All Statuses</option>
+              <option value={MentorStatus.ACTIVE}>Active</option>
+              <option value={MentorStatus.AWAY}>Away</option>
+              <option value={MentorStatus.INACTIVE}>Inactive</option>
+            </select>
 
-            {/* Workload Filter */}
-            <Select
+            <select
               value={workloadFilter}
-              onValueChange={setWorkloadFilter}
+              onChange={(e) => setWorkloadFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Filter by workload" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Workloads</SelectItem>
-                <SelectItem value="under-assigned">Under-assigned</SelectItem>
-                <SelectItem value="optimal">Optimal</SelectItem>
-                <SelectItem value="over-assigned">Over-assigned</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="">All Workloads</option>
+              <option value="under-assigned">Under Assigned</option>
+              <option value="optimal">Optimal</option>
+              <option value="over-assigned">Over Assigned</option>
+            </select>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('');
+                setWorkloadFilter('');
+                setCurrentPage(1);
+              }}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Mentors Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Mentors List
-            {mentors && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                ({mentors.total} total)
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error ? (
-            <div className="text-center py-8">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-gray-600">{error}</p>
-              <Button onClick={loadMentors} className="mt-4">
-                Try Again
-              </Button>
+      {/* Error Message */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
             </div>
-          ) : !mentors || mentors.data.length === 0 ? (
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mentors List */}
+      {!mentors.data || mentors.data.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
             <div className="text-center py-12">
               <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">No mentors found</p>
-              <p className="text-sm text-gray-500">
-                Try adjusting your filters or search query
-              </p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No mentors found</h3>
+              <p className="text-gray-600">Try adjusting your filters or search query</p>
+              {!error && (
+                <Button className="mt-4" onClick={loadMentors}>
+                  Retry Loading
+                </Button>
+              )}
             </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mentor</TableHead>
-                      <TableHead>Designation</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Schools Assigned</TableHead>
-                      <TableHead>Students</TableHead>
-                      <TableHead>Workload</TableHead>
-                      <TableHead>Last Active</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mentors.data.map((mentor) => (
-                      <TableRow key={mentor.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={mentor.avatar} />
-                              <AvatarFallback>
-                                {mentor.name
-                                  .split(' ')
-                                  .map((n) => n[0])
-                                  .join('')
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{mentor.name}</p>
-                              <p className="text-sm text-gray-500">{mentor.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">{mentor.designation}</p>
-                            <p className="text-xs text-gray-500">{mentor.department}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(mentor.status)}>
-                            {mentor.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">
-                            {mentor.assignedSchoolsCount}
-                          </span>
-                          <span className="text-gray-500 text-sm">
-                            {' '}/ {mentor.maxStudents}
-                          </span>
-                        </TableCell>
-                        <TableCell>{mentor.totalStudentsSupervised}</TableCell>
-                        <TableCell>
-                          <Badge variant={getWorkloadBadgeVariant(mentor.workloadStatus)}>
-                            {mentor.workloadStatus}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {mentor.lastActive
-                            ? new Date(mentor.lastActive).toLocaleDateString()
-                            : 'N/A'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <Link href={`/dashboard/hei-admin/mentors/${mentor.id}`}>
-                                <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Profile
-                                </DropdownMenuItem>
-                              </Link>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  window.open(`mailto:${mentor.email}`, '_blank')
-                                }
-                              >
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Email
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {mentor.status !== MentorStatus.ACTIVE && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStatusChange(mentor.id, MentorStatus.ACTIVE)}
-                                >
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Mark as Active
-                                </DropdownMenuItem>
-                              )}
-                              {mentor.status !== MentorStatus.AWAY && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStatusChange(mentor.id, MentorStatus.AWAY)}
-                                >
-                                  <AlertCircle className="h-4 w-4 mr-2" />
-                                  Mark as Away
-                                </DropdownMenuItem>
-                              )}
-                              {mentor.status !== MentorStatus.INACTIVE && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStatusChange(mentor.id, MentorStatus.INACTIVE)}
-                                  className="text-red-600"
-                                >
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Mark as Inactive
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {mentors.data.map((mentor) => (
+            <Card key={mentor.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex gap-4 flex-1">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xl flex-shrink-0">
+                      {mentor.name.charAt(0).toUpperCase()}
+                    </div>
 
-              {/* Pagination */}
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-gray-600">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-                  {Math.min(currentPage * itemsPerPage, mentors.total)} of {mentors.total}{' '}
-                  mentors
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={!mentors.hasPrev}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                    disabled={!mentors.hasNext}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <h3 className="text-lg font-semibold text-gray-900">{mentor.name}</h3>
+                        {getStatusBadge(mentor.status)}
+                        {getWorkloadBadge(mentor)}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{mentor.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{mentor.designation || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{mentor.qualification || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 flex-shrink-0" />
+                          <span>
+                            {mentor.assignedSchoolsCount || 0} school(s) • {mentor.totalStudentsSupervised || 0} students
+                          </span>
+                        </div>
+                      </div>
+
+                      {mentor.assignedSchools && mentor.assignedSchools.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-gray-600 mb-2">Assigned Schools:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {mentor.assignedSchools.map((school) => (
+                              <Badge key={school.schoolId} variant="outline" className="text-xs">
+                                {school.schoolName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Link href={`/dashboard/hei-admin/mentors/${mentor.id}`}>
+                    <Button variant="outline" size="sm" className="flex-shrink-0">
+                      View Details
+                    </Button>
+                  </Link>
                 </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {mentors.totalPages > 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+                {Math.min(currentPage * itemsPerPage, mentors.total)} of {mentors.total} mentors
+              </p>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={!mentors.hasPrev}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-2 px-4">
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {mentors.totalPages}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(mentors.totalPages, p + 1))}
+                  disabled={!mentors.hasNext}
+                >
+                  Next
+                </Button>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
