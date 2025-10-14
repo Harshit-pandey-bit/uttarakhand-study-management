@@ -43,16 +43,18 @@ export default function PartnershipsPage() {
       setLoading(true);
       setError(null);
 
-      const [partnershipsResponse, statsResponse] = await Promise.all([
-        heiAdminAPI.getPartnerships(
-          {
-            status: statusFilter !== 'all' ? statusFilter : undefined,
-            search: searchQuery || undefined,
-          },
-          { page: currentPage, limit: itemsPerPage }
-        ),
-        heiAdminAPI.getPartnershipOverviewStats(),
-      ]);
+     const [partnershipsResponse, statsResponse] = await Promise.all([
+      heiAdminAPI.getPartnerships({
+        // Filters
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        search: searchQuery || undefined,
+        // Pagination (merged into same object)
+        page: currentPage,
+        limit: itemsPerPage,
+      }),
+      heiAdminAPI.getPartnershipOverviewStats(),
+    ]);
+
 
       if (partnershipsResponse.success) {
         setPartnerships(partnershipsResponse.data);
