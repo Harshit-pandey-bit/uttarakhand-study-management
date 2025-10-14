@@ -1,599 +1,487 @@
-
 'use client';
 
-import React from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { ExternalLink, BookOpen, Award, Users, TrendingUp, Sparkles, Globe, Target, Brain, Heart, Shield, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  GraduationCap, 
-  BookOpen, 
-  Clock, 
-  Award, 
-  Users, 
-  CheckCircle2,
-  Star,
-  Calendar,
-  Download,
-  Globe,
-  Video,
-  FileText,
-  Brain,
-  Shield,
-  Heart,
-  Monitor,
-  Calculator,
-  Microscope,
-  Languages,
-  UserCheck,
-  ArrowRight,
-  Lightbulb,
-  Zap,
-  Target,
-  TrendingUp,
-  Bell,
-  Play,
-  Palette
-} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-export default function NISTHTHAInfoPage() {
-  const handleAccessNISHTHA = () => {
-    // Official NISHTHA portal on DIKSHA
-    window.open('https://diksha.gov.in/nishtha', '_blank');
-  };
-
-  const handleStartDIKSHA = () => {
-    window.open('https://diksha.gov.in', '_blank');
-  };
-
-  const handleViewModules = () => {
-    window.open('https://itpd.ncert.gov.in', '_blank');
+export default function NishthaPage() {
+  const handleVisitPortal = () => {
+    window.open('https://itpd.ncert.gov.in', '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Header */}
-        <div className="text-center space-y-4 md:space-y-6">
-          <div className="flex flex-col sm:flex-row items-center justify-center mb-4 space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
-              <GraduationCap className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-orange-50">
+      <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-12 max-w-7xl">
+        {/* Hero Header Section */}
+        <div className="mb-8 sm:mb-12">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
+            <div className="space-y-3 sm:space-y-4">
+              <Badge variant="secondary" className="text-xs sm:text-sm bg-purple-100 text-purple-700 border-purple-200 w-fit">
+                World's Largest Teacher Training Programme
+              </Badge>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-orange-600 bg-clip-text text-transparent">
+                NISHTHA Programme
+              </h1>
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl">
+                National Initiative for School Heads' and Teachers' Holistic Advancement
+              </p>
             </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">NISHTHA Training Program</h1>
-              <p className="text-sm sm:text-base lg:text-lg text-emerald-600 font-medium">National Initiative for School Heads' and Teachers' Holistic Advancement</p>
-            </div>
+            <Button 
+              onClick={handleVisitPortal} 
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 w-full sm:w-auto"
+            >
+              Visit NISHTHA Portal
+              <ExternalLink className="h-5 w-5" />
+            </Button>
           </div>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-4xl mx-auto px-2">
-            World's largest teachers' training program designed to build competencies among 4.2+ million teachers 
-            and school principals, fulfilling NEP 2020's 50-hour CPD mandate through comprehensive online modules
-          </p>
 
-          {/* Quick Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4 mt-6">
-            <Button 
-              size="lg" 
-              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
-              onClick={handleAccessNISHTHA}
-            >
-              <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-              Access NISHTHA Portal
-              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="w-full sm:w-auto border-emerald-200 text-emerald-700 hover:bg-emerald-50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
-              onClick={handleStartDIKSHA}
-            >
-              <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-              Start on DIKSHA
-            </Button>
+          {/* Stats Bar */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 mb-2 opacity-90" />
+              <div className="text-xl sm:text-2xl font-bold">42 Lakh+</div>
+              <div className="text-xs sm:text-sm opacity-90">Teachers Trained</div>
+            </div>
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
+              <Globe className="h-6 w-6 sm:h-8 sm:w-8 mb-2 opacity-90" />
+              <div className="text-xl sm:text-2xl font-bold">11+</div>
+              <div className="text-xs sm:text-sm opacity-90">Languages</div>
+            </div>
+            <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
+              <Target className="h-6 w-6 sm:h-8 sm:w-8 mb-2 opacity-90" />
+              <div className="text-xl sm:text-2xl font-bold">4 Versions</div>
+              <div className="text-xs sm:text-sm opacity-90">NISHTHA 1.0-4.0</div>
+            </div>
+            <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
+              <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 mb-2 opacity-90" />
+              <div className="text-xl sm:text-2xl font-bold">18+</div>
+              <div className="text-xs sm:text-sm opacity-90">Training Modules</div>
+            </div>
           </div>
         </div>
 
-        {/* What is NISHTHA */}
-        <Card className="border-emerald-100">
-          <CardHeader className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-              <Lightbulb className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-600 sm:mr-3" />
-              What is NISHTHA?
-            </h2>
+        {/* What is NISHTHA Section */}
+        <Card className="mb-6 sm:mb-8 border-none shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-orange-50 border-b">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">What is NISHTHA?</CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-4 md:space-y-6">
-            <p className="text-gray-700 text-base sm:text-lg leading-relaxed">
-              NISHTHA (National Initiative for School Heads' and Teachers' Holistic Advancement) is the world's 
-              largest integrated teacher training program launched by the Ministry of Education under Samagra Shiksha. 
-              It's designed to build competencies among teachers and school principals at all education levels, 
-              covering 4.2+ million educators across India.
+          <CardContent className="space-y-4 pt-6">
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+              NISHTHA (National Initiative for School Heads' and Teachers' Holistic Advancement) is the world's largest teacher training programme launched in 2019 by the Ministry of Education under the Samagra Shiksha scheme[web:37][web:40]. It is a comprehensive capacity-building programme designed to improve the quality of school education through integrated teacher training[web:33].
             </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">
-              <div className="text-center p-4 sm:p-6 bg-emerald-50 rounded-lg">
-                <Users className="h-10 w-10 sm:h-12 sm:w-12 text-emerald-600 mx-auto mb-3" />
-                <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">4.2+ Million Teachers</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Largest capacity building program globally</p>
-              </div>
-              <div className="text-center p-4 sm:p-6 bg-blue-50 rounded-lg">
-                <Globe className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3" />
-                <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">11+ Languages</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Accessible in regional languages</p>
-              </div>
-              <div className="text-center p-4 sm:p-6 bg-purple-50 rounded-lg sm:col-span-2 lg:col-span-1">
-                <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-purple-600 mx-auto mb-3" />
-                <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">4 Training Phases</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Elementary, Secondary, FLN, and ECCE</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* NEP 2020 Mandate */}
-        <Card className="border-yellow-100 bg-gradient-to-r from-yellow-50 to-orange-50">
-          <CardHeader className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-              <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600 sm:mr-3" />
-              NEP 2020 Compliance & CPD Requirements
-            </h2>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-4">
-            <div className="p-4 sm:p-6 bg-white rounded-lg border border-yellow-200">
-              <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
-                <div className="bg-yellow-100 p-3 rounded-full mx-auto sm:mx-0">
-                  <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg">Mandatory 50 Hours Professional Development</h3>
-                  <p className="text-gray-700 mb-3 text-sm sm:text-base leading-relaxed">
-                    NEP 2020 mandates that every teacher and head teacher must participate in at least 50 hours 
-                    of Continuous Professional Development annually. NISHTHA directly fulfills this requirement 
-                    through structured online modules on DIKSHA platform.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="flex items-center justify-center sm:justify-start">
-                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm">Latest pedagogical approaches</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm">Competency-based learning methods</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm">ICT integration in teaching</span>
-                    </div>
-                    <div className="flex items-center justify-center sm:justify-start">
-                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm">Inclusive education practices</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Who Needs NISHTHA Training */}
-        <Card className="border-green-100">
-          <CardHeader className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-              <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 sm:mr-3" />
-              Who Must Complete NISHTHA Training?
-            </h2>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-              <Card className="border-emerald-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <Users className="h-10 w-10 sm:h-12 sm:w-12 text-emerald-600 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Elementary Teachers</h3>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2">Classes 1-8 (NISHTHA 1.0)</p>
-                  <Badge className="mt-2 bg-emerald-100 text-emerald-700 text-xs">18 Modules</Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="border-blue-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Secondary Teachers</h3>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2">Classes 9-12 (NISHTHA 2.0)</p>
-                  <Badge className="mt-2 bg-blue-100 text-blue-700 text-xs">13 Modules</Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="border-purple-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <Brain className="h-10 w-10 sm:h-12 sm:w-12 text-purple-600 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">FLN Teachers</h3>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2">Foundational Literacy & Numeracy (3.0)</p>
-                  <Badge className="mt-2 bg-purple-100 text-purple-700 text-xs">12 Modules</Badge>
-                </CardContent>
-              </Card>
-
-              <Card className="border-orange-200 hover:shadow-md transition-shadow sm:col-span-2 xl:col-span-1">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <Heart className="h-10 w-10 sm:h-12 sm:w-12 text-orange-600 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">ECCE Educators</h3>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2">Early Childhood Care & Education (4.0)</p>
-                  <Badge className="mt-2 bg-orange-100 text-orange-700 text-xs">6 Modules</Badge>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <div className="p-4 sm:p-6 bg-emerald-50 rounded-lg">
-                <h3 className="font-semibold text-emerald-900 mb-3 text-sm sm:text-base">School Leadership</h3>
-                <ul className="space-y-2 text-emerald-800">
-                  <li className="flex items-center text-xs sm:text-sm">
-                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                    Head Teachers & Principals
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm">
-                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                    Block Resource Coordinators (BRC)
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm">
-                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                    Cluster Resource Coordinators (CRC)
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-4 sm:p-6 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-3 text-sm sm:text-base">Educational Bodies</h3>
-                <ul className="space-y-2 text-blue-800">
-                  <li className="flex items-center text-xs sm:text-sm">
-                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                    SCERT & DIET Faculty
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm">
-                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                    CBSE, KVS, NVS Teachers
-                  </li>
-                  <li className="flex items-center text-xs sm:text-sm">
-                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                    State Board Educators
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Career & Classification Benefits */}
-        <Card className="border-purple-100">
-          <CardHeader className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-              <Star className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 sm:mr-3" />
-              Career Advancement & Classification Benefits
-            </h2>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-              <div className="space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-                  <Award className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 sm:mr-2" />
-                  Professional Recognition
-                </h3>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>NCERT Certificates:</strong> Nationally recognized credentials for each completed module</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>CPD Hour Credits:</strong> Automatic fulfillment of NEP 2020's 50-hour requirement</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>Digital Portfolio:</strong> Comprehensive professional development record</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>Leadership Training:</strong> Specialized modules for administrative roles</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 sm:mr-2" />
-                  Career Progression
-                </h3>
-                <ul className="space-y-3 text-gray-700">
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>Promotion Eligibility:</strong> Enhanced qualifications for senior positions</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>Performance Appraisals:</strong> Higher ratings in teacher evaluation systems</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>Salary Benefits:</strong> Improved pay scales and professional allowances</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm sm:text-base"><strong>Inter-State Mobility:</strong> Recognized qualifications across all states</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-              <h3 className="font-semibold text-purple-900 mb-3 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 text-sm sm:text-base">
-                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 sm:mr-2" />
-                Special Recognition Programs
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
-                <div className="p-3 bg-white rounded border border-purple-100">
-                  <Award className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm font-medium text-purple-800">Master Trainer Status</p>
-                </div>
-                <div className="p-3 bg-white rounded border border-purple-100">
-                  <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm font-medium text-purple-800">Resource Person Role</p>
-                </div>
-                <div className="p-3 bg-white rounded border border-purple-100 sm:col-span-1">
-                  <Star className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm font-medium text-purple-800">Excellence Awards</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Key Advantages */}
-        <Card className="border-blue-100">
-          <CardHeader className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-              <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 sm:mr-3" />
-              Key Advantages of NISHTHA Training
-            </h2>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              {/* Pedagogical Excellence */}
-              <Card className="border-emerald-200">
-                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-3">
-                  <h3 className="font-semibold text-emerald-700 flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 text-sm sm:text-base">
-                    <Brain className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
-                    Modern Pedagogies
-                  </h3>
-                </CardHeader>
-                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                  <div className="flex items-start">
-                    <Target className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Competency-based learning approaches</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Heart className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Arts-integrated and experiential learning</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Palette className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Joyful and activity-based teaching methods</span>
-                  </div>
-                  <div className="flex items-start">
-                    <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Formative and adaptive assessment</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Technology Integration */}
-              <Card className="border-blue-200">
-                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-3">
-                  <h3 className="font-semibold text-blue-700 flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 text-sm sm:text-base">
-                    <Monitor className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
-                    Digital Literacy
-                  </h3>
-                </CardHeader>
-                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                  <div className="flex items-start">
-                    <Globe className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">ICT integration in teaching-learning</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Video className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Digital content creation and curation</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Play className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Online learning platforms proficiency</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Monitor className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Virtual classroom management</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Professional Skills */}
-              <Card className="border-purple-200 lg:col-span-1">
-                <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-3">
-                  <h3 className="font-semibold text-purple-700 flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 text-sm sm:text-base">
-                    <Users className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2" />
-                    Professional Skills
-                  </h3>
-                </CardHeader>
-                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                  <div className="flex items-start">
-                    <Heart className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Inclusive education and diversity management</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">School safety and security protocols</span>
-                  </div>
-                  <div className="flex items-start">
-                    <Brain className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">Critical thinking and problem-solving</span>
-                  </div>
-                  <div className="flex items-start">
-                    <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">First-level counseling capabilities</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* NISHTHA Program Phases */}
-        <Card className="border-orange-100">
-          <CardHeader className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0">
-              <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 sm:mr-3" />
-              NISHTHA Training Phases & Coverage
-            </h2>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-6">
-              {/* Phase Overview */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <Card className="border-emerald-200 bg-emerald-50">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-emerald-600 mb-1">1.0</div>
-                    <div className="text-xs sm:text-sm font-medium text-emerald-800">Elementary</div>
-                    <div className="text-xs text-emerald-600 mt-1">Classes 1-8</div>
-                    <Badge className="mt-2 bg-emerald-100 text-emerald-700 text-xs">18 Modules</Badge>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-blue-600 mb-1">2.0</div>
-                    <div className="text-xs sm:text-sm font-medium text-blue-800">Secondary</div>
-                    <div className="text-xs text-blue-600 mt-1">Classes 9-12</div>
-                    <Badge className="mt-2 bg-blue-100 text-blue-700 text-xs">13 Modules</Badge>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-purple-200 bg-purple-50">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-purple-600 mb-1">3.0</div>
-                    <div className="text-xs sm:text-sm font-medium text-purple-800">FLN Mission</div>
-                    <div className="text-xs text-purple-600 mt-1">NIPUN Bharat</div>
-                    <Badge className="mt-2 bg-purple-100 text-purple-700 text-xs">12 Modules</Badge>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-orange-200 bg-orange-50">
-                  <CardContent className="p-3 sm:p-4 text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-orange-600 mb-1">4.0</div>
-                    <div className="text-xs sm:text-sm font-medium text-orange-800">ECCE</div>
-                    <div className="text-xs text-orange-600 mt-1">Early Childhood</div>
-                    <Badge className="mt-2 bg-orange-100 text-orange-700 text-xs">6 Modules</Badge>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Coverage Statistics */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div className="p-3 sm:p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-1">4.2M+</div>
-                  <div className="text-xs sm:text-sm text-emerald-700">Teachers Covered</div>
-                </div>
-                <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1">36</div>
-                  <div className="text-xs sm:text-sm text-blue-700">States & UTs</div>
-                </div>
-                <div className="p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-1">11</div>
-                  <div className="text-xs sm:text-sm text-purple-700">Languages</div>
-                </div>
-                <div className="p-3 sm:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-1">49</div>
-                  <div className="text-xs sm:text-sm text-orange-700">Total Modules</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Call to Action */}
-        <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50">
-          <CardContent className="p-6 sm:p-8 text-center">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-              Ready to Begin Your NISHTHA Journey?
-            </h2>
-            <p className="text-gray-600 mb-6 text-base sm:text-lg max-w-3xl mx-auto px-2">
-              Join 4.2+ million educators across India who have enhanced their teaching capabilities through NISHTHA. 
-              Access world-class training modules, earn recognized certificates, and fulfill your NEP 2020 CPD requirements 
-              while advancing your career.
+            <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+              The programme aims to build the capacities of around 42 lakh participants, covering all teachers and heads of schools at the elementary level in all Government schools, faculty members of SCERTs and DIETs, and Block and Cluster Resource Coordinators across all States and UTs[web:40][web:35]. The training focuses on learner-centered pedagogy, learning outcomes, ICT integration, and holistic development of students[web:37].
             </p>
+          </CardContent>
+        </Card>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <Button 
-                size="lg" 
-                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
-                onClick={handleAccessNISHTHA}
-              >
-                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                Start NISHTHA Training
-                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="w-full sm:w-auto border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
-                onClick={handleViewModules}
-              >
-                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                View Training Modules
-              </Button>
-            </div>
+        {/* NISHTHA Versions */}
+        <Card className="mb-6 sm:mb-8 border-none shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
+          <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">NISHTHA Versions</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Four specialized versions addressing different educational levels
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="p-4 sm:p-5 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 hover:shadow-lg transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="px-3 py-1 bg-purple-500 text-white rounded-full text-sm font-semibold">1.0</div>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">Elementary Level</h3>
+                </div>
+                <div className="space-y-2 text-xs sm:text-sm text-gray-700">
+                  <p><span className="font-medium">Target:</span> Grades 1-8</p>
+                  <p><span className="font-medium">Languages:</span> 11 Languages</p>
+                  <p><span className="font-medium">Reach:</span> 24 Lakh+ Teachers Trained</p>
+                  <p><span className="font-medium">Focus:</span> Foundational Teaching Skills[web:37]</p>
+                </div>
+              </div>
 
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="p-3 sm:p-4 bg-white rounded-lg border border-emerald-200 text-center">
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">Training Platform:</p>
-                <p className="font-mono text-emerald-600 text-xs sm:text-sm">DIKSHA Portal</p>
+              <div className="p-4 sm:p-5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border-2 border-orange-200 hover:shadow-lg transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="px-3 py-1 bg-orange-500 text-white rounded-full text-sm font-semibold">2.0</div>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">Secondary Level</h3>
+                </div>
+                <div className="space-y-2 text-xs sm:text-sm text-gray-700">
+                  <p><span className="font-medium">Target:</span> Grades 9-12</p>
+                  <p><span className="font-medium">Languages:</span> 10 Languages</p>
+                  <p><span className="font-medium">Reach:</span> 10 Lakh Teachers Targeted</p>
+                  <p><span className="font-medium">Focus:</span> Subject Mastery & Pedagogy[web:37]</p>
+                </div>
               </div>
-              <div className="p-3 sm:p-4 bg-white rounded-lg border border-emerald-200 text-center">
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">Duration:</p>
-                <p className="font-mono text-emerald-600 text-xs sm:text-sm">Self-Paced Learning</p>
+
+              <div className="p-4 sm:p-5 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border-2 border-pink-200 hover:shadow-lg transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="px-3 py-1 bg-pink-500 text-white rounded-full text-sm font-semibold">3.0</div>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">NIPUN Bharat</h3>
+                </div>
+                <div className="space-y-2 text-xs sm:text-sm text-gray-700">
+                  <p><span className="font-medium">Target:</span> Pre-primary to Grade 5</p>
+                  <p><span className="font-medium">Theme:</span> FLN (Foundational Literacy/Numeracy)</p>
+                  <p><span className="font-medium">Reach:</span> 25 Lakh Teachers Targeted</p>
+                  <p><span className="font-medium">Focus:</span> Play-based Learning Modules[web:37]</p>
+                </div>
               </div>
-              <div className="p-3 sm:p-4 bg-white rounded-lg border border-emerald-200 text-center">
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">Certification:</p>
-                <p className="font-mono text-emerald-600 text-xs sm:text-sm">NCERT Verified</p>
+
+              <div className="p-4 sm:p-5 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border-2 border-indigo-200 hover:shadow-lg transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="px-3 py-1 bg-indigo-500 text-white rounded-full text-sm font-semibold">4.0</div>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">ECCE</h3>
+                </div>
+                <div className="space-y-2 text-xs sm:text-sm text-gray-700">
+                  <p><span className="font-medium">Target:</span> Newest Initiative</p>
+                  <p><span className="font-medium">Theme:</span> Early Childhood Care & Education</p>
+                  <p><span className="font-medium">Audience:</span> Anganwadi + Pre-primary Teachers</p>
+                  <p><span className="font-medium">Focus:</span> Holistic Development[web:37]</p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Footer Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <Card className="text-center">
-            <CardContent className="p-4 sm:p-6">
-              <div className="text-2xl sm:text-3xl font-bold text-emerald-600 mb-1 sm:mb-2">✓</div>
-              <div className="text-xs sm:text-sm text-gray-600">NEP 2020</div>
-              <div className="text-xs text-gray-500 mt-1">Compliant Training</div>
+        {/* Key Objectives Section */}
+        <Card className="mb-6 sm:mb-8 border-none shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">Key Objectives of NISHTHA</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 sm:p-5 border-2 border-purple-200 rounded-xl bg-gradient-to-br from-white to-purple-50 hover:shadow-lg transition-all hover:scale-105">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-3">
+                  <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2 text-sm sm:text-base text-gray-800">Critical Thinking</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Motivate and equip teachers to encourage and foster critical thinking in students[web:40]
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-5 border-2 border-orange-200 rounded-xl bg-gradient-to-br from-white to-orange-50 hover:shadow-lg transition-all hover:scale-105">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-3">
+                  <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2 text-sm sm:text-base text-gray-800">Learning Outcomes</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Improve learning outcomes at elementary level through integrated training programs[web:35]
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-5 border-2 border-pink-200 rounded-xl bg-gradient-to-br from-white to-pink-50 hover:shadow-lg transition-all hover:scale-105">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-pink-500 rounded-lg flex items-center justify-center mb-3">
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2 text-sm sm:text-base text-gray-800">ICT Integration</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Use technology including AI in teaching to improve educational methods and outcomes[web:38]
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-5 border-2 border-indigo-200 rounded-xl bg-gradient-to-br from-white to-indigo-50 hover:shadow-lg transition-all hover:scale-105">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-500 rounded-lg flex items-center justify-center mb-3">
+                  <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2 text-sm sm:text-base text-gray-800">Inclusive Education</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Ensure inclusive education with focus on health, well-being, and equal opportunities for all[web:35]
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-5 border-2 border-green-200 rounded-xl bg-gradient-to-br from-white to-green-50 hover:shadow-lg transition-all hover:scale-105">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-lg flex items-center justify-center mb-3">
+                  <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2 text-sm sm:text-base text-gray-800">Competency-Based Learning</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Focus on competency-based learning and testing over rote memorization[web:38]
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-5 border-2 border-blue-200 rounded-xl bg-gradient-to-br from-white to-blue-50 hover:shadow-lg transition-all hover:scale-105">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-3">
+                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                </div>
+                <h3 className="font-semibold mb-2 text-sm sm:text-base text-gray-800">Safe Environment</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Promote a healthy and safe school environment where students can learn freely[web:38]
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Training Coverage Section */}
+        <Card className="mb-6 sm:mb-8 border-none shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
+          <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 border-b">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">Who Benefits from NISHTHA?</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-3 p-4 sm:p-5 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">Primary Participants</h3>
+                </div>
+                <ul className="space-y-2 text-xs sm:text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">●</span>
+                    <span>Teachers at elementary and secondary levels across all government schools[web:40]</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">●</span>
+                    <span>School Heads and Principals managing educational institutions[web:40]</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">●</span>
+                    <span>Block Resource Coordinators and Cluster Resource Coordinators[web:40]</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-500 mt-1">●</span>
+                    <span>Anganwadi workers for early childhood education (NISHTHA 4.0)[web:37]</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-3 p-4 sm:p-5 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">Institutional Faculty</h3>
+                </div>
+                <ul className="space-y-2 text-xs sm:text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-500 mt-1">●</span>
+                    <span>Faculty members of State Councils of Educational Research and Training (SCERTs)[web:40]</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-500 mt-1">●</span>
+                    <span>Faculty members of District Institutes of Education and Training (DIETs)[web:40]</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-500 mt-1">●</span>
+                    <span>National Resource Persons from NCERT and NIEPA institutions[web:40]</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-500 mt-1">●</span>
+                    <span>State and Key Resource Persons conducting training sessions[web:37]</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Training Features Section */}
+        <Card className="mb-6 sm:mb-8 border-none shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">Training Features & Modules</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {[
+                  "Learning Outcomes",
+                  "School Based Assessment",
+                  "ICT in Education",
+                  "Art Integrated Learning",
+                  "Inclusive Education",
+                  "Environmental Studies",
+                  "Mathematics Pedagogy",
+                  "Science Teaching",
+                  "Social Sciences",
+                  "School Leadership",
+                  "Pre-School Education",
+                  "Health & Physical Education",
+                  "Gender Issues",
+                  "School Safety & Security",
+                  "Pre-Vocational Education",
+                  "Indian Languages",
+                  "School Environment",
+                  "Initiatives in School Education"
+                ].map((module, index) => (
+                  <div key={index} className="flex items-center gap-2 p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border hover:shadow-md transition-all">
+                    <div className="h-2 w-2 rounded-full bg-gradient-to-r from-purple-500 to-orange-500 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-700">{module}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-600 mt-4">
+                18+ activity-based training modules covering comprehensive teacher development areas[web:39][web:40]
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Programme Features */}
+        <Card className="mb-6 sm:mb-8 border-none shadow-lg hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 border-b">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">Programme Highlights</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-3 sm:space-y-4">
+              {[
+                {
+                  title: "Activity-Based Modules",
+                  description: "Hands-on learning with motivational interactions, educational games, quizzes, and team building exercises",
+                  icon: Sparkles,
+                  color: "purple"
+                },
+                {
+                  title: "Structured Training Model",
+                  description: "National Resource Persons train State and Key Resource Persons who conduct sessions for teachers across the country",
+                  icon: TrendingUp,
+                  color: "orange"
+                },
+                {
+                  title: "Online & Offline Access",
+                  description: "Training modules available through DIKSHA and SWAYAM platforms for flexible learning",
+                  icon: Globe,
+                  color: "blue"
+                },
+                {
+                  title: "Continuous Feedback Mechanism",
+                  description: "In-built feedback system with training need and impact analysis through pre and post-training assessments",
+                  icon: Target,
+                  color: "green"
+                },
+                {
+                  title: "Mobile App & LMS",
+                  description: "MOODLE-based Learning Management System for registration, resources, monitoring, and measuring progress online",
+                  icon: BookOpen,
+                  color: "pink"
+                },
+                {
+                  title: "State Customization",
+                  description: "States and UTs can contextualize training modules using their own material while maintaining core topics",
+                  icon: Lightbulb,
+                  color: "indigo"
+                }
+              ].map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <div key={index} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:shadow-md transition-all">
+                    <div className={`p-2 bg-${item.color}-500 rounded-lg flex-shrink-0`}>
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium mb-1 text-sm sm:text-base text-gray-800">{item.title}</h4>
+                      <p className="text-xs sm:text-sm text-gray-600">{item.description}[web:37][web:40]</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Impact & Benefits */}
+        <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-purple-50 to-white">
+            <CardHeader className="border-b bg-white/50">
+              <CardTitle className="text-lg sm:text-xl text-gray-800">Impact on Teaching</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ul className="space-y-3 text-xs sm:text-sm text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1 text-lg">✓</span>
+                  <span>Shift from rote learning to competency-based teaching methods for engaging classrooms[web:41]</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1 text-lg">✓</span>
+                  <span>Enhanced pedagogical practices improving student learning outcomes and academic performance[web:41]</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1 text-lg">✓</span>
+                  <span>Teachers equipped with problem-solving approaches and critical thinking development skills[web:41]</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1 text-lg">✓</span>
+                  <span>First-level counseling skills to address academic, social, and emotional needs of students[web:41]</span>
+                </li>
+              </ul>
             </CardContent>
           </Card>
-          <Card className="text-center">
-            <CardContent className="p-4 sm:p-6">
-              <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-1 sm:mb-2">24/7</div>
-              <div className="text-xs sm:text-sm text-gray-600">Online Access</div>
-              <div className="text-xs text-gray-500 mt-1">DIKSHA Platform</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-4 sm:p-6">
-              <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-1 sm:mb-2">Free</div>
-              <div className="text-xs sm:text-sm text-gray-600">Training Cost</div>
-              <div className="text-xs text-gray-500 mt-1">Government Funded</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-4 sm:p-6">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-1 sm:mb-2">∞</div>
-              <div className="text-xs sm:text-sm text-gray-600">Career Growth</div>
-              <div className="text-xs text-gray-500 mt-1">Professional Development</div>
+
+          <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-orange-50 to-white">
+            <CardHeader className="border-b bg-white/50">
+              <CardTitle className="text-lg sm:text-xl text-gray-800">Teacher Empowerment</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ul className="space-y-3 text-xs sm:text-sm text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1 text-lg">✓</span>
+                  <span>Better learning modules based on activities, motivational interaction, and use of technology[web:38]</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1 text-lg">✓</span>
+                  <span>Creative tools and motivation to use Art as a pedagogical tool in teaching[web:38]</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1 text-lg">✓</span>
+                  <span>Student-centered teaching methods catering to individual needs and learning capacity[web:38]</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1 text-lg">✓</span>
+                  <span>Improved social-personal skills for handling students with patience and understanding[web:38]</span>
+                </li>
+              </ul>
             </CardContent>
           </Card>
         </div>
+
+        {/* Platform Access Section */}
+        <Card className="border-none shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+          <CardHeader className="border-b bg-white/50">
+            <CardTitle className="text-xl sm:text-2xl text-gray-800">Access NISHTHA Platform</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Available online through multiple platforms
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-6 pt-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 sm:p-6 border-2 border-purple-200 rounded-xl bg-white hover:shadow-lg transition-all">
+              <div className="flex-1">
+                <h4 className="font-semibold mb-2 text-base sm:text-lg text-gray-800">NISHTHA Training Portal</h4>
+                <p className="text-xs sm:text-sm text-gray-600">Access comprehensive training modules and resources at itpd.ncert.gov.in</p>
+              </div>
+              <Button 
+                onClick={handleVisitPortal} 
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 flex items-center gap-2 w-full sm:w-auto shadow-md hover:shadow-lg transition-all"
+              >
+                Visit Portal
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-4 sm:p-6 border-2 border-orange-200 rounded-xl bg-white">
+              <h4 className="font-semibold mb-3 text-base sm:text-lg text-gray-800">Additional Platforms</h4>
+              <div className="space-y-3 text-xs sm:text-sm text-gray-700">
+                <p className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1">●</span>
+                  <span>Access NISHTHA courses through DIKSHA portal at diksha.gov.in for mobile and web learning[web:37]</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1">●</span>
+                  <span>SWAYAM platform for additional online courses and training materials[web:37]</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-orange-500 mt-1">●</span>
+                  <span>Mobile apps for on-the-go learning and training access across all versions[web:40]</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">DIKSHA Integration</Badge>
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">SWAYAM Platform</Badge>
+                <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-300">Mobile Apps</Badge>
+                <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-300">11+ Languages</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
