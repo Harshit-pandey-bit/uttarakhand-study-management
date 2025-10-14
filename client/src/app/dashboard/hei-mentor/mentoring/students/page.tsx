@@ -18,6 +18,8 @@ import {
   Eye,
   MessageCircle,
   Calendar,
+  UserPlus,
+  AlertTriangle
 } from 'lucide-react';
 
 import { heiMentorAPI } from '@/lib/api/hei-mentor-client';
@@ -42,6 +44,8 @@ export default function StudentsPage() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
       const response = await heiMentorAPI.getAssignedStudents(filters, currentPage, studentsPerPage);
       
       if (response.error) {
@@ -49,13 +53,23 @@ export default function StudentsPage() {
       }
 
       if (response.data) {
-        setStudents(response.data.students);
-        setTotalStudents(response.data.total);
-        setHasMore(response.data.hasMore);
+        // ✅ Ensure we always have an array, even if empty
+        setStudents(Array.isArray(response.data.students) ? response.data.students : []);
+        setTotalStudents(response.data.total || 0);
+        setHasMore(response.data.hasMore || false);
+      } else {
+        // ✅ Handle case where response.data is undefined
+        setStudents([]);
+        setTotalStudents(0);
+        setHasMore(false);
       }
     } catch (err) {
       setError('Failed to load students');
       console.error('Students error:', err);
+      // ✅ Set empty array on error
+      setStudents([]);
+      setTotalStudents(0);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
@@ -97,12 +111,25 @@ export default function StudentsPage() {
     return { label: 'Not Yet Active', color: 'bg-gray-100 text-gray-800' };
   };
 
-  const filteredStudents = students.filter(student =>
-    searchTerm === '' || 
-    student.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.school.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ✅ Safe filter with proper null/undefined checks
+  const filteredStudents = students.filter(student => {
+    // Ensure student and nested properties exist
+    if (!student || !student.user || !student.school) {
+      return false;
+    }
+    
+    if (searchTerm === '') {
+      return true;
+    }
+    
+    const fullName = student.user.full_name?.toLowerCase() || '';
+    const schoolName = student.school.name?.toLowerCase() || '';
+    const search = searchTerm.toLowerCase();
+    
+    return fullName.includes(search) || schoolName.includes(search);
+  });
 
+  // Loading State
   if (loading && currentPage === 1) {
     return (
       <div className="space-y-6">
@@ -122,11 +149,22 @@ export default function StudentsPage() {
     );
   }
 
+  // Error State
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={() => fetchStudents()}>Retry</Button>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Assigned Students</h1>
+        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <div className="text-red-600 mb-4">
+              <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
+              <p className="text-lg font-medium">{error}</p>
+            </div>
+            <Button onClick={() => fetchStudents()}>Retry</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -145,96 +183,99 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardContent className="p-6">
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search students by name or school..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+      {/* Show filters only if there are students OR filters are active */}
+      {(students.length > 0 || Object.keys(filters).length > 0 || searchTerm) && (
+        <Card>
+          <CardContent className="p-6">
+            <form onSubmit={handleSearch} className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search students by name or school..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
+                <Button type="submit" variant="outline">
+                  Search
+                </Button>
               </div>
-              <Button type="submit" variant="outline">
-                Search
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Class Level Filter */}
-              <Select 
-                value={filters.class_level || 'all'} 
-                onValueChange={(value) => handleFilterChange('class_level', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="9">Class 9</SelectItem>
-                  <SelectItem value="10">Class 10</SelectItem>
-                  <SelectItem value="11">Class 11</SelectItem>
-                  <SelectItem value="12">Class 12</SelectItem>
-                </SelectContent>
-              </Select>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Select 
+                  value={filters.class_level || 'all'} 
+                  onValueChange={(value) => handleFilterChange('class_level', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    <SelectItem value="9">Class 9</SelectItem>
+                    <SelectItem value="10">Class 10</SelectItem>
+                    <SelectItem value="11">Class 11</SelectItem>
+                    <SelectItem value="12">Class 12</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {/* School Filter */}
-              <Select 
-                value={filters.school_id || 'all'} 
-                onValueChange={(value) => handleFilterChange('school_id', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by school" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Schools</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select 
+                  value={filters.school_id || 'all'} 
+                  onValueChange={(value) => handleFilterChange('school_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Schools</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {/* Clear Button */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={clearFilters}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Clear
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={clearFilters}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Students Grid */}
+      {/* Students Grid or Empty State */}
       {filteredStudents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStudents.map((student) => {
-            // ✅ Safe access with optional chaining and defaults
-            const sessionsAttended = student.stats?.sessionsAttended ?? 0;
-            const lastActivity = student.stats?.lastActivity;
+            // ✅ Super safe access with multiple fallbacks
+            const userId = student?.user?.id || `student-${Math.random()}`;
+            const fullName = student?.user?.full_name || 'Unknown Student';
+            const classLevel = student?.profile?.class_level || 'N/A';
+            const schoolName = student?.school?.name || 'Unknown School';
+            const sessionsAttended = student?.stats?.sessionsAttended ?? 0;
+            const lastActivity = student?.stats?.lastActivity;
+            const careerAspirations = student?.profile?.career_aspirations || [];
+            const assignedAt = student?.assignment?.assigned_at;
             const engagementStatus = getEngagementStatus(sessionsAttended);
             
             return (
-              <Card key={student.user.id} className="hover:shadow-lg transition-shadow">
+              <Card key={userId} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-12 w-12">
                         <AvatarFallback className="bg-blue-100 text-blue-600 text-sm">
-                          {student.user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          {fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{student.user.full_name}</h3>
-                        <p className="text-sm text-gray-600">
-                          Class {student.profile.class_level || 'N/A'}
-                        </p>
+                        <h3 className="font-semibold text-gray-900">{fullName}</h3>
+                        <p className="text-sm text-gray-600">Class {classLevel}</p>
                       </div>
                     </div>
                     <Badge className={engagementStatus.color}>
@@ -242,15 +283,13 @@ export default function StudentsPage() {
                     </Badge>
                   </div>
 
-                  {/* School Info */}
                   <div className="mb-4">
                     <div className="flex items-center text-sm text-gray-600">
                       <School className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="truncate">{student.school.name}</span>
+                      <span className="truncate">{schoolName}</span>
                     </div>
                   </div>
 
-                  {/* Student Stats */}
                   <div className="space-y-3 mb-4 p-3 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center text-sm text-gray-600">
@@ -267,38 +306,39 @@ export default function StudentsPage() {
                     )}
                   </div>
 
-                  {/* Career Aspirations */}
-                  {student.profile.career_aspirations && student.profile.career_aspirations.length > 0 && (
+                  {careerAspirations.length > 0 && (
                     <div className="mb-4">
                       <p className="text-xs text-gray-500 mb-1">Career Interests:</p>
                       <div className="flex flex-wrap gap-1">
-                        {student.profile.career_aspirations.slice(0, 2).map((career, idx) => (
+                        {careerAspirations.slice(0, 2).map((career, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {career}
                           </Badge>
                         ))}
-                        {student.profile.career_aspirations.length > 2 && (
+                        {careerAspirations.length > 2 && (
                           <Badge variant="outline" className="text-xs">
-                            +{student.profile.career_aspirations.length - 2}
+                            +{careerAspirations.length - 2}
                           </Badge>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* Action Buttons */}
                   <div className="flex justify-between items-center pt-4 border-t">
                     <div className="text-xs text-gray-500">
-                      Assigned: {new Date(student.assignment.assigned_at).toLocaleDateString('en-IN')}
+                      {assignedAt 
+                        ? `Assigned: ${new Date(assignedAt).toLocaleDateString('en-IN')}`
+                        : 'Recently assigned'
+                      }
                     </div>
                     <div className="flex space-x-2">
-                      <Link href={`/dashboard/hei-mentor/mentoring/students/${student.user.id}`}>
+                      <Link href={`/dashboard/hei-mentor/mentoring/students/${userId}`}>
                         <Button size="sm" variant="outline">
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
                       </Link>
-                      <Link href={`/dashboard/hei-mentor/mentoring/chat?student=${student.user.id}`}>
+                      <Link href={`/dashboard/hei-mentor/mentoring/chat?student=${userId}`}>
                         <Button size="sm" variant="outline">
                           <MessageCircle className="h-4 w-4" />
                         </Button>
@@ -311,25 +351,32 @@ export default function StudentsPage() {
           })}
         </div>
       ) : (
+        // ✅ Enhanced Empty State
         <Card>
           <CardContent className="p-12 text-center">
-            <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-            <p className="text-gray-500 mb-4">
+            <UserPlus className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {searchTerm || Object.keys(filters).length > 0 
+                ? "No students found"
+                : "No students assigned yet"
+              }
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
               {searchTerm || Object.keys(filters).length > 0
-                ? "No students match your current filters."
-                : "You don't have any assigned students yet."}
+                ? "No students match your current search criteria. Try adjusting your filters."
+                : "You don't have any assigned students yet. Students will appear here once they are assigned to you by the HEI admin."}
             </p>
             {(searchTerm || Object.keys(filters).length > 0) && (
               <Button onClick={clearFilters} variant="outline">
-                Clear Filters
+                <Filter className="h-4 w-4 mr-2" />
+                Clear All Filters
               </Button>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Pagination */}
+      {/* Pagination - only show if there are students */}
       {totalStudents > studentsPerPage && (
         <div className="flex justify-center items-center space-x-4">
           <Button
