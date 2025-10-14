@@ -44,20 +44,39 @@ export default function HEIMentorProfile() {
     research_interests: [] as string[]
   });
 
+  // Fix for page.tsx profile page
+
   useEffect(() => {
     const fetchMentorProfile = async () => {
       try {
         setLoading(true);
-        const data = await heiMentorAPI.getMentorProfile();
-        setMentorData(data);
+        
+        // ✅ FIX: API returns APIResponse<any> with .data property
+        const response = await heiMentorAPI.getMentorProfile();
+        
+        // Add logging to see structure
+        console.log('📦 Full API Response:', response);
+        console.log('📦 Response Data:', response.data);
+        
+        // Check if response has error
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        
+        // Extract the actual mentor data from response.data
+        const mentorData = response.data.data;
+        
+        console.log('✅ Mentor Data:', mentorData);
+        
+        setMentorData(mentorData);
         setFormData({
-          designation: data.profile.designation || '',
-          department: data.profile.department || '',
-          qualification: data.profile.qualification || '',
-          experience_years: data.profile.experience_years || 0,
-          max_students: data.profile.max_students,
-          expertise: data.profile.expertise,
-          research_interests: data.profile.research_interests
+          designation: mentorData.profile.designation || '',
+          department: mentorData.profile.department || '',
+          qualification: mentorData.profile.qualification || '',
+          experience_years: mentorData.profile.experience_years || 0,
+          max_students: mentorData.profile.max_students,
+          expertise: mentorData.profile.expertise,
+          research_interests: mentorData.profile.research_interests
         });
       } catch (err) {
         setError('Failed to load profile data');
@@ -70,14 +89,27 @@ export default function HEIMentorProfile() {
     fetchMentorProfile();
   }, []);
 
+
   const handleSave = async () => {
     try {
       setSaving(true);
+      
+      // Update profile
       await heiMentorAPI.updateMentorProfile(formData);
+      
       setEditing(false);
-      // Refetch data
-      const updatedData = await heiMentorAPI.getMentorProfile();
+      
+      // ✅ FIX: Extract .data from the APIResponse
+      const response = await heiMentorAPI.getMentorProfile();
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      // Extract mentor data from response.data
+      const updatedData = response.data.data;
       setMentorData(updatedData);
+      
     } catch (err) {
       setError('Failed to update profile');
       console.error('Update error:', err);
@@ -85,6 +117,7 @@ export default function HEIMentorProfile() {
       setSaving(false);
     }
   };
+
 
   const handleCancel = () => {
     if (mentorData) {
@@ -150,11 +183,11 @@ export default function HEIMentorProfile() {
             <div className="flex items-center space-x-6">
               <Avatar className="h-20 w-20">
                 <AvatarFallback className="text-2xl font-bold bg-blue-100 text-blue-600">
-                  {user.name.split(' ').map(n => n[0]).join('')}
+                  {user.full_name.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{user.full_name}</h1>
                 <p className="text-lg text-gray-600">
                   {profile.designation} • {profile.department}
                 </p>

@@ -195,56 +195,12 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
                 route: '/dashboard/hei-mentor/mentoring/students'
               },
               {
-                icon: School,
-                label: 'Schools',
-                route: '/dashboard/hei-mentor/mentoring/schools'
-              },
-              {
                 icon: Users,
                 label: 'Chat',
                 route: '/dashboard/hei-mentor/mentoring/chat'
               }
             ]
           },
-          {
-            icon: BookOpen,
-            label: 'Assignments',
-            route: '/dashboard/hei-mentor/content',
-            children: [
-              {
-                icon: BookOpen,
-                label: 'All Assignments',
-                route: '/dashboard/hei-mentor/content/assignments'
-              },
-              {
-                icon: BookOpen,
-                label: 'Create Assignment',
-                route: '/dashboard/hei-mentor/content/assignments/create'
-              },
-              {
-                icon: FileText,
-                label: 'Resources',
-                route: '/dashboard/hei-mentor/content/resources'
-              }
-            ]
-          },
-          {
-            icon: GraduationCap,
-            label: 'Career Guidance',
-            route: '/dashboard/hei-mentor/career-guidance',
-            children: [
-              {
-                icon: GraduationCap,
-                label: 'Student Progress',
-                route: '/dashboard/hei-mentor/career-guidance/progress'
-              },
-              {
-                icon: Trophy,
-                label: 'Holland Results',
-                route: '/dashboard/hei-mentor/career-guidance/holland-results'
-              }
-            ]
-          }
         ];
 
 

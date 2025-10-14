@@ -104,11 +104,12 @@ export default function StudentsPage() {
     return { label: 'Needs Attention', color: 'bg-red-100 text-red-800' };
   };
 
-  const filteredStudents = students.filter(student =>
+  // Fixed: Added optional chaining and corrected property names
+  const filteredStudents = students?.filter(student =>
     searchTerm === '' || 
-    student.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.school.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.schoolName.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   if (loading && currentPage === 1) {
     return (
@@ -227,19 +228,19 @@ export default function StudentsPage() {
             const progressStatus = getProgressStatus(student.stats.assignmentProgress);
             
             return (
-              <Card key={student.user.id} className="hover:shadow-lg transition-shadow">
+              <Card key={student.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {student.user.name.split(' ').map(n => n[0]).join('')}
+                          {student.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{student.user.name}</h3>
+                        <h3 className="font-semibold text-gray-900">{student.name}</h3>
                         <p className="text-sm text-gray-600">
-                          Class {student.profile.class_level}{student.profile.section}
+                          Class {student.classLevel}
                         </p>
                       </div>
                     </div>
@@ -251,11 +252,7 @@ export default function StudentsPage() {
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center text-sm text-gray-600">
                       <School className="h-4 w-4 mr-2" />
-                      {student.school.name}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <GraduationCap className="h-4 w-4 mr-2" />
-                      Roll: {student.profile.roll_number}
+                      {student.schoolName}
                     </div>
                   </div>
 
@@ -263,77 +260,38 @@ export default function StudentsPage() {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Assignment Progress</span>
-                        <span className={`font-medium ${getProgressColor(student.stats.assignmentProgress)}`}>
-                          {student.stats.assignmentProgress}%
+                        <span className={`font-medium ${getProgressColor(student.stats?.assignmentProgress || 0)}`}>
+                          {student.stats?.assignmentProgress || 0}%
                         </span>
                       </div>
-                      <Progress value={student.stats.assignmentProgress} className="h-2" />
+                      <Progress value={student.stats?.assignmentProgress || 0} className="h-2" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="text-center">
-                        <p className="font-semibold text-gray-900">{student.stats.completedAssignments}</p>
+                        <p className="font-semibold text-gray-900">{student.completedSessions || 0}</p>
                         <p className="text-gray-600">Completed</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-gray-900">{student.stats.averageGrade}%</p>
-                        <p className="text-gray-600">Avg Grade</p>
+                        <p className="font-semibold text-gray-900">{student.averageScore || 0}%</p>
+                        <p className="text-gray-600">Avg Score</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Holland Test Status */}
-                  {student.hollandResult ? (
-                    <div className="mb-4 p-3 bg-green-50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                          <span className="text-sm text-green-800">Holland Test Completed</span>
-                        </div>
-                        <Badge variant="outline" className="text-green-600 border-green-200">
-                          {student.hollandResult.personality_code}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-green-700 mt-1">
-                        Top: {student.hollandResult.top_categories.slice(0, 2).join(', ')}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600 mr-2" />
-                        <span className="text-sm text-yellow-800">Holland Test Pending</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Career Interests */}
-                  {student.profile.career_aspirations && student.profile.career_aspirations.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-600 mb-2">Career Interests:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {student.profile.career_aspirations.slice(0, 2).map((career, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {career}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Action Buttons */}
                   <div className="flex justify-between items-center pt-2 border-t">
                     <div className="text-xs text-gray-500">
-                      Last active: {new Date(student.stats.lastActivity).toLocaleDateString('en-IN')}
+                      {student.assignedAt && `Assigned: ${new Date(student.assignedAt).toLocaleDateString('en-IN')}`}
                     </div>
                     <div className="flex space-x-2">
-                      <Link href={`/dashboard/hei-mentor/mentoring/students/${student.user.id}`}>
+                      <Link href={`/dashboard/hei-mentor/mentoring/students/${student.id}`}>
                         <Button size="sm" variant="outline">
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
                       </Link>
-                      <Link href={`/dashboard/hei-mentor/mentoring/chat?student=${student.user.id}`}>
+                      <Link href={`/dashboard/hei-mentor/mentoring/chat?student=${student.id}`}>
                         <Button size="sm" variant="outline">
                           <MessageCircle className="h-4 w-4" />
                         </Button>

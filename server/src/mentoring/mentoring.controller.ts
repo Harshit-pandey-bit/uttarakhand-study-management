@@ -1889,6 +1889,4 @@ async getSchoolById(
 
   return this.mentoringService.getSchoolById(mentorId, schoolId);
 }
-
-
 }

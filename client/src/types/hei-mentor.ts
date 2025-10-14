@@ -1,12 +1,11 @@
 // src/types/hei-mentor.ts
-// Updated to match exact database schema from Supabase
+// Production-ready types matching database schema
 
 // ===== CORE USER & PROFILE TYPES =====
-
 export interface User {
   id: string; // uuid
   email: string;
-  name: string;
+  full_name: string;
   phone_number?: string;
   user_type: 'student' | 'teacher' | 'school_admin' | 'hei_mentor' | 'hei_admin' | 'super_admin';
   profile_picture?: string;
@@ -44,7 +43,6 @@ export interface HEI {
 }
 
 // ===== MENTORING TYPES =====
-
 export interface MentoringSession {
   id: string; // uuid
   title: string;
@@ -71,6 +69,7 @@ export interface SessionParticipant {
   attendance_status: 'registered' | 'attended' | 'absent';
   feedback?: string;
   rating?: number;
+  student?: User; // populated when needed
 }
 
 export interface MentorStudentAssignment {
@@ -86,19 +85,7 @@ export interface MentorStudentAssignment {
   updated_at: string;
 }
 
-export interface MentorAvailability {
-  id: string; // uuid
-  mentor_id: string; // foreign key to users
-  day_of_week: number; // 0-6 (0 = Sunday)
-  start_time: string; // time without time zone
-  end_time: string; // time without time zone
-  is_available: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 // ===== ASSIGNMENT TYPES =====
-
 export interface Assignment {
   id: string; // uuid
   title: string;
@@ -139,19 +126,7 @@ export interface AssignmentSubmission {
   updated_at: string;
 }
 
-export interface AssignmentTemplate {
-  id: string; // uuid
-  subject: string;
-  class_level: string;
-  chapter?: string;
-  difficulty: string;
-  question_types?: any; // jsonb
-  template_data?: any; // jsonb
-  created_at: string;
-}
-
 // ===== CHAT TYPES =====
-
 export interface ChatRoom {
   id: string; // uuid
   name: string;
@@ -188,16 +163,7 @@ export interface ChatMessage {
   updated_at: string;
 }
 
-export interface MessageReaction {
-  id: string; // uuid
-  message_id: string; // foreign key to chat_messages
-  user_id: string; // foreign key to users
-  emoji: string; // varchar(10)
-  created_at: string;
-}
-
 // ===== SCHOOL TYPES =====
-
 export interface School {
   id: string; // uuid
   name: string;
@@ -235,33 +201,6 @@ export interface StudentProfile {
 }
 
 // ===== CAREER TYPES =====
-
-export interface Career {
-  id: string; // uuid
-  title: string;
-  slug: string; // unique
-  emoji?: string;
-  description?: string;
-  category?: string;
-  holland_codes: string[]; // ARRAY
-  salary_range?: string;
-  demand_level?: string;
-  education_level?: string;
-  skills?: string[]; // ARRAY
-  work_environment?: string;
-  typical_day?: string;
-  pros?: string[]; // ARRAY
-  cons?: string[]; // ARRAY
-  famous_persons?: string[]; // ARRAY
-  pathway?: string;
-  inspiring_fact?: string;
-  local_connection?: string;
-  next_steps?: string[]; // ARRAY
-  is_featured: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface HollandResult {
   id: string; // uuid
   student_id: string; // foreign key to users
@@ -273,63 +212,21 @@ export interface HollandResult {
   completed_at: string;
 }
 
-// ===== NOTIFICATION TYPES =====
-
-export interface Notification {
-  id: string; // uuid
-  user_id?: string; // foreign key to users
-  title: string;
-  message: string;
-  notification_type: string; // varchar(50)
-  resource_id?: string;
-  is_read: boolean;
-  priority: 'low' | 'medium' | 'high';
-  action_url?: string;
-  expires_at?: string;
-  created_at: string;
-}
-
 // ===== DASHBOARD & STATS TYPES =====
-
-export interface StudentDashboardStats {
-  id: string; // uuid
-  student_id: string; // foreign key to users
-  completed_assignments: number;
-  total_assignments: number;
-  upcoming_tests: number;
-  mentoring_sessions_attended: number;
-  total_mentoring_sessions: number;
-  average_assignment_score: number;
-  average_test_score: number;
-  career_exploration_progress: number;
-  last_updated: string;
-}
-
-export interface StudentActivity {
-  id: string; // uuid
-  student_id?: string; // foreign key to users
-  activity_type: string; // varchar(50)
-  resource_id: string;
-  metadata?: any; // jsonb
-  created_at: string;
-}
-
-// ===== AGGREGATED TYPES FOR FRONTEND =====
-
 export interface HEIMentorDashboardStats {
   // Student Progress Metrics (actionable)
   assignedStudents: number;
   studentsActiveThisWeek: number;
   studentsCompletedHollandTest: number;
   studentsNeedingAttention: number;
-  
+
   // Assignment & Content Metrics (actionable)
   pendingSubmissions: number;
   ungradedAssignments: number;
-  
+
   // Session Metrics (current/upcoming only)
   upcomingSessionsThisWeek: number;
-  
+
   // Career Guidance Progress
   studentsWithCareerPlans: number;
   averageStudentProgress: number;
@@ -341,7 +238,7 @@ export interface HEIMentorDashboardData {
     profile: HEIMentorProfile;
     hei: HEI;
   };
-  stats: HEIMentorDashboardStats; // <-- Updated to use the new interface
+  stats: HEIMentorDashboardStats;
   upcomingSessions: (MentoringSession & {
     participants: (SessionParticipant & { student: User })[];
   })[];
@@ -368,7 +265,6 @@ export interface HEIMentorDashboardData {
   }[];
 }
 
-
 export interface AssignedStudent {
   user: User;
   profile: StudentProfile;
@@ -386,7 +282,6 @@ export interface AssignedStudent {
 }
 
 // ===== API REQUEST/RESPONSE TYPES =====
-
 export interface CreateSessionRequest {
   title: string;
   description?: string;
@@ -447,7 +342,6 @@ export interface UpdateMentorProfileRequest {
 }
 
 // ===== FILTER & SEARCH TYPES =====
-
 export interface SessionFilters {
   status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   session_type?: string;
@@ -473,19 +367,7 @@ export interface AssignmentFilters {
   status?: 'active' | 'inactive';
 }
 
-// ===== UTILITY TYPES =====
-
-export type SessionStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
-export type AttendanceStatus = 'registered' | 'attended' | 'absent';
-export type SubmissionStatus = 'submitted' | 'graded' | 'returned';
-export type AssignmentDifficulty = 'easy' | 'medium' | 'hard';
-export type MessageType = 'text' | 'file' | 'image' | 'voice';
-export type UserType = 'student' | 'teacher' | 'school_admin' | 'hei_mentor' | 'hei_admin' | 'super_admin';
-export type Priority = 'low' | 'medium' | 'high';
-export type RoomType = 'direct' | 'group' | 'broadcast';
-
 // ===== API RESPONSE WRAPPERS =====
-
 export interface SessionListResponse {
   sessions: MentoringSession[];
   total: number;
@@ -519,8 +401,12 @@ export interface ChatRoomListResponse {
   total: number;
 }
 
-export interface NotificationListResponse {
-  notifications: Notification[];
-  unreadCount: number;
-  total: number;
-}
+// ===== UTILITY TYPES =====
+export type SessionStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+export type AttendanceStatus = 'registered' | 'attended' | 'absent';
+export type SubmissionStatus = 'submitted' | 'graded' | 'returned';
+export type AssignmentDifficulty = 'easy' | 'medium' | 'hard';
+export type MessageType = 'text' | 'file' | 'image' | 'voice';
+export type UserType = 'student' | 'teacher' | 'school_admin' | 'hei_mentor' | 'hei_admin' | 'super_admin';
+export type Priority = 'low' | 'medium' | 'high';
+export type RoomType = 'direct' | 'group' | 'broadcast';

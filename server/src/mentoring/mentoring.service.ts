@@ -1810,7 +1810,7 @@ async getStudentProgress(mentorId: string, studentId: string) {
       .from('students')
       .select(`
         *,
-        users!inner(id, full_name, email, phone_number, profile_picture),
+        users!inner(id, full_name, email, phone, profile_picture),
         student_profiles!inner(
           *,
           schools!inner(id, name, location)
@@ -2126,30 +2126,52 @@ private async generateMentorRecommendations(mentorId: string): Promise<any[]> {
 
 /* ---------- NEW HEI-MENTOR SERVICE METHODS ---------- */
 
+
+// ✅ FIXED VERSION - mentoring.service.ts
+// Replace the existing getMentorProfile method with this:
+
 async getMentorProfile(mentorId: string): Promise<any> {
   try {
     this.logger.log(`Fetching mentor profile for: ${mentorId}`);
 
+    // ✅ Let Supabase auto-detect relationships
     const { data: profile, error } = await this.supabase
       .from('hei_mentor_profiles')
       .select(`
         *,
-        user:users!hei_mentor_profiles_user_id_fkey(*),
-        hei:heis!hei_mentor_profiles_hei_id_fkey(*)
+        users!inner(*),
+        heis!inner(*)
       `)
       .eq('user_id', mentorId)
       .single();
 
-    if (error || !profile) {
+    if (error) {
+      this.logger.error('Supabase error:', JSON.stringify(error));
       throw new NotFoundException('Profile not found');
     }
 
-    return { success: true, data: profile };
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    // Transform response
+    const { users: user, heis: hei, ...profileFields } = profile;
+
+    return {
+      success: true,
+      data: {
+        user: user || null,
+        profile: profileFields,
+        hei: hei || null,
+      }
+    };
   } catch (error: any) {
     this.logger.error('Error fetching mentor profile:', error);
     throw new BadRequestException('Failed to fetch mentor profile');
   }
 }
+
+
 
 async updateMentorProfile(mentorId: string, updateData: any): Promise<any> {
   try {
@@ -2341,32 +2363,58 @@ private async getMentorAssignmentIds(mentorId: string): Promise<string[]> {
   }
 }
 
-async getMentorSessions(mentorId: string, filters: { status?: string; limit?: number }): Promise<any> {
+async getMentorSessions(
+  mentorId: string, 
+  filters: { status?: string; limit?: number }
+): Promise<any> {
   try {
     this.logger.log(`Fetching sessions for mentor: ${mentorId}`);
 
+    // ✅ Step 1: Get mentor profile ID from user ID
+    const { data: mentorProfile, error: profileError } = await this.supabase
+      .from('hei_mentor_profiles')  // ← snake_case
+      .select('id')
+      .eq('user_id', mentorId)  // ← snake_case
+      .single();
+
+    if (profileError || !mentorProfile) {
+      this.logger.error('Mentor profile not found:', profileError);
+      throw new NotFoundException('Mentor profile not found');
+    }
+
+    this.logger.log(`Found mentor profile ID: ${mentorProfile.id}`);
+
+    // ✅ Step 2: Build correct query with snake_case
     let query = this.supabase
-      .from('mentoring_sessions')
+      .from('mentoring_sessions')  // ← snake_case
       .select(`
         *,
-        mentor:users!mentoring_sessions_mentor_id_fkey(id, name, email),
         participants:session_participants(
-          *,
-          student:student_profiles!session_participants_student_id_fkey(
-            *,
-            user:users!student_profiles_user_id_fkey(name, email)
-          )
+          id,
+          student_id,
+          attendance_status,
+          registration_date
         )
       `)
-      .eq('mentor_id', mentorId)
-      .order('session_date', { ascending: false });
+      .eq('mentor_id', mentorProfile.id)  // ← Use profile ID, snake_case
+      .order('session_date', { ascending: false });  // ← snake_case
 
-    if (filters.status) query = query.eq('status', filters.status);
-    if (filters.limit) query = query.limit(filters.limit);
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
 
     const { data: sessions, error } = await query;
 
-    if (error) throw new BadRequestException('Failed to fetch mentor sessions');
+    if (error) {
+      this.logger.error('Supabase error fetching sessions:', error);
+      throw new BadRequestException('Failed to fetch mentor sessions');
+    }
+
+    this.logger.log(`Successfully fetched ${sessions?.length || 0} sessions`);
 
     return {
       success: true,
@@ -2375,9 +2423,15 @@ async getMentorSessions(mentorId: string, filters: { status?: string; limit?: nu
     };
   } catch (error: any) {
     this.logger.error('Error fetching mentor sessions:', error);
+    
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    
     throw new BadRequestException('Failed to fetch mentor sessions');
   }
 }
+
 
 async getMentorSessionById(mentorId: string, sessionId: string): Promise<any> {
   try {
@@ -2390,7 +2444,7 @@ async getMentorSessionById(mentorId: string, sessionId: string): Promise<any> {
           *,
           student:student_profiles!session_participants_student_id_fkey(
             *,
-            user:users!student_profiles_user_id_fkey(name, email, phone_number)
+            user:users!student_profiles_user_id_fkey(name, email, phone)
           )
         ),
         feedback:session_feedback(*)
@@ -2632,7 +2686,7 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
       .insert(insertData)
       .select(`
         *,
-        sender:users!chatmessages_senderid_fkey(id, fullname, email)
+        sender:users!chatmessages_senderid_fkey(id, full_name, email)
       `)
       .single();
 
@@ -2659,7 +2713,7 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
         id: message.id,
         content: message.messagecontent,
         messageType: MessageType.TEXT,
-        senderName: (message as any).sender?.fullname || 'Unknown',
+        senderName: (message as any).sender?.full_name || 'Unknown',
         senderId: message.senderid,
         fileUrl: null, // Always null - no file support
         replyTo: null,
@@ -2827,132 +2881,102 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
   }
 
   async getAssignedStudents(mentorId: string, filters: StudentFiltersDto): Promise<AssignedStudentsResponseDto> {
-    try {
-      this.logger.log(`Getting assigned students for mentor: ${mentorId}`);
+  try {
+    this.logger.log(`Getting assigned students for mentor: ${mentorId}`);
 
-      // Get mentor profile
-      const { data: mentorProfile } = await this.supabase
-        .from('hei_mentor_profiles')
-        .select('id')
-        .eq('user_id', mentorId)
-        .single();
+    // Get mentor profile
+    const { data: mentorProfile } = await this.supabase
+      .from('hei_mentor_profiles')
+      .select('id')
+      .eq('user_id', mentorId)
+      .single();
 
-      if (!mentorProfile) {
-        throw new NotFoundException('Mentor profile not found');
-      }
+    if (!mentorProfile) {
+      throw new NotFoundException('Mentor profile not found');
+    }
 
-      // Build query for assigned students
-      let query = this.supabase
-        .from('mentor_student_assignments')
-        .select(`
-          id,
-          student_id,
-          status,
-          assigned_at,
-          student_profiles!mentor_student_assignments_student_id_fkey(
-            user_id,
-            class_level,
-            school_id,
-            users!student_profiles_user_id_fkey(
-              id,
-              full_name,
-              email,
-              phone_number
-            ),
-            schools!student_profiles_school_id_fkey(
-              id,
-              name
-            )
-          )
-        `)
-        .eq('mentor_id', mentorProfile.id);
+    // ❌ OLD (BROKEN):
+    // .select(`
+    //   *,
+    //   student_profiles!mentor_student_assignments_student_id_fkey(...)
+    // `)
 
-      // Apply filters
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
+    // ✅ NEW (CORRECT):
+    // Don't rely on automatic relationship detection
+    // Query assignments first, then join manually
+    
+    const { data: assignments, error } = await this.supabase
+      .from('mentor_student_assignments')
+      .select('id, student_id, status, assigned_at')  // ← Just the assignment data
+      .eq('mentor_id', mentorProfile.id);
 
-      if (filters.schoolId) {
-        // This requires a more complex join - for now we'll filter after fetching
-      }
+    if (error) throw error;
 
-      if (filters.classLevel) {
-        // This also requires filtering the nested student_profiles
-      }
-
-      const { data: assignments, error, count } = await query
-        .order('assigned_at', { ascending: false })
-        .range(
-          ((filters.page || 1) - 1) * (filters.limit || 20),
-          (filters.page || 1) * (filters.limit || 20) - 1
-        );
-
-      if (error) throw error;
-
-      // Process the results
-      const students: AssignedStudentDto[] = (assignments || [])
-        .filter(assignment => assignment.student_profiles)
-        .map(assignment => {
-          // Properly handle Supabase arrays
-      const profiles = Array.isArray(assignment.student_profiles) 
-        ? assignment.student_profiles[0]    // Get first element if array
-        : assignment.student_profiles;      // Use as-is if single object
-
-      const users = Array.isArray(profiles?.users) 
-        ? profiles.users[0]                 // Get first element if array
-        : profiles?.users;                  // Use as-is if single object
-
-      const schools = Array.isArray(profiles?.schools) 
-        ? profiles.schools[0]               // Get first element if array
-        : profiles?.schools;                // Use as-is if single object
-
-
-          return {
-            id: assignment.student_id,
-            name: users?.full_name || 'Unknown Student',
-            email: users?.email || '',
-            classLevel: profiles?.class_level || 'Unknown',
-            schoolName: schools?.name || 'Unknown School',
-            phoneNumber: users?.phone_number,
-            subjects: 'Mathematics, Science', // Mock - implement based on your data structure
-            averageScore: Math.round(Math.random() * 20 + 70), // Mock - calculate from actual scores
-            completedSessions: Math.floor(Math.random() * 15), // Mock - count from session_participants
-            upcomingSessions: Math.floor(Math.random() * 5), // Mock - count upcoming sessions
-            lastSessionDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: assignment.status,
-            assignedAt: assignment.assigned_at,
-          };
-        });
-
-      // Apply post-fetch filters
-      let filteredStudents = students;
-
-      if (filters.schoolId) {
-        // This would need actual school filtering logic
-      }
-
-      if (filters.classLevel) {
-        filteredStudents = filteredStudents.filter(s => s.classLevel === filters.classLevel);
-      }
-
-      // Calculate stats
-      const activeStudents = filteredStudents.filter(s => s.status === 'active').length;
-      const inactiveStudents = filteredStudents.filter(s => s.status !== 'active').length;
-
+    if (!assignments || assignments.length === 0) {
       return {
-        students: filteredStudents,
-        total: filteredStudents.length,
+        students: [],
+        total: 0,
         page: filters.page || 1,
         limit: filters.limit || 20,
-        activeStudents,
-        inactiveStudents,
+        activeStudents: 0,
+        inactiveStudents: 0
       };
-
-    } catch (error: any) {
-      this.logger.error('Error fetching assigned students:', error);
-      throw new BadRequestException('Failed to fetch assigned students');
     }
+
+    // ✅ Manually fetch student profiles using student_ids
+    const studentIds = assignments.map(a => a.student_id);
+
+    const { data: studentProfiles, error: profileError } = await this.supabase
+      .from('student_profiles')
+      .select(`
+        id,
+        user_id,
+        class_level,
+        school_id,
+        users!student_profiles_user_id_fkey(id, full_name, email, phone),
+        schools!student_profiles_school_id_fkey(id, name)
+      `)
+      .in('id', studentIds);  // ← Query by student_profile IDs
+
+    if (profileError) throw profileError;
+
+    // ✅ Combine the data
+    const students = assignments.map(assignment => {
+      const profile = studentProfiles?.find(p => p.id === assignment.student_id);
+      const user = Array.isArray(profile?.users) ? profile.users[0] : profile?.users;
+      const school = Array.isArray(profile?.schools) ? profile.schools[0] : profile?.schools;
+
+      return {
+        id: assignment.student_id,
+        name: user?.full_name || 'Unknown Student',
+        email: user?.email || '',
+        classLevel: profile?.class_level || 'Unknown',
+        schoolName: school?.name || 'Unknown School',
+        phoneNumber: user?.phone,
+        subjects:'Mathematics, Science', // Mock - implement based on your data
+        averageScore: Math.round(Math.random() * 20 + 70), // Mock
+        completedSessions: Math.floor(Math.random() * 15), // Mock
+        upcomingSessions: Math.floor(Math.random() * 5), // Mock
+        lastSessionDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        status: assignment.status,
+        assignedAt: assignment.assigned_at
+      };
+    });
+
+    return {
+      students,
+      total: students.length,
+      page: filters.page || 1,
+      limit: filters.limit || 20,
+      activeStudents: students.filter(s => s.status === 'active').length,
+      inactiveStudents: students.filter(s => s.status !== 'active').length
+    };
+
+  } catch (error: any) {
+    this.logger.error('Error fetching assigned students:', error);
+    throw new BadRequestException('Failed to fetch assigned students');
   }
+}
 
   async getStudentById(mentorId: string, studentId: string): Promise<StudentDetailDto> {
     try {
@@ -2980,7 +3004,7 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
               id,
               full_name,
               email,
-              phone_number
+              phone
             ),
             schools!student_profiles_school_id_fkey(
               id,
@@ -3051,7 +3075,7 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
         email: user?.email || '',
         classLevel: profile?.class_level || 'Unknown',
         schoolName: school?.name || 'Unknown School',
-        phoneNumber: user?.phone_number,
+        phoneNumber: user?.phone,
         subjects: 'Mathematics, Science, Computer Science',
         averageScore: 81.5,
         completedSessions: (recentSessions || []).filter(s => s.attendance_status === 'completed').length,
@@ -3222,7 +3246,7 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
               id,
               full_name,
               email,
-              phone_number
+              phone
             )
           )
         `)
@@ -3242,7 +3266,7 @@ async sendMentorChatMessage(mentorId: string, roomId: string, messageData: SendM
             email: user?.email || '',
             classLevel: profile?.class_level || 'Unknown',
             schoolName: school.name,
-            phoneNumber: user?.phone_number,
+            phoneNumber: user?.phone,
             subjects: 'Mathematics, Science',
             averageScore: Math.round(Math.random() * 20 + 70),
             completedSessions: Math.floor(Math.random() * 15),

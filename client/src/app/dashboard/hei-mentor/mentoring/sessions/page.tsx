@@ -55,20 +55,38 @@ export default function SessionsPage() {
     fetchSessions();
   }, [currentPage, filters]);
 
-  const fetchSessions = async () => {
-    try {
-      setLoading(true);
-      const response = await heiMentorAPI.getSessions(filters, currentPage, sessionsPerPage);
-      setSessions(response.sessions);
-      setTotalSessions(response.total);
-      setHasMore(response.hasMore);
-    } catch (err) {
-      setError('Failed to load sessions');
-      console.error('Sessions error:', err);
-    } finally {
-      setLoading(false);
+ const fetchSessions = async () => {
+  try {
+    setLoading(true);
+    
+    const response = await heiMentorAPI.getSessions(filters, currentPage, sessionsPerPage);
+    
+    // ✅ Check for error
+    if (response.error) {
+      throw new Error(response.error);
     }
-  };
+    
+    // ✅ Safely extract data with null checks
+    if (!response.data) {
+      throw new Error('No data received from server');
+    }
+    
+    // Backend returns: { success: true, data: [...], total: 0 }
+    // So response.data = { success: true, data: [...], total: 0 }
+    const backendResponse = response.data as any;
+    
+    setSessions(backendResponse.data || []);
+    setTotalSessions(backendResponse.total || 0);
+    setHasMore(currentPage * sessionsPerPage < (backendResponse.total || 0));
+    
+  } catch (err) {
+    setError('Failed to load sessions');
+    console.error('Sessions error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleFilterChange = (key: string, value: string) => {
     if (value === 'all') {
