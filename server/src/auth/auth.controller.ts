@@ -4,16 +4,16 @@ import { Controller, Post, Get, Body, UseGuards, Request, HttpCode, HttpStatus, 
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { 
-  LoginDto, 
-  RegisterDto, 
-  AuthResponseDto, 
+import {
+  LoginDto,
+  RegisterDto,
+  AuthResponseDto,
   RegistrationResponseDto,
   StudentRegisterDto,
   TeacherRegisterDto,
   HeiMentorRegisterDto,
   HeiAdminRegisterDto,
-  SchoolAdminRegisterDto 
+  SchoolAdminRegisterDto
 } from './dto/auth.dto';
 import { Response } from 'express';
 
@@ -66,20 +66,46 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
-  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response,): Promise<AuthResponseDto> {
-
+  async login(
+    @Body() loginDto: LoginDto, 
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<Omit<AuthResponseDto, 'access_token' | 'refresh_token'>> {
     const data = await this.authService.login(loginDto);
-
-    // The controller's job is to set the token in a secure, httpOnly cookie.
+    
+    // ✅ FIXED: Set cookie with correct cross-domain settings
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     response.cookie('access_token', data.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
+      httpOnly: true, // Prevents JavaScript access (XSS protection)
+      secure: isProduction, // Must be true in production (HTTPS only)
+      sameSite: isProduction ? 'none' : 'lax', // ✅ 'none' allows cross-domain cookies
+      path: '/', // Cookie available on all paths
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return this.authService.login(loginDto);
+    // ✅ FIXED: Return user data without tokens (tokens are in cookie)
+    return {
+      user: data.user,
+    };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  async logout(@Res({ passthrough: true }) response: Response) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Clear the cookie
+    response.cookie('access_token', '', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/',
+      maxAge: 0, // Expire immediately
+    });
+
+    return { message: 'Logout successful' };
   }
 
   @Get('profile')
