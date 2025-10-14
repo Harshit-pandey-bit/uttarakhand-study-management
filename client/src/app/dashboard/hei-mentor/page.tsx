@@ -124,12 +124,12 @@ export default function HEIMentorDashboard() {
             <Avatar className="h-12 w-12 border-2 border-white/20">
               <AvatarImage src={mentor?.user?.profile_picture} />
               <AvatarFallback className="bg-white/10 text-white font-bold">
-                {mentor?.user?.name?.split(' ').map(n => n[0]).join('') || 'HM'}
+                {mentor?.user?.full_name?.split(' ').map(n => n[0]).join('') || 'HM'}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold">
-                Welcome back, {mentor?.user?.name || 'HEI Mentor'}!
+                Welcome back, {mentor?.user?.full_name || 'HEI Mentor'}!
               </h1>
               <p className="text-blue-100">
                 {mentor?.profile?.designation || 'Mentor'}, {mentor?.profile?.department || 'Department'}
