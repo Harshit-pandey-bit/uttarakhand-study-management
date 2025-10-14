@@ -1,562 +1,558 @@
-// src/app/dashboard/student/mentoring/page.tsx
-
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Calendar as CalendarIcon,
+  Calendar,
   Clock,
+  Users,
+  Star,
   Video,
+  MessageCircle,
+  MoreHorizontal,
+  ArrowLeft,
+  Filter,
+  Search,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
   Loader2,
-  AlertTriangle,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
+  AlertTriangle
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
+// Import API client and types
 import { mentoringAPI } from '@/lib/api/mentoringClient';
-import type { Mentor, BookSession, SessionType } from '@/types/mentoring';
+import { 
+  Session, 
+  SessionList,
+  SessionStatus, 
+  SessionType,
+  SessionFeedback,
+  SessionFilters,
+  UpdateSession
+} from '@/types/mentoring';
 
-export default function StudentMentoringPage() {
-  const [mentors, setMentors] = useState<Mentor[]>([]);
-  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
-  const [sessionTitle, setSessionTitle] = useState('');
-  const [sessionDescription, setSessionDescription] = useState('');
-  const [sessionType, setSessionType] = useState<SessionType>('one_on_one' as SessionType);
-  const [sessionSubject, setSessionSubject] = useState('');
-  
+export default function SessionsPage() {
+  // State management
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [bookedSession, setBookedSession] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
+  
+  // Filters and search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<SessionType | 'all'>('all');
+  
+  // Feedback modal
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [feedbackData, setFeedbackData] = useState<SessionFeedback>({
+    rating: 5,
+    comment: ''
+  });
 
-  // Calendar state
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-
+  // Load sessions
   useEffect(() => {
-    fetchMentors();
-  }, []);
+    loadSessions();
+  }, [currentPage, activeTab, statusFilter, typeFilter, searchTerm]);
 
-  const fetchMentors = async () => {
+  const loadSessions = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await mentoringAPI.getMentors();
+
+      const filters: SessionFilters = {};
+      
+      // Set status filter based on active tab
+      if (activeTab === 'upcoming') {
+        filters.status = SessionStatus.SCHEDULED;
+      } else if (activeTab === 'completed') {
+        filters.status = SessionStatus.COMPLETED;
+      } else if (activeTab === 'cancelled') {
+        filters.status = SessionStatus.CANCELLED;
+      }
+
+      // Add additional filters
+      if (statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (typeFilter !== 'all') {
+        filters.type = typeFilter;
+      }
+
+      const response = await mentoringAPI.getSessions(filters, currentPage, 10);
       
       if (response.error) {
         throw new Error(response.error);
       }
 
       if (response.data) {
-        setMentors(Array.isArray(response.data) ? response.data : []);
-      } else {
-        setMentors([]);
+        setSessions(response.data.sessions);
+        setTotalPages(Math.ceil(response.data.total / response.data.limit));
       }
     } catch (err) {
-      console.error('Failed to load mentors:', err);
-      setError('Failed to load mentors. Please try again.');
-      setMentors([]);
+      console.error('Failed to load sessions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load sessions');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ FIXED: Generate proper calendar with correct weekday alignment
-  const generateCalendarDays = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
-    
-    const firstDayWeekday = firstDayOfMonth.getDay();
-    const daysInMonth = lastDayOfMonth.getDate();
-    
-    const days: (Date | null)[] = [];
-    
-    // Add empty cells for days before the month starts
-    for (let i = 0; i < firstDayWeekday; i++) {
-      days.push(null);
+  // Helper functions
+  const getSessionStatusColor = (status: SessionStatus) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'in_progress': return 'bg-green-100 text-green-700 border-green-200';
+      case 'completed': return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
-    
-    // Add all days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
-    }
-    
-    return days;
   };
 
-  // ✅ Check if date is valid for booking (not in past, within 7 days)
-  const isDateValid = (date: Date | null): boolean => {
-    if (!date) return false;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
-    
-    // Must be today or in the future
-    if (checkDate < today) return false;
-    
-    // Must be within 7 days
-    const oneWeekFromNow = new Date(today);
-    oneWeekFromNow.setDate(today.getDate() + 7);
-    
-    if (checkDate > oneWeekFromNow) return false;
-    
-    return true;
+  const formatSessionTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const isDateSelected = (date: Date | null): boolean => {
-    if (!date || !selectedDate) return false;
-    return date.toDateString() === selectedDate.toDateString();
-  };
-
-  const handleDateSelect = (date: Date | null) => {
-    if (!date || !isDateValid(date)) return;
-    setSelectedDate(date);
-    setSelectedTimeSlot('');
-  };
-
-  // Generate time slots (9 AM to 5 PM, every hour)
-  const generateTimeSlots = (): string[] => {
-    const slots: string[] = [];
-    for (let hour = 9; hour <= 17; hour++) {
-      const time = `${hour.toString().padStart(2, '0')}:00`;
-      slots.push(time);
-    }
-    return slots;
-  };
-
-  const handleBookSession = async () => {
-    if (!selectedMentor || !selectedDate || !selectedTimeSlot || !sessionTitle.trim() || !sessionDescription.trim()) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
+  // Session actions
+  const handleJoinSession = async (sessionId: string) => {
     try {
-      setBooking(true);
-      setError(null);
-
-      // Create session_date timestamp
-      const [hours, minutes] = selectedTimeSlot.split(':');
-      const sessionDate = new Date(selectedDate);
-      sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-      // ✅ FIXED: Match the BookSession type exactly
-      const bookingPayload: BookSession = {
-        mentorId: selectedMentor.id,
-        sessionDate: sessionDate.toISOString(),
-        duration: 60,
-        subject: sessionSubject || sessionTitle,
-        description: sessionDescription,
-        sessionType: sessionType,
-      };
-
-      const response = await mentoringAPI.bookSession(bookingPayload);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      if (response.data) {
-        setBookedSession(response.data);
-        setSuccessDialogOpen(true);
-        
-        // Reset form
-        setSelectedMentor(null);
-        setSelectedDate(null);
-        setSelectedTimeSlot('');
-        setSessionTitle('');
-        setSessionDescription('');
-        setSessionSubject('');
+      const response = await mentoringAPI.joinSession(sessionId);
+      if (response.data?.meetingLink) {
+        window.open(response.data.meetingLink, '_blank');
       }
     } catch (err) {
-      console.error('Booking failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to book session');
-    } finally {
-      setBooking(false);
+      console.error('Failed to join session:', err);
     }
   };
 
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!confirm('Are you sure you want to cancel this session?')) return;
+    
+    try {
+      const response = await mentoringAPI.deleteSession(sessionId);
+      if (response.data?.success) {
+        await loadSessions(); // Reload sessions
+      }
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+    }
   };
 
-  const previousMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  const handleSubmitFeedback = async () => {
+    if (!selectedSession) return;
+
+    try {
+      const response = await mentoringAPI.submitSessionFeedback(selectedSession.id, feedbackData);
+      if (response.data?.success) {
+        setShowFeedbackModal(false);
+        setSelectedSession(null);
+        await loadSessions(); // Reload sessions
+      }
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  // Filter sessions by search term
+  const filteredSessions = sessions.filter(session =>
+    session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    session.mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    session.subject.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Book a Mentoring Session</h1>
-        <p className="text-gray-600 mt-2">Schedule a session with your mentor (up to 7 days in advance)</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Mentoring Sessions</h1>
+          <p className="text-gray-600 mt-1">Manage your mentoring sessions</p>
+        </div>
+        <Link href="/dashboard/student/mentoring/sessions/schedule">
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Schedule Session
+          </Button>
+        </Link>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-              <p>{error}</p>
+      {/* Filters and Search */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search sessions, mentors, or subjects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Mentor Selection & Details */}
-        <div className="space-y-6">
-          {/* Select Mentor */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Step 1: Select Your Mentor</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {mentors.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No mentors available at the moment.</p>
-                  <p className="text-sm mt-2">Please check back later.</p>
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as SessionStatus | 'all')}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Type Filter */}
+            <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as SessionType | 'all')}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="one_on_one">One-on-One</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+                <SelectItem value="workshop">Workshop</SelectItem>
+                <SelectItem value="doubt_session">Doubt Session</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <Button
+          variant={activeTab === 'upcoming' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('upcoming')}
+          className={cn(
+            "px-6 py-2",
+            activeTab === 'upcoming' && "bg-white shadow-sm"
+          )}
+        >
+          Upcoming ({sessions.filter(s => s.status === 'scheduled').length})
+        </Button>
+        <Button
+          variant={activeTab === 'completed' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('completed')}
+          className={cn(
+            "px-6 py-2",
+            activeTab === 'completed' && "bg-white shadow-sm"
+          )}
+        >
+          Completed ({sessions.filter(s => s.status === 'completed').length})
+        </Button>
+        <Button
+          variant={activeTab === 'cancelled' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('cancelled')}
+          className={cn(
+            "px-6 py-2",
+            activeTab === 'cancelled' && "bg-white shadow-sm"
+          )}
+        >
+          Cancelled ({sessions.filter(s => s.status === 'cancelled').length})
+        </Button>
+      </div>
+
+      {/* Sessions List */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="pt-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <p className="text-gray-600">Loading sessions...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <div className="flex items-center space-x-3">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <div>
+                  <h3 className="text-red-800 font-medium">Unable to load sessions</h3>
+                  <p className="text-red-600 text-sm mt-1">{error}</p>
+                  <Button 
+                    onClick={loadSessions} 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-3 border-red-200 hover:bg-red-50"
+                  >
+                    Try Again
+                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {mentors.map((mentor) => (
-                    <button
-                      key={mentor.id}
-                      onClick={() => setSelectedMentor(mentor)}
-                      className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                        selectedMentor?.id === mentor.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-12 w-12 flex-shrink-0">
-                          <AvatarFallback className="bg-blue-100 text-blue-600">
-                            {mentor.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'M'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{mentor.name}</h3>
-                          <p className="text-sm text-gray-600 truncate">{mentor.designation || 'Mentor'}</p>
-                          <p className="text-sm text-gray-500 truncate">{mentor.department || ''}</p>
-                          {mentor.expertise && mentor.expertise.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {mentor.expertise.slice(0, 3).map((skill, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+              </div>
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                {activeTab === 'upcoming' && "Schedule your first mentoring session to get started"}
+                {activeTab === 'completed' && "Complete some sessions to see them here"}
+                {activeTab === 'cancelled' && "Cancelled sessions will appear here"}
+              </h3>
+              {activeTab === 'upcoming' && (
+                <Link href="/dashboard/student/mentoring/sessions/schedule">
+                  <Button className="mt-4">Schedule Your First Session</Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      {/* Session Header */}
+                      <div className="flex items-center space-x-3 mb-3">
+                        <h3 className="font-semibold text-gray-900 text-lg">{session.title}</h3>
+                        <Badge className={cn("text-xs", getSessionStatusColor(session.status))}>
+                          {session.status.replace('_', ' ')}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {session.sessionType.replace('_', ' ')}
+                        </Badge>
+                      </div>
+
+                      <p className="text-gray-600 mb-4">{session.description}</p>
+
+                      {/* Session Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span>{formatSessionTime(session.sessionDate)}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4 text-gray-400" />
+                          <span>with {session.mentor.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-gray-400" />
+                          <span>{session.subject}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>{session.duration} minutes</span>
                         </div>
                       </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Session Details */}
-          {selectedMentor && selectedDate && selectedTimeSlot && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 4: Session Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Session Title *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Career Guidance Discussion"
-                    value={sessionTitle}
-                    onChange={(e) => setSessionTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                      {/* Mentor Info */}
+                      <div className="flex items-center space-x-3 mt-4 pt-4 border-t border-gray-200">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={session.mentor.avatar} />
+                          <AvatarFallback className="bg-blue-100 text-blue-700">
+                            {session.mentor.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{session.mentor.name}</p>
+                          <p className="text-xs text-gray-500">{session.mentor.designation}</p>
+                        </div>
+                      </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Session Type
-                  </label>
-                  <Select 
-                    value={sessionType} 
-                    onValueChange={(value: string) => setSessionType(value as SessionType)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="one_on_one">One-on-One (Private)</SelectItem>
-                      <SelectItem value="group">Group Session</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                      {/* Feedback (for completed sessions) */}
+                      {session.status === 'completed' && session.feedback && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Star className="h-4 w-4 text-yellow-500" />
+                            <span className="font-medium">{session.feedback.rating}/5</span>
+                          </div>
+                          <p className="text-sm text-gray-600">{session.feedback.comment}</p>
+                        </div>
+                      )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Mathematics, Science"
-                    value={sessionSubject}
-                    onChange={(e) => setSessionSubject(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description *
-                  </label>
-                  <Textarea
-                    placeholder="What would you like to discuss? Be specific about your questions or topics."
-                    value={sessionDescription}
-                    onChange={(e) => setSessionDescription(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleBookSession}
-                  disabled={!sessionTitle.trim() || !sessionDescription.trim() || booking}
-                  className="w-full"
-                  size="lg"
-                >
-                  {booking ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Booking Session...
-                    </>
-                  ) : (
-                    <>
-                      <Video className="h-4 w-4 mr-2" />
-                      Confirm Booking
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Column: Calendar & Time Selection */}
-        {selectedMentor && (
-          <div className="space-y-6">
-            {/* Calendar */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 2: Select Date</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">
-                  You can book sessions up to 7 days in advance
-                </p>
-              </CardHeader>
-              <CardContent>
-                {/* Calendar Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={previousMonth}
-                    disabled={currentMonth.getMonth() === new Date().getMonth()}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <h3 className="font-semibold text-lg">
-                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </h3>
-                  <Button variant="outline" size="sm" onClick={nextMonth}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* ✅ FIXED: Calendar Grid with Proper Alignment */}
-                <div className="grid grid-cols-7 gap-1">
-                  {/* Weekday Headers */}
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
-                      {day}
+                      {/* Session Notes */}
+                      {session.sessionNotes && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="font-medium text-sm mb-2">Session Notes:</h4>
+                          <p className="text-sm text-gray-600">{session.sessionNotes}</p>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  
-                  {/* Calendar Days */}
-                  {generateCalendarDays().map((date, index) => {
-                    const isValid = isDateValid(date);
-                    const isSelected = isDateSelected(date);
-                    const isToday = date && date.toDateString() === new Date().toDateString();
 
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => date && handleDateSelect(date)}
-                        disabled={!date || !isValid}
-                        className={`
-                          aspect-square p-2 rounded-lg text-sm font-medium transition-all
-                          ${!date ? 'invisible' : ''}
-                          ${!isValid ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer'}
-                          ${isSelected ? 'bg-blue-600 text-white shadow-lg' : ''}
-                          ${isValid && !isSelected ? 'hover:bg-blue-50 text-gray-700 border border-transparent hover:border-blue-200' : ''}
-                          ${isToday && !isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''}
-                        `}
-                      >
-                        {date?.getDate()}
-                      </button>
-                    );
-                  })}
+                    {/* Action Buttons */}
+                    <div className="flex flex-col space-y-2 ml-6">
+                      {session.status === 'scheduled' && session.canJoin && (
+                        <Button
+                          onClick={() => handleJoinSession(session.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                          size="sm"
+                        >
+                          <Video className="mr-2 h-4 w-4" />
+                          Join
+                        </Button>
+                      )}
+                      
+                      {session.status === 'completed' && !session.feedback && (
+                        <Button
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setShowFeedbackModal(true);
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Star className="mr-2 h-4 w-4" />
+                          Rate
+                        </Button>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          {session.status === 'scheduled' && (
+                            <>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Session
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteSession(session.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Cancel Session
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {session.recordingUrl && (
+                            <DropdownMenuItem>
+                              <Video className="mr-2 h-4 w-4" />
+                              View Recording
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
 
-                <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-lg ring-2 ring-blue-500 ring-inset"></div>
-                    <span>Today</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-lg bg-blue-600"></div>
-                    <span>Selected</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-            {/* Time Slot Selection */}
-            {selectedDate && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Step 3: Select Time</CardTitle>
-                  <p className="text-sm text-gray-500">
-                    {selectedDate.toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-2">
-                    {generateTimeSlots().map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTimeSlot(time)}
-                        className={`
-                          p-3 rounded-lg border-2 text-sm font-medium transition-all
-                          ${selectedTimeSlot === time
-                            ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                          }
-                        `}
-                      >
-                        <Clock className="h-4 w-4 mx-auto mb-1" />
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Success Dialog */}
-      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+      {/* Feedback Modal */}
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="mx-auto mb-4">
-              <CheckCircle2 className="h-20 w-20 text-green-500" />
-            </div>
-            <DialogTitle className="text-center text-2xl">Session Booked Successfully!</DialogTitle>
-            <DialogDescription className="text-center space-y-4 pt-4">
-              <p className="text-base">Your mentoring session has been scheduled.</p>
-              
-              {bookedSession && (
-                <div className="bg-gray-50 p-6 rounded-lg text-left space-y-3">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Mentor:</span>
-                    <p className="text-base font-semibold text-gray-900">{selectedMentor?.name}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Title:</span>
-                    <p className="text-base text-gray-900">{bookedSession.title}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Date & Time:</span>
-                    <p className="text-base text-gray-900">
-                      {selectedDate?.toLocaleDateString('en-IN', { 
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })} at {selectedTimeSlot}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-600">Duration:</span>
-                    <p className="text-base text-gray-900">60 minutes</p>
-                  </div>
-                  {bookedSession.meeting_link && (
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-                      <p className="text-sm font-semibold text-blue-900 mb-2">Meeting Link:</p>
-                      <a
-                        href={bookedSession.meeting_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:underline break-all"
-                      >
-                        <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                        <span>{bookedSession.meeting_link}</span>
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <Button
-                onClick={() => {
-                  setSuccessDialogOpen(false);
-                }}
-                className="w-full mt-6"
-                size="lg"
-              >
-                Done
-              </Button>
+            <DialogTitle>Rate Your Session</DialogTitle>
+            <DialogDescription>
+              How was your session with {selectedSession?.mentor.name}?
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Rating</label>
+              <div className="flex space-x-1">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <Button
+                    key={rating}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFeedbackData(prev => ({ ...prev, rating }))}
+                  >
+                    <Star
+                      className={cn(
+                        "h-6 w-6",
+                        rating <= feedbackData.rating
+                          ? "text-yellow-500 fill-current"
+                          : "text-gray-300"
+                      )}
+                    />
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Comment</label>
+              <Textarea
+                placeholder="Share your feedback about the session..."
+                value={feedbackData.comment}
+                onChange={(e) => setFeedbackData(prev => ({ ...prev, comment: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFeedbackModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitFeedback}>
+              Submit Feedback
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
