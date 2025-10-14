@@ -472,54 +472,85 @@ export class MentoringService {
   }
 
   async createSession(mentorId: string, createData: CreateSessionDto): Promise<SessionDto> {
-    try {
-      this.logger.log(`Creating session: ${createData.title}`);
+  try {
+    this.logger.log(`Creating session: ${createData.title}`);
+    
+    // ✅ FIXED: Try to find mentor profile by ID first, then by user_id
+    let mentorProfile: any = null;
+    
+    // Try matching by profile ID first
+    const { data: profileById, error: profileError } = await this.supabase
+      .from('hei_mentor_profiles')
+      .select('id, user_id')
+      .eq('id', mentorId)
+      .single();
 
-      // Get mentor profile
-      const { data: mentorProfile } = await this.supabase
+    if (profileById) {
+      mentorProfile = profileById;
+      this.logger.log(`✅ Found mentor by profile ID: ${mentorProfile.id}`);
+    } else {
+      // If not found by profile ID, try by user_id
+      const { data: profileByUserId, error: userError } = await this.supabase
         .from('hei_mentor_profiles')
         .select('id, user_id')
         .eq('user_id', mentorId)
         .single();
-
-      if (!mentorProfile) {
-        throw new NotFoundException('Mentor profile not found');
+      
+      if (profileByUserId) {
+        mentorProfile = profileByUserId;
+        this.logger.log(`✅ Found mentor by user ID: ${mentorProfile.id}`);
       }
-
-      const sessionData = {
-        title: createData.title,
-        description: createData.description,
-        mentor_id: mentorProfile.id,
-        session_date: createData.sessionDate,
-        duration: createData.duration,
-        session_type: createData.sessionType,
-        subject: createData.subject,
-        max_participants: createData.maxParticipants,
-        meeting_link: createData.meetingLink || null,
-        meeting_room: createData.meetingRoom || null,
-        session_notes: createData.sessionNotes || null,
-        status: SessionStatus.SCHEDULED,
-      };
-
-      const { data: session, error } = await this.supabase
-        .from('mentoring_sessions')
-        .insert(sessionData)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Auto-create session group chat
-      if (session) {
-        await this.createSessionChatRoom(session.id, mentorProfile.id);
-      }
-
-      return this.formatSessionDto(session as DatabaseSession, mentorId);
-    } catch (error: any) {
-      this.logger.error('Error creating session:', error);
-      throw new BadRequestException('Failed to create session');
     }
+
+    if (!mentorProfile) {
+      this.logger.error(`❌ Mentor profile not found for ID: ${mentorId}`);
+      throw new NotFoundException('Mentor profile not found');
+    }
+
+    // Build session data with proper snake_case column names
+    const sessionData = {
+      title: createData.title,
+      description: createData.description,
+      mentor_id: mentorProfile.id,  // ✅ Use the profile ID
+      session_date: createData.sessionDate,
+      duration: createData.duration,
+      session_type: createData.sessionType,
+      subject: createData.subject,
+      max_participants: createData.maxParticipants || 1,
+      meeting_link: createData.meetingLink || null,
+      meeting_room: createData.meetingRoom || null,
+      session_notes: createData.sessionNotes || null,
+      status: SessionStatus.SCHEDULED,
+    };
+
+    this.logger.log(`Inserting session data:`, JSON.stringify(sessionData));
+
+    const { data: session, error } = await this.supabase
+      .from('mentoring_sessions')
+      .insert(sessionData)
+      .select()
+      .single();
+
+    if (error) {
+      this.logger.error('❌ Supabase insert error:', JSON.stringify(error));
+      throw error;
+    }
+
+    this.logger.log(`✅ Session created successfully: ${session.id}`);
+
+    // Auto-create session group chat
+    if (session) {
+      await this.createSessionChatRoom(session.id, mentorProfile.id);
+    }
+
+    return this.formatSessionDto(session as DatabaseSession, mentorId);
+  } catch (error: any) {
+    this.logger.error('❌ Error creating session:', error);
+    throw new BadRequestException('Failed to create session');
   }
+}
+
+
 
   async updateSession(sessionId: string, mentorId: string, updateData: UpdateSessionDto): Promise<SessionDto> {
     try {
