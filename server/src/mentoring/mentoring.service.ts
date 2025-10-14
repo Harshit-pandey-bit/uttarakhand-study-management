@@ -507,11 +507,11 @@ export class MentoringService {
       throw new NotFoundException('Mentor profile not found');
     }
 
-    // Build session data with proper snake_case column names
+    // ✅ CRITICAL FIX: Use user_id for mentor_id column (FK references users table)
     const sessionData = {
       title: createData.title,
       description: createData.description,
-      mentor_id: mentorProfile.id,  // ✅ Use the profile ID
+      mentor_id: mentorProfile.user_id,  // ✅ Use user_id, NOT profile ID!
       session_date: createData.sessionDate,
       duration: createData.duration,
       session_type: createData.sessionType,
@@ -549,6 +549,7 @@ export class MentoringService {
     throw new BadRequestException('Failed to create session');
   }
 }
+
 
 
 
