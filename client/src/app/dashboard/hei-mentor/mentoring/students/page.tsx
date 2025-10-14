@@ -16,18 +16,12 @@ import {
   Search, 
   Filter,
   School,
-  GraduationCap,
-  TrendingUp,
-  Calendar,
-  MessageCircle,
   Eye,
-  Award,
-  AlertTriangle,
-  CheckCircle
+  MessageCircle,
 } from 'lucide-react';
 
 import { heiMentorAPI } from '@/lib/api/hei-mentor-client';
-import type { AssignedStudent, StudentFilters } from '@/types/hei-mentor';
+import type { AssignedStudent, StudentFilters, StudentListResponse } from '@/types/hei-mentor';
 
 export default function StudentsPage() {
   const [students, setStudents] = useState<AssignedStudent[]>([]);
@@ -48,10 +42,19 @@ export default function StudentsPage() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
+      // Fixed: Pass all parameters correctly
       const response = await heiMentorAPI.getAssignedStudents(filters, currentPage, studentsPerPage);
-      setStudents(response.students);
-      setTotalStudents(response.total);
-      setHasMore(response.hasMore);
+      
+      // Fixed: Handle API response structure
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (response.data) {
+        setStudents(response.data.students);
+        setTotalStudents(response.data.total);
+        setHasMore(response.data.hasMore);
+      }
     } catch (err) {
       setError('Failed to load students');
       console.error('Students error:', err);
@@ -62,7 +65,6 @@ export default function StudentsPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     if (value === 'all') {
-      // Remove filter when "All" is selected
       const newFilters = { ...filters };
       delete newFilters[key as keyof StudentFilters];
       setFilters(newFilters);
@@ -104,12 +106,12 @@ export default function StudentsPage() {
     return { label: 'Needs Attention', color: 'bg-red-100 text-red-800' };
   };
 
-  // Fixed: Added optional chaining and corrected property names
-  const filteredStudents = students?.filter(student =>
+  // Fixed: Properly filter students based on search
+  const filteredStudents = students.filter(student =>
     searchTerm === '' || 
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.schoolName.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+    student.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.school.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading && currentPage === 1) {
     return (
@@ -175,7 +177,7 @@ export default function StudentsPage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Class Level Filter - Fixed */}
+              {/* Class Level Filter */}
               <Select 
                 value={filters.class_level || 'all'} 
                 onValueChange={(value) => handleFilterChange('class_level', value)}
@@ -192,7 +194,7 @@ export default function StudentsPage() {
                 </SelectContent>
               </Select>
 
-              {/* School Filter - Fixed */}
+              {/* School Filter */}
               <Select 
                 value={filters.school_id || 'all'} 
                 onValueChange={(value) => handleFilterChange('school_id', value)}
@@ -202,8 +204,7 @@ export default function StudentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Schools</SelectItem>
-                  <SelectItem value="school_001">GSSS Rajouri</SelectItem>
-                  <SelectItem value="school_002">GHS Udhampur</SelectItem>
+                  {/* TODO: Populate dynamically from assigned schools */}
                 </SelectContent>
               </Select>
 
@@ -228,19 +229,19 @@ export default function StudentsPage() {
             const progressStatus = getProgressStatus(student.stats.assignmentProgress);
             
             return (
-              <Card key={student.id} className="hover:shadow-lg transition-shadow">
+              <Card key={student.user.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {student.name.split(' ').map(n => n[0]).join('')}
+                          {student.user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{student.name}</h3>
+                        <h3 className="font-semibold text-gray-900">{student.user.full_name}</h3>
                         <p className="text-sm text-gray-600">
-                          Class {student.classLevel}
+                          Class {student.profile.class_level}
                         </p>
                       </div>
                     </div>
@@ -252,7 +253,7 @@ export default function StudentsPage() {
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center text-sm text-gray-600">
                       <School className="h-4 w-4 mr-2" />
-                      {student.schoolName}
+                      {student.school.name}
                     </div>
                   </div>
 
@@ -260,21 +261,25 @@ export default function StudentsPage() {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Assignment Progress</span>
-                        <span className={`font-medium ${getProgressColor(student.stats?.assignmentProgress || 0)}`}>
-                          {student.stats?.assignmentProgress || 0}%
+                        <span className={`font-medium ${getProgressColor(student.stats.assignmentProgress)}`}>
+                          {student.stats.assignmentProgress}%
                         </span>
                       </div>
-                      <Progress value={student.stats?.assignmentProgress || 0} className="h-2" />
+                      <Progress value={student.stats.assignmentProgress} className="h-2" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="text-center">
-                        <p className="font-semibold text-gray-900">{student.completedSessions || 0}</p>
+                        <p className="font-semibold text-gray-900">
+                          {student.stats.completedAssignments}/{student.stats.totalAssignments}
+                        </p>
                         <p className="text-gray-600">Completed</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-gray-900">{student.averageScore || 0}%</p>
-                        <p className="text-gray-600">Avg Score</p>
+                        <p className="font-semibold text-gray-900">
+                          {student.stats.averageGrade || 0}%
+                        </p>
+                        <p className="text-gray-600">Avg Grade</p>
                       </div>
                     </div>
                   </div>
@@ -282,16 +287,16 @@ export default function StudentsPage() {
                   {/* Action Buttons */}
                   <div className="flex justify-between items-center pt-2 border-t">
                     <div className="text-xs text-gray-500">
-                      {student.assignedAt && `Assigned: ${new Date(student.assignedAt).toLocaleDateString('en-IN')}`}
+                      {new Date(student.assignment.assigned_at).toLocaleDateString('en-IN')}
                     </div>
                     <div className="flex space-x-2">
-                      <Link href={`/dashboard/hei-mentor/mentoring/students/${student.id}`}>
+                      <Link href={`/dashboard/hei-mentor/mentoring/students/${student.user.id}`}>
                         <Button size="sm" variant="outline">
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
                       </Link>
-                      <Link href={`/dashboard/hei-mentor/mentoring/chat?student=${student.id}`}>
+                      <Link href={`/dashboard/hei-mentor/mentoring/chat?student=${student.user.id}`}>
                         <Button size="sm" variant="outline">
                           <MessageCircle className="h-4 w-4" />
                         </Button>
