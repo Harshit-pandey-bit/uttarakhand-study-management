@@ -28,7 +28,7 @@ import {
 } from '@/types/hei-admin-types';
 
 class HEIAdminAPIClient {
-  private baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  private baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://uttarakhand-gsmp.onrender.com/api';
 
   private async request<T>(
     endpoint: string,

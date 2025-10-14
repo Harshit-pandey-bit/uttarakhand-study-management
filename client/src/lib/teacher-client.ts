@@ -26,7 +26,7 @@ import {
 } from '@/types/teacher-types';
 
 // API Base URL - update this to your backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://uttarakhand-gsmp.onrender.com/api';
 
 // Helper function to get auth token from cookies
 const getAuthToken = (): string | null => {

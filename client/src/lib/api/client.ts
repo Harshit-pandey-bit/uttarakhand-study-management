@@ -49,7 +49,7 @@ interface APIResponse<T = any> {
 }
 
 class APIClient {
-  private baseURL = 'http://localhost:3001/api';
+  private baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://uttarakhand-gsmp.onrender.com/api';
 
   constructor() {
     // No need to manage tokens since they're handled via httpOnly cookies

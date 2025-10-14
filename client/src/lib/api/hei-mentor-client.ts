@@ -30,7 +30,7 @@ interface APIResponse<T> {
 }
 
 class HEIMentorAPIClient {
-  private baseURL = 'http://localhost:3001/api';
+  private baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://uttarakhand-gsmp.onrender.com/api';
 
   private async request<T>(
     endpoint: string,
