@@ -4,11 +4,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -18,10 +17,11 @@ import {
   School,
   Eye,
   MessageCircle,
+  Calendar,
 } from 'lucide-react';
 
 import { heiMentorAPI } from '@/lib/api/hei-mentor-client';
-import type { AssignedStudent, StudentFilters, StudentListResponse } from '@/types/hei-mentor';
+import type { AssignedStudent, StudentFilters } from '@/types/hei-mentor';
 
 export default function StudentsPage() {
   const [students, setStudents] = useState<AssignedStudent[]>([]);
@@ -42,10 +42,8 @@ export default function StudentsPage() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      // Fixed: Pass all parameters correctly
       const response = await heiMentorAPI.getAssignedStudents(filters, currentPage, studentsPerPage);
       
-      // Fixed: Handle API response structure
       if (response.error) {
         throw new Error(response.error);
       }
@@ -92,21 +90,13 @@ export default function StudentsPage() {
     setCurrentPage(1);
   };
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'text-green-600';
-    if (progress >= 60) return 'text-blue-600';
-    if (progress >= 40) return 'text-yellow-600';
-    return 'text-red-600';
+  const getEngagementStatus = (sessionsAttended: number) => {
+    if (sessionsAttended >= 10) return { label: 'Highly Engaged', color: 'bg-green-100 text-green-800' };
+    if (sessionsAttended >= 5) return { label: 'Active', color: 'bg-blue-100 text-blue-800' };
+    if (sessionsAttended >= 1) return { label: 'Getting Started', color: 'bg-yellow-100 text-yellow-800' };
+    return { label: 'Not Yet Active', color: 'bg-gray-100 text-gray-800' };
   };
 
-  const getProgressStatus = (progress: number) => {
-    if (progress >= 80) return { label: 'Excellent', color: 'bg-green-100 text-green-800' };
-    if (progress >= 60) return { label: 'Good', color: 'bg-blue-100 text-blue-800' };
-    if (progress >= 40) return { label: 'Fair', color: 'bg-yellow-100 text-yellow-800' };
-    return { label: 'Needs Attention', color: 'bg-red-100 text-red-800' };
-  };
-
-  // Fixed: Properly filter students based on search
   const filteredStudents = students.filter(student =>
     searchTerm === '' || 
     student.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,7 +137,7 @@ export default function StudentsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Assigned Students</h1>
-          <p className="text-gray-600">Monitor and guide your assigned students' progress</p>
+          <p className="text-gray-600">Monitor and guide your assigned students</p>
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-500">Total Students</p>
@@ -204,7 +194,6 @@ export default function StudentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Schools</SelectItem>
-                  {/* TODO: Populate dynamically from assigned schools */}
                 </SelectContent>
               </Select>
 
@@ -226,68 +215,81 @@ export default function StudentsPage() {
       {filteredStudents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStudents.map((student) => {
-            const progressStatus = getProgressStatus(student.stats.assignmentProgress);
+            // ✅ Safe access with optional chaining and defaults
+            const sessionsAttended = student.stats?.sessionsAttended ?? 0;
+            const lastActivity = student.stats?.lastActivity;
+            const engagementStatus = getEngagementStatus(sessionsAttended);
             
             return (
               <Card key={student.user.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-blue-100 text-blue-600 text-sm">
                           {student.user.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <h3 className="font-semibold text-gray-900">{student.user.full_name}</h3>
                         <p className="text-sm text-gray-600">
-                          Class {student.profile.class_level}
+                          Class {student.profile.class_level || 'N/A'}
                         </p>
                       </div>
                     </div>
-                    <Badge className={progressStatus.color}>
-                      {progressStatus.label}
+                    <Badge className={engagementStatus.color}>
+                      {engagementStatus.label}
                     </Badge>
                   </div>
 
-                  <div className="space-y-3 mb-4">
+                  {/* School Info */}
+                  <div className="mb-4">
                     <div className="flex items-center text-sm text-gray-600">
-                      <School className="h-4 w-4 mr-2" />
-                      {student.school.name}
+                      <School className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{student.school.name}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-3 mb-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Assignment Progress</span>
-                        <span className={`font-medium ${getProgressColor(student.stats.assignmentProgress)}`}>
-                          {student.stats.assignmentProgress}%
-                        </span>
+                  {/* Student Stats */}
+                  <div className="space-y-3 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        <span>Sessions Attended</span>
                       </div>
-                      <Progress value={student.stats.assignmentProgress} className="h-2" />
+                      <span className="font-semibold text-gray-900">{sessionsAttended}</span>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="text-center">
-                        <p className="font-semibold text-gray-900">
-                          {student.stats.completedAssignments}/{student.stats.totalAssignments}
-                        </p>
-                        <p className="text-gray-600">Completed</p>
+                    
+                    {lastActivity && (
+                      <div className="text-xs text-gray-500 pt-2 border-t">
+                        Last activity: {new Date(lastActivity).toLocaleDateString('en-IN')}
                       </div>
-                      <div className="text-center">
-                        <p className="font-semibold text-gray-900">
-                          {student.stats.averageGrade || 0}%
-                        </p>
-                        <p className="text-gray-600">Avg Grade</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
+
+                  {/* Career Aspirations */}
+                  {student.profile.career_aspirations && student.profile.career_aspirations.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500 mb-1">Career Interests:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {student.profile.career_aspirations.slice(0, 2).map((career, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {career}
+                          </Badge>
+                        ))}
+                        {student.profile.career_aspirations.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{student.profile.career_aspirations.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Action Buttons */}
-                  <div className="flex justify-between items-center pt-2 border-t">
+                  <div className="flex justify-between items-center pt-4 border-t">
                     <div className="text-xs text-gray-500">
-                      {new Date(student.assignment.assigned_at).toLocaleDateString('en-IN')}
+                      Assigned: {new Date(student.assignment.assigned_at).toLocaleDateString('en-IN')}
                     </div>
                     <div className="flex space-x-2">
                       <Link href={`/dashboard/hei-mentor/mentoring/students/${student.user.id}`}>
@@ -318,6 +320,11 @@ export default function StudentsPage() {
                 ? "No students match your current filters."
                 : "You don't have any assigned students yet."}
             </p>
+            {(searchTerm || Object.keys(filters).length > 0) && (
+              <Button onClick={clearFilters} variant="outline">
+                Clear Filters
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
