@@ -348,109 +348,132 @@ export class MentoringService {
 
   /* ---------- SESSION MANAGEMENT METHODS ---------- */
 
-  async getSessions(
-    studentId: string,
-    status?: SessionStatus,
-    limit: number = 20,
-    offset: number = 0
-  ): Promise<SessionListDto> {
-    try {
-      this.logger.log(`Getting sessions for student: ${studentId}`);
+ async getSessions(
+  studentId: string,
+  status?: SessionStatus,
+  limit: number = 20,
+  offset: number = 0
+): Promise<SessionListDto> {
+  try {
+    this.logger.log(`Getting sessions for student: ${studentId}`);
 
-      // Get all sessions first
-      let sessionsQuery = this.supabase
-        .from('mentoring_sessions')
-        .select('*');
+    // Get all sessions first
+    let sessionsQuery = this.supabase
+      .from('mentoring_sessions')
+      .select('*');
 
-      if (status) {
-        sessionsQuery = sessionsQuery.eq('status', status);
-      }
+    if (status) {
+      sessionsQuery = sessionsQuery.eq('status', status);
+    }
 
-      const { data: allSessions, error: sessionsError } = await sessionsQuery
-        .order('session_date', { ascending: true });
+    const { data: allSessions, error: sessionsError } = await sessionsQuery
+      .order('session_date', { ascending: true });
 
-      if (sessionsError) throw sessionsError;
+    if (sessionsError) throw sessionsError;
 
-      if (!allSessions || allSessions.length === 0) {
-        return { sessions: [], total: 0, page: 1, limit };
-      }
+    if (!allSessions || allSessions.length === 0) {
+      this.logger.log('✅ No sessions found - returning empty list');
+      return { sessions: [], total: 0, page: 1, limit };
+    }
 
-      const typedSessions = allSessions as DatabaseSession[];
+    const typedSessions = allSessions as DatabaseSession[];
 
-      // Get session participants
-      const sessionIds = typedSessions.map(s => s.id);
-      const { data: participants } = await this.supabase
-        .from('session_participants')
-        .select('*')
-        .in('session_id', sessionIds);
+    // Get session participants
+    const sessionIds = typedSessions.map(s => s.id);
+    const { data: participants } = await this.supabase
+      .from('session_participants')
+      .select('*')
+      .in('session_id', sessionIds);
 
-      const typedParticipants = (participants || []) as DatabaseSessionParticipant[];
+    const typedParticipants = (participants || []) as DatabaseSessionParticipant[];
 
-      // Get mentor profiles
-      const mentorIds = typedSessions
-        .map(s => s.mentor_id)
-        .filter((id): id is string => id !== null && id !== undefined);
+    // Get mentor profiles
+    const mentorIds = typedSessions
+      .map(s => s.mentor_id)
+      .filter((id): id is string => id !== null && id !== undefined);
 
-      let mentorProfiles: DatabaseMentor[] = [];
-      if (mentorIds.length > 0) {
+    let mentorProfiles: DatabaseMentor[] = [];
+    let users: any[] = [];
+
+    if (mentorIds.length > 0) {
+      // ✅ FIX: Get mentor profiles by USER ID (since mentor_id in sessions references users table)
+      const { data: userMentorData } = await this.supabase
+        .from('users')
+        .select('id, full_name, email')
+        .in('id', mentorIds);
+      
+      users = userMentorData || [];
+
+      // Now get mentor profiles by matching user_id
+      const userIdsList = users.map(u => u.id);
+      if (userIdsList.length > 0) {
         const { data: mentors } = await this.supabase
           .from('hei_mentor_profiles')
           .select('*')
-          .in('id', mentorIds);
+          .in('user_id', userIdsList);
+
         mentorProfiles = (mentors || []) as DatabaseMentor[];
       }
-
-      // Get user names for mentors
-      const userIds = mentorProfiles
-        .map(m => m.user_id)
-        .filter((id): id is string => id !== null && id !== undefined);
-
-      let users: any[] = [];
-      if (userIds.length > 0) {
-        const { data: userData } = await this.supabase
-          .from('users')
-          .select('id, full_name')
-          .in('id', userIds);
-        users = userData || [];
-      }
-
-      // Combine data
-      const combinedSessions: DatabaseSession[] = typedSessions.map(session => {
-        session.session_participants = typedParticipants.filter(p => p.session_id === session.id);
-        
-        const mentorProfile = mentorProfiles.find(m => m.id === session.mentor_id);
-        if (mentorProfile) {
-          const user = users.find(u => u.id === mentorProfile.user_id);
-          session.hei_mentor_profiles = {
-            ...mentorProfile,
-            users: user ? { full_name: user.full_name } : { full_name: 'Unknown Mentor' }
-          };
-        }
-        return session;
-      });
-
-      // Filter accessible sessions
-      const accessibleSessions = combinedSessions.filter(session => {
-        const isParticipant = session.session_participants?.some((p: any) => p.student_id === studentId) ?? false;
-        const isPublicSession = ['group', 'workshop'].includes(session.session_type);
-        return isParticipant || isPublicSession;
-      });
-
-      // Apply pagination
-      const paginatedSessions = accessibleSessions.slice(offset, offset + limit);
-      const formattedSessions = paginatedSessions.map(session => this.formatSessionDto(session, studentId));
-
-      return {
-        sessions: formattedSessions,
-        total: accessibleSessions.length,
-        page: Math.floor(offset / limit) + 1,
-        limit,
-      };
-    } catch (error: any) {
-      this.logger.error('Error getting sessions:', error);
-      throw new BadRequestException('Failed to get sessions');
     }
+
+    // ✅ FIX: Combine data properly
+    const combinedSessions: DatabaseSession[] = typedSessions.map(session => {
+      session.session_participants = typedParticipants.filter(p => p.session_id === session.id);
+      
+      // Find user for this mentor
+      const user = users.find(u => u.id === session.mentor_id);
+      
+      // Find mentor profile for this user
+      const mentorProfile = mentorProfiles.find(m => m.user_id === session.mentor_id);
+      
+      if (user) {
+        session.hei_mentor_profiles = {
+          id: mentorProfile?.id || session.mentor_id,
+          user_id: user.id,
+          designation: mentorProfile?.designation || '',
+          department: mentorProfile?.department || '',
+          expertise: mentorProfile?.expertise || [],
+          qualification: mentorProfile?.qualification || '',
+          experience_years: mentorProfile?.experience_years || 0,
+          max_students: mentorProfile?.max_students || 30,
+          research_interests: mentorProfile?.research_interests || [],
+          created_at: mentorProfile?.created_at || new Date().toISOString(),
+          users: {
+            id: user.id,
+            full_name: user.full_name || 'Unknown Mentor',
+            email: user.email || ''
+          }
+        };
+      }
+      
+      return session;
+    });
+
+    // Filter accessible sessions
+    const accessibleSessions = combinedSessions.filter(session => {
+      const isParticipant = session.session_participants?.some((p: any) => p.student_id === studentId) ?? false;
+      const isPublicSession = ['group', 'workshop'].includes(session.session_type);
+      return isParticipant || isPublicSession;
+    });
+
+    // Apply pagination
+    const paginatedSessions = accessibleSessions.slice(offset, offset + limit);
+    const formattedSessions = paginatedSessions.map(session => this.formatSessionDto(session, studentId));
+
+    this.logger.log(`✅ Successfully fetched ${formattedSessions.length} sessions (total: ${accessibleSessions.length})`);
+
+    return {
+      sessions: formattedSessions,
+      total: accessibleSessions.length,
+      page: Math.floor(offset / limit) + 1,
+      limit,
+    };
+  } catch (error: any) {
+    this.logger.error('❌ Error getting sessions:', error);
+    throw new BadRequestException('Failed to get sessions');
   }
+}
+
 
   async getSessionById(sessionId: string, studentId: string): Promise<SessionDto> {
     try {
