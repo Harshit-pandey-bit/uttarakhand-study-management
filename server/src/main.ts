@@ -20,40 +20,49 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  // CORS configuration
+  // CORS configuration - UPDATED for production
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  
   app.enableCors({
-    origin: [
-      configService.get('FRONTEND_URL'), // http://localhost:3000
-      'http://localhost:3000',
-      'http://localhost:3001', 
-      // Add production URLs here
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: isProduction 
+      ? [
+          configService.get('FRONTEND_URL'), // Your Vercel URL
+          /\.vercel\.app$/, // Allow all Vercel preview deployments
+        ]
+      : [
+          'http://localhost:3000',
+          'http://localhost:3001',
+        ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     credentials: true,
   });
 
   // Global prefix
   app.setGlobalPrefix('api');
 
-  // Swagger setup for development
-  if (configService.get('NODE_ENV') === 'development') {
+  // Swagger setup for development only
+  if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('Government School Mentoring API')
       .setDescription('API for HEI-Rural School Mentoring Platform')
       .setVersion('1.0')
       .addBearerAuth()
       .build();
-    
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  const port = configService.get('PORT') || 3001;
-  await app.listen(port);
-  
-  console.log(`🚀 Government School Mentoring API running on: http://localhost:${port}`);
-  console.log(`📖 Swagger docs available at: http://localhost:${port}/api/docs`);
+  // CRITICAL: Bind to 0.0.0.0 and use PORT from environment
+  const port = configService.get('PORT') || 10000;
+  await app.listen(port, '0.0.0.0'); // This is the key change for Render
+
+  if (!isProduction) {
+    console.log(`🚀 Government School Mentoring API running on: http://localhost:${port}`);
+    console.log(`📖 Swagger docs available at: http://localhost:${port}/api/docs`);
+  } else {
+    console.log(`🚀 API running in production on port ${port}`);
+  }
 }
 
 bootstrap();
