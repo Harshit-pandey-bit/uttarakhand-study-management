@@ -77,17 +77,7 @@ export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebar
               { icon: GraduationCap, label: 'Career Map', route: '/dashboard/student/career-guidance/career-map' },
             ]
           },
-          {
-            icon: BookOpen,
-            label: 'Assignments',
-            route: '/dashboard/student/assignments',
-            badge: '3',
-            children: [
-              { icon: BookOpen, label: 'All Assignments', route: '/dashboard/student/assignments' },
-              { icon: BookOpen, label: 'Pending', route: '/dashboard/student/assignments/pending' },
-              { icon: BookOpen, label: 'Completed', route: '/dashboard/student/assignments/completed' },
-            ]
-          },
+        
           {
             icon: Users,
             label: 'Mentoring',
