@@ -533,16 +533,23 @@ export class TeacherService {
   /* ---------- HEI SESSION METHODS ---------- */
 
   async getHEISessions(teacherUserId: string): Promise<MentoringSessionDto[]> {
-    const { data, error } = await this.supabase
-      .from('mentoringsessions')
-      .select('*')
-      .order('sessiondate', { ascending: true });
+    try {
+      const { data, error } = await this.supabase
+        .from('mentoringsessions')
+        .select('*')
+        .order('sessiondate', { ascending: true });
 
-    if (error) {
-      throw new BadRequestException('Failed to fetch sessions');
+      if (error) {
+        console.error('Failed to fetch sessions:', error.message);
+        // Return empty array instead of throwing for dashboard data
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('getHEISessions error:', error);
+      return [];
     }
-
-    return data || [];
   }
 
   async scheduleHEISession(
@@ -579,49 +586,56 @@ export class TeacherService {
     teacherUserId: string,
     filters: { badge_type?: string; priority?: string; unread_only?: boolean },
   ): Promise<AnnouncementDto[]> {
-    const { data: profile } = await this.supabase
-      .from('teacher_profiles')
-      .select('school_id')
-      .eq('user_id', teacherUserId)
-      .single();
+    try {
+      const { data: profile } = await this.supabase
+        .from('teacher_profiles')
+        .select('school_id')
+        .eq('user_id', teacherUserId)
+        .single();
 
-    if (!profile) {
-      throw new NotFoundException('Teacher profile not found');
+      if (!profile) {
+        console.log('Teacher profile not found for announcements, returning empty array');
+        return [];
+      }
+
+      let query = this.supabase
+        .from('announcements')
+        .select(`
+          *,
+          announcementviews!left (user_id)
+        `)
+        .or(`school_id.eq.${profile.school_id},targetaudience.cs.{"teacher"}`);
+
+      if (filters.badge_type) {
+        query = query.eq('badgetype', filters.badge_type);
+      }
+
+      if (filters.priority) {
+        query = query.eq('priority', filters.priority);
+      }
+
+      const { data, error } = await query.order('createdat', { ascending: false });
+
+      if (error) {
+        console.error('Failed to fetch announcements:', error.message);
+        return [];
+      }
+
+      let announcements = (data || []).map((ann) => ({
+        ...ann,
+        user_has_viewed:
+          ann.announcementviews?.some((view: any) => view.user_id === teacherUserId) || false,
+      }));
+
+      if (filters.unread_only) {
+        announcements = announcements.filter((a) => !a.user_has_viewed);
+      }
+
+      return announcements;
+    } catch (error) {
+      console.error('getAnnouncements error:', error);
+      return [];
     }
-
-    let query = this.supabase
-      .from('announcements')
-      .select(`
-        *,
-        announcementviews!left (user_id)
-      `)
-      .or(`school_id.eq.${profile.school_id},targetaudience.cs.{"teacher"}`);
-
-    if (filters.badge_type) {
-      query = query.eq('badgetype', filters.badge_type);
-    }
-
-    if (filters.priority) {
-      query = query.eq('priority', filters.priority);
-    }
-
-    const { data, error } = await query.order('createdat', { ascending: false });
-
-    if (error) {
-      throw new BadRequestException('Failed to fetch announcements');
-    }
-
-    let announcements = (data || []).map((ann) => ({
-      ...ann,
-      user_has_viewed:
-        ann.announcementviews?.some((view: any) => view.user_id === teacherUserId) || false,
-    }));
-
-    if (filters.unread_only) {
-      announcements = announcements.filter((a) => !a.user_has_viewed);
-    }
-
-    return announcements;
   }
 
   async markAnnouncementAsRead(teacherUserId: string, announcementId: string): Promise<void> {

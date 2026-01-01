@@ -3,9 +3,9 @@
 import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { 
-  LoginDto, 
-  RegisterDto, 
+import {
+  LoginDto,
+  RegisterDto,
   UserRole,
   AuthResponseDto,
   RegistrationResponseDto,
@@ -235,6 +235,50 @@ export class AuthService {
     }
   }
 
+  async createSchool(data: {
+    name: string;
+    code: string;
+    type?: string;
+    location: string;
+    district: string;
+    principal_name?: string;
+    total_students?: number;
+  }) {
+    try {
+      // Check if school with same code already exists
+      const { data: existingSchool } = await this.serviceSupabase
+        .from('schools')
+        .select('id')
+        .eq('code', data.code)
+        .single();
+
+      if (existingSchool) {
+        throw new BadRequestException('A school with this code already exists');
+      }
+
+      const { data: school, error } = await this.serviceSupabase
+        .from('schools')
+        .insert({
+          name: data.name,
+          code: data.code,
+          type: data.type || 'Government',
+          location: data.location,
+          district: data.district,
+          principal_name: data.principal_name || null,
+          total_students: data.total_students || 0,
+          is_active: true,
+        })
+        .select('id, name, location, district, type')
+        .single();
+
+      if (error) throw new Error(error.message);
+      return school;
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Failed to create school: ' + error.message);
+    }
+  }
+
   async getHeis() {
     try {
       const { data, error } = await this.serviceSupabase
@@ -320,11 +364,11 @@ export class AuthService {
       case UserRole.TEACHER:
         prepared.school_id = data.school_id;
         prepared.employee_id = data.employee_id;
-        prepared.subjects = Array.isArray(data.subjects) 
-          ? data.subjects.join(',') 
+        prepared.subjects = Array.isArray(data.subjects)
+          ? data.subjects.join(',')
           : data.subjects;
-        prepared.classes = Array.isArray(data.classes) 
-          ? data.classes.join(',') 
+        prepared.classes = Array.isArray(data.classes)
+          ? data.classes.join(',')
           : data.classes;
         prepared.qualification = data.qualification;
         prepared.experience_years = data.experience_years;
@@ -336,13 +380,13 @@ export class AuthService {
         prepared.employee_id = data.employee_id;
         prepared.designation = data.designation;
         prepared.department = data.department;
-        prepared.expertise = Array.isArray(data.expertise) 
-          ? data.expertise.join(',') 
+        prepared.expertise = Array.isArray(data.expertise)
+          ? data.expertise.join(',')
           : data.expertise;
         prepared.qualification = data.qualification;
         prepared.experience_years = data.experience_years;
-        prepared.research_interests = Array.isArray(data.research_interests) 
-          ? data.research_interests.join(',') 
+        prepared.research_interests = Array.isArray(data.research_interests)
+          ? data.research_interests.join(',')
           : data.research_interests;
         prepared.max_students = data.max_students || 30;
         break;
@@ -352,8 +396,8 @@ export class AuthService {
         prepared.employee_id = data.employee_id;
         prepared.designation = data.designation;
         prepared.department = data.department;
-        prepared.responsibilities = Array.isArray(data.responsibilities) 
-          ? data.responsibilities.join(',') 
+        prepared.responsibilities = Array.isArray(data.responsibilities)
+          ? data.responsibilities.join(',')
           : data.responsibilities;
         break;
 
@@ -361,8 +405,8 @@ export class AuthService {
         prepared.school_id = data.school_id;
         prepared.employee_id = data.employee_id;
         prepared.designation = data.designation;
-        prepared.responsibilities = Array.isArray(data.responsibilities) 
-          ? data.responsibilities.join(',') 
+        prepared.responsibilities = Array.isArray(data.responsibilities)
+          ? data.responsibilities.join(',')
           : data.responsibilities;
         break;
     }

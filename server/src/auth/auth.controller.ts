@@ -13,14 +13,15 @@ import {
   TeacherRegisterDto,
   HeiMentorRegisterDto,
   HeiAdminRegisterDto,
-  SchoolAdminRegisterDto
+  SchoolAdminRegisterDto,
+  CreateSchoolDto
 } from './dto/auth.dto';
 import { Response } from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register/student')
   @HttpCode(HttpStatus.CREATED)
@@ -67,14 +68,14 @@ export class AuthController {
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
   async login(
-    @Body() loginDto: LoginDto, 
+    @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<Omit<AuthResponseDto, 'access_token' | 'refresh_token'>> {
     const data = await this.authService.login(loginDto);
-    
+
     // ✅ FIXED: Set cookie with correct cross-domain settings
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     response.cookie('access_token', data.access_token, {
       httpOnly: true, // Prevents JavaScript access (XSS protection)
       secure: isProduction, // Must be true in production (HTTPS only)
@@ -95,7 +96,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(@Res({ passthrough: true }) response: Response) {
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     // Clear the cookie
     response.cookie('access_token', '', {
       httpOnly: true,
@@ -117,12 +118,19 @@ export class AuthController {
     return this.authService.getUserProfile(req.user.id);
   }
 
-  // Helper endpoints for dropdowns
   @Get('schools')
   @ApiOperation({ summary: 'Get all active schools' })
   @ApiResponse({ status: 200, description: 'Schools retrieved successfully' })
   async getSchools() {
     return this.authService.getSchools();
+  }
+
+  @Post('schools')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new school' })
+  @ApiResponse({ status: 201, description: 'School created successfully' })
+  async createSchool(@Body() createSchoolDto: CreateSchoolDto) {
+    return this.authService.createSchool(createSchoolDto);
   }
 
   @Get('heis')

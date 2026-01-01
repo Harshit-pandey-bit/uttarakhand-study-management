@@ -40,7 +40,7 @@ export default function PartnershipDetailsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('🔍 Fetching partnership details for school:', schoolId);
       const response = await heiAdminAPI.getPartnership(schoolId);
 
@@ -339,6 +339,66 @@ export default function PartnershipDetailsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-700">{partnership.notes}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Principal Information */}
+          {(school.principalName || school.principalContact || school.principalEmail) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Principal Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
+                      {school.principalName?.charAt(0).toUpperCase() || 'P'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg">
+                        {school.principalName || 'Principal Name Not Available'}
+                      </h3>
+                      <p className="text-sm text-gray-600">School Principal</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t space-y-3">
+                    {school.principalContact && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span>{school.principalContact}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`tel:${school.principalContact}`, '_blank')}
+                        >
+                          Call
+                        </Button>
+                      </div>
+                    )}
+                    {school.principalEmail && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm truncate flex-1 mr-2">
+                          <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{school.principalEmail}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`mailto:${school.principalEmail}`, '_blank')}
+                        >
+                          Email
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}

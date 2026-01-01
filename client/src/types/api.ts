@@ -13,22 +13,24 @@ export interface RegisterRequest {
   role: UserRole;
   full_name: string;
   phone?: string;
-  
+
   // Student fields
   school_id?: string;
   class_level?: string;
   career_aspiration?: string;
   parent_contact?: string;
   address?: string;
-  
+
   // Teacher fields
   employee_id?: string;
   subjects?: string[];
+  primary_subject?: string;
+  additional_subjects?: string;
   classes?: string[];
   qualification?: string;
   experience_years?: number;
   joined_date?: string;
-  
+
   // HEI Mentor fields
   hei_id?: string;
   designation?: string;
@@ -36,7 +38,7 @@ export interface RegisterRequest {
   expertise?: string[];
   research_interests?: string[];
   max_students?: number;
-  
+
   // Admin fields
   responsibilities?: string[];
 }
@@ -208,10 +210,10 @@ export interface AssessmentStatus {
 
 // ===== DREAM EXPLORER TYPES =====
 export type DemandLevel = 'Extremely High' | 'Very High' | 'Growing Fast' | 'Growing' | 'High' | 'Medium' | 'Low';
-export type CareerCategory = 
-  | 'Space & Exploration' 
-  | 'Healthcare & Medicine' 
-  | 'Technology & Innovation' 
+export type CareerCategory =
+  | 'Space & Exploration'
+  | 'Healthcare & Medicine'
+  | 'Technology & Innovation'
   | 'Environment & Sustainability'
   | 'Engineering'
   | 'Arts & Entertainment'
@@ -261,19 +263,19 @@ export interface DreamCareer {
   demandLevel: string;
   educationLevel: string;
   skills: string[];
-  
+
   // Direct properties (not nested in realityCheck)
   workEnvironment: string;
   typicalDay: string;
   pros: string[];
   cons: string[];
-  
+
   famousPersons: string[];
   pathway: string;
   inspiringFact: string;
   localConnection: string;
   nextSteps: string[];
-  
+
   successStories: SuccessStory[];
   dayInLife: DayInLife;
   pathways: CareerPathway[];

@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { GraduationCap, Eye, EyeOff, X, Users, BookOpen, Award, Sparkles, ArrowRight, CheckCircle, User, Mail, Lock } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, X, Users, BookOpen, Award, Sparkles, ArrowRight, CheckCircle, User, Mail, Lock, Plus, Building, Loader2 } from 'lucide-react';
 import { UserRole } from '@/types/auth';
 import { apiClient } from '@/lib/api/client';
 import { School, HEI } from '@/types/api';
@@ -20,7 +20,7 @@ import { School, HEI } from '@/types/api';
 const classLevels = ['6th', '7th', '8th', '9th', '10th', '11th', '12th'];
 
 const qualifications = [
-  'Bachelor of Education (B.Ed)', 'Master of Education (M.Ed)', 
+  'Bachelor of Education (B.Ed)', 'Master of Education (M.Ed)',
   'Bachelor of Science (B.Sc)', 'Master of Science (M.Sc)',
   'Bachelor of Arts (B.A)', 'Master of Arts (M.A)', 'Ph.D'
 ];
@@ -38,7 +38,7 @@ const responsibilities = [
 const roleDisplayNames = {
   'student': 'Student',
   'teacher': 'Teacher',
-  'hei_mentor': 'HEI Mentor', 
+  'hei_mentor': 'HEI Mentor',
   'hei_admin': 'HEI Admin',
   'school_admin': 'School Admin'
 };
@@ -88,6 +88,19 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  // Add School Form State
+  const [showAddSchoolForm, setShowAddSchoolForm] = useState(false);
+  const [addingSchool, setAddingSchool] = useState(false);
+  const [newSchoolData, setNewSchoolData] = useState({
+    name: '',
+    code: '',
+    type: 'Government',
+    location: '',
+    district: '',
+    principal_name: '',
+    total_students: 0,
+  });
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -123,26 +136,41 @@ export default function RegisterPage() {
 
   const handleTagToggle = (tag: string, field: string) => {
     const currentTags = formData[field] || [];
-    const newTags = currentTags.includes(tag) 
+    const newTags = currentTags.includes(tag)
       ? currentTags.filter((t: string) => t !== tag)
       : [...currentTags, tag];
     setFormData({ ...formData, [field]: newTags });
   };
 
   const validateStep1 = () => {
-    if (!formData.email || !formData.password || !formData.confirmPassword || 
-        !formData.role || !formData.full_name) {
-      setError('Please fill in all required fields');
+    if (!formData.full_name) {
+      setError('Please enter your full name');
       return false;
     }
-    
+    if (!formData.role) {
+      setError('Please select a role');
+      return false;
+    }
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return false;
+    }
+    if (!formData.password) {
+      setError('Please enter a password');
+      return false;
+    }
+    if (!formData.confirmPassword) {
+      setError('Please confirm your password');
+      return false;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return false;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long (matching backend validation)');
+      setError('Password must be at least 8 characters long');
       return false;
     }
 
@@ -159,15 +187,26 @@ export default function RegisterPage() {
         }
         return true;
       case 'teacher':
-        if (!formData.school_id || !formData.qualification || 
-            !formData.experience_years || !formData.subjects?.length) {
-          setError('Please fill in all required fields');
+        if (!formData.school_id) {
+          setError('Please select a school');
+          return false;
+        }
+        if (!formData.primary_subject) {
+          setError('Please select a primary subject');
+          return false;
+        }
+        if (!formData.qualification) {
+          setError('Please select your qualification');
+          return false;
+        }
+        if (!formData.experience_years && formData.experience_years !== 0) {
+          setError('Please enter years of experience');
           return false;
         }
         return true;
       case 'hei_mentor':
         if (!formData.hei_id || !formData.designation || !formData.department ||
-            !formData.qualification || !formData.experience_years || !formData.primary_expertise) {
+          !formData.qualification || !formData.experience_years || !formData.primary_expertise) {
           setError('Please fill in all required fields');
           return false;
         }
@@ -208,7 +247,7 @@ export default function RegisterPage() {
     console.log(formData)
     try {
       const response = await apiClient.register(formData);
-      console.log("response =",response);
+      console.log("response =", response);
       if (response.error) {
         setError(response.error);
         setLoading(false);
@@ -219,12 +258,54 @@ export default function RegisterPage() {
         // Redirect to login with success message
         router.push('/auth/login?message=' + encodeURIComponent(response.data.message || 'Registration successful!'));
       }
-      
+
     } catch (error) {
       setError('Registration failed. Please try again.');
     }
-    
+
     setLoading(false);
+  };
+
+  // Handle adding a new school
+  const handleAddSchool = async () => {
+    setError('');
+
+    // Validate required fields
+    if (!newSchoolData.name || !newSchoolData.code || !newSchoolData.location || !newSchoolData.district) {
+      setError('Please fill in all required school fields');
+      return;
+    }
+
+    setAddingSchool(true);
+    try {
+      const response = await apiClient.createSchool(newSchoolData);
+
+      if (response.error) {
+        setError(response.error);
+        setAddingSchool(false);
+        return;
+      }
+
+      if (response.data) {
+        // Add new school to the list and select it
+        setSchools([...schools, response.data]);
+        handleCommonFieldChange('school_id', response.data.id);
+        setShowAddSchoolForm(false);
+        // Reset form
+        setNewSchoolData({
+          name: '',
+          code: '',
+          type: 'Government',
+          location: '',
+          district: '',
+          principal_name: '',
+          total_students: 0,
+        });
+      }
+    } catch (error) {
+      setError('Failed to create school. Please try again.');
+    }
+    setAddingSchool(false);
   };
 
   const renderRoleSpecificFields = () => {
@@ -611,18 +692,155 @@ export default function RegisterPage() {
           <div className="space-y-5">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-700">School *</Label>
-              <Select onValueChange={(value) => handleCommonFieldChange('school_id', value)}>
-                <SelectTrigger className="h-12 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300">
-                  <SelectValue placeholder="Select your school" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-2 shadow-xl">
-                  {schools.map(school => (
-                    <SelectItem key={school.id} value={school.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                      {school.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              {!showAddSchoolForm ? (
+                <>
+                  <Select
+                    value={formData.school_id || ''}
+                    onValueChange={(value) => {
+                      if (value === 'add_new') {
+                        setShowAddSchoolForm(true);
+                      } else {
+                        handleCommonFieldChange('school_id', value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300">
+                      <SelectValue placeholder="Select your school" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-2 shadow-xl">
+                      {schools.map(school => (
+                        <SelectItem key={school.id} value={school.id} className="rounded-lg hover:bg-blue-50 transition-colors duration-200">
+                          {school.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="add_new" className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors duration-200 font-medium text-blue-700 border-t border-gray-200 mt-1">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add New School
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              ) : (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-5 w-5 text-blue-600" />
+                      <span className="font-semibold text-blue-900">Add New School</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAddSchoolForm(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">School Name *</Label>
+                      <Input
+                        placeholder="Enter school name"
+                        value={newSchoolData.name}
+                        onChange={(e) => setNewSchoolData({ ...newSchoolData, name: e.target.value })}
+                        className="h-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">School Code *</Label>
+                      <Input
+                        placeholder="e.g., GHS001"
+                        value={newSchoolData.code}
+                        onChange={(e) => setNewSchoolData({ ...newSchoolData, code: e.target.value })}
+                        className="h-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Type</Label>
+                      <Select
+                        value={newSchoolData.type}
+                        onValueChange={(value) => setNewSchoolData({ ...newSchoolData, type: value })}
+                      >
+                        <SelectTrigger className="h-10 border border-gray-300 rounded-lg">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Government">Government</SelectItem>
+                          <SelectItem value="Private">Private</SelectItem>
+                          <SelectItem value="Aided">Aided</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Location *</Label>
+                      <Input
+                        placeholder="Enter location"
+                        value={newSchoolData.location}
+                        onChange={(e) => setNewSchoolData({ ...newSchoolData, location: e.target.value })}
+                        className="h-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">District *</Label>
+                      <Input
+                        placeholder="Enter district"
+                        value={newSchoolData.district}
+                        onChange={(e) => setNewSchoolData({ ...newSchoolData, district: e.target.value })}
+                        className="h-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Principal Name</Label>
+                      <Input
+                        placeholder="Enter principal name"
+                        value={newSchoolData.principal_name}
+                        onChange={(e) => setNewSchoolData({ ...newSchoolData, principal_name: e.target.value })}
+                        className="h-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAddSchoolForm(false)}
+                      className="rounded-lg"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleAddSchool}
+                      disabled={addingSchool}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg"
+                    >
+                      {addingSchool ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create School
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -716,7 +934,7 @@ export default function RegisterPage() {
                 <p className="text-blue-100 text-lg transition-all duration-300 hover:text-white cursor-default">UK Government School Mentoring Program</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2 text-blue-100 group cursor-default">
               <Sparkles className="h-5 w-5 transition-all duration-300 group-hover:text-yellow-300 group-hover:animate-pulse" />
               <span className="text-lg transition-all duration-300 group-hover:text-white">Join our educational community</span>
@@ -726,8 +944,8 @@ export default function RegisterPage() {
           {/* Features List */}
           <div className="space-y-8">
             {features.map((feature, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="flex items-start space-x-4 group hover:transform hover:translate-x-3 transition-all duration-500 cursor-pointer"
               >
                 <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20 group-hover:bg-white/25 transition-all duration-500 group-hover:shadow-lg group-hover:shadow-white/20 group-hover:scale-110">
@@ -776,10 +994,10 @@ export default function RegisterPage() {
               <CardDescription className="text-gray-600 text-lg transition-colors duration-300 hover:text-gray-800 cursor-default">
                 Step {step} of 2: {step === 1 ? 'Basic Information' : `${roleDisplayNames[formData.role as UserRole]} Details`}
               </CardDescription>
-              
+
               {/* Enhanced Progress Bar */}
               <div className="w-full bg-gray-200 rounded-full h-3 mt-6 overflow-hidden">
-                <div 
+                <div
                   className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-700 ease-out relative"
                   style={{ width: `${(step / 2) * 100}%` }}
                 >
@@ -797,7 +1015,7 @@ export default function RegisterPage() {
                 </span>
               </div>
             </CardHeader>
-            
+
             <CardContent className="p-8">
               <form onSubmit={step === 2 ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}>
                 {step === 1 ? (
@@ -815,18 +1033,20 @@ export default function RegisterPage() {
                           onChange={(e) => handleCommonFieldChange('full_name', e.target.value)}
                           onFocus={() => setFocusedField('full_name')}
                           onBlur={() => setFocusedField(null)}
-                          className={`h-12 border-2 rounded-xl transition-all duration-300 ${
-                            focusedField === 'full_name' 
-                              ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]' 
-                              : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                          }`}
+                          className={`h-12 border-2 rounded-xl transition-all duration-300 ${focusedField === 'full_name'
+                            ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]'
+                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                            }`}
                           required
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-gray-700">Role *</Label>
-                        <Select onValueChange={(value: UserRole) => handleCommonFieldChange('role', value)}>
+                        <Select
+                          value={formData.role || ''}
+                          onValueChange={(value: UserRole) => handleCommonFieldChange('role', value)}
+                        >
                           <SelectTrigger className="h-12 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-md focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300">
                             <SelectValue placeholder="Select your role" />
                           </SelectTrigger>
@@ -853,11 +1073,10 @@ export default function RegisterPage() {
                         onChange={(e) => handleCommonFieldChange('email', e.target.value)}
                         onFocus={() => setFocusedField('email')}
                         onBlur={() => setFocusedField(null)}
-                        className={`h-12 border-2 rounded-xl transition-all duration-300 ${
-                          focusedField === 'email' 
-                            ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]' 
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
+                        className={`h-12 border-2 rounded-xl transition-all duration-300 ${focusedField === 'email'
+                          ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                          }`}
                         required
                       />
                     </div>
@@ -887,11 +1106,10 @@ export default function RegisterPage() {
                             onChange={(e) => handleCommonFieldChange('password', e.target.value)}
                             onFocus={() => setFocusedField('password')}
                             onBlur={() => setFocusedField(null)}
-                            className={`h-12 border-2 rounded-xl pr-12 transition-all duration-300 ${
-                              focusedField === 'password' 
-                                ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]' 
-                                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                            }`}
+                            className={`h-12 border-2 rounded-xl pr-12 transition-all duration-300 ${focusedField === 'password'
+                              ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]'
+                              : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                              }`}
                             required
                           />
                           <button
@@ -914,11 +1132,10 @@ export default function RegisterPage() {
                             onChange={(e) => handleCommonFieldChange('confirmPassword', e.target.value)}
                             onFocus={() => setFocusedField('confirmPassword')}
                             onBlur={() => setFocusedField(null)}
-                            className={`h-12 border-2 rounded-xl pr-12 transition-all duration-300 ${
-                              focusedField === 'confirmPassword' 
-                                ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]' 
-                                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                            }`}
+                            className={`h-12 border-2 rounded-xl pr-12 transition-all duration-300 ${focusedField === 'confirmPassword'
+                              ? 'border-blue-500 ring-4 ring-blue-100 shadow-lg transform scale-[1.01]'
+                              : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                              }`}
                             required
                           />
                           <button
@@ -966,7 +1183,7 @@ export default function RegisterPage() {
                       Back
                     </Button>
                   )}
-                  
+
                   <Button
                     type="submit"
                     className={`h-12 px-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl group relative overflow-hidden ${step === 1 ? 'ml-auto' : ''}`}
@@ -974,7 +1191,7 @@ export default function RegisterPage() {
                   >
                     {/* Shimmer Effect */}
                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-                    
+
                     <span className="relative flex items-center space-x-2">
                       <span>{loading ? 'Creating Account...' : step === 1 ? 'Next' : 'Create Account'}</span>
                       {!loading && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />}
@@ -988,8 +1205,8 @@ export default function RegisterPage() {
               <div className="mt-8 text-center">
                 <p className="text-gray-600">
                   Already have an account?{' '}
-                  <Link 
-                    href="/auth/login" 
+                  <Link
+                    href="/auth/login"
                     className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-all duration-300 hover:scale-105 inline-block"
                   >
                     Sign in here

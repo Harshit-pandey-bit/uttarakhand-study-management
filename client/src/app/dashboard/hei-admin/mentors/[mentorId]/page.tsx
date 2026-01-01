@@ -98,13 +98,14 @@ export default function MentorProfilePage() {
     }
   };
 
+
   const handleRemoveAssignment = async () => {
     if (!assignmentToRemove) return;
 
     try {
       setRemoving(true);
       const response = await heiAdminAPI.removeAssignment(assignmentToRemove);
-      
+
       if (response.success) {
         // Reload mentor details
         await loadMentorDetails();
@@ -118,13 +119,16 @@ export default function MentorProfilePage() {
     }
   };
 
-  const getStatusBadgeVariant = (status: MentorStatus) => {
-    switch (status) {
-      case MentorStatus.ACTIVE:
+  const getStatusBadgeVariant = (status: MentorStatus | string) => {
+    // Normalize status to lowercase string for comparison
+    const statusStr = (status || 'active').toString().toLowerCase();
+
+    switch (statusStr) {
+      case 'active':
         return 'default';
-      case MentorStatus.AWAY:
+      case 'away':
         return 'secondary';
-      case MentorStatus.INACTIVE:
+      case 'inactive':
         return 'outline';
       default:
         return 'outline';
@@ -386,10 +390,13 @@ export default function MentorProfilePage() {
             </Card>
           )}
 
-          {/* Status Actions */}
+          {/* Status Management */}
           <Card>
             <CardHeader>
-              <CardTitle>Status Management</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5" />
+                Status Management
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {mentor.status !== MentorStatus.ACTIVE && (
@@ -398,7 +405,7 @@ export default function MentorProfilePage() {
                   variant="outline"
                   onClick={() => handleStatusChange(MentorStatus.ACTIVE)}
                 >
-                  <UserCheck className="h-4 w-4 mr-2" />
+                  <UserCheck className="h-4 w-4 mr-2 text-green-600" />
                   Mark as Active
                 </Button>
               )}
@@ -408,7 +415,7 @@ export default function MentorProfilePage() {
                   variant="outline"
                   onClick={() => handleStatusChange(MentorStatus.AWAY)}
                 >
-                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertCircle className="h-4 w-4 mr-2 text-yellow-600" />
                   Mark as Away
                 </Button>
               )}
@@ -418,12 +425,13 @@ export default function MentorProfilePage() {
                   variant="outline"
                   onClick={() => handleStatusChange(MentorStatus.INACTIVE)}
                 >
-                  <UserX className="h-4 w-4 mr-2" />
+                  <UserX className="h-4 w-4 mr-2 text-red-600" />
                   Mark as Inactive
                 </Button>
               )}
             </CardContent>
           </Card>
+
         </div>
 
         {/* Right Column - Assigned Schools */}

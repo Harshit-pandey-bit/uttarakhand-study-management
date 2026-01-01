@@ -52,8 +52,15 @@ class HEIAdminAPIClient {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
 
+      // Check if response is a paginated response (has pagination fields)
+      // If so, return as-is; otherwise unwrap data.data if present
+      const isPaginatedResponse = data && typeof data === 'object' &&
+        ('total' in data || 'page' in data || 'totalPages' in data);
+
+      const responseData = isPaginatedResponse ? data : (data.data || data);
+
       return {
-        data: data.data || data,
+        data: responseData,
         success: true,
         message: data.message,
       };
@@ -172,7 +179,7 @@ class HEIAdminAPIClient {
     params?: PartnershipFilters & PaginationParams
   ): Promise<APIResponse<{ partnerships: SchoolPartnership[]; total: number; page: number; limit: number }>> {
     const queryParams = new URLSearchParams();
-    
+
     if (params?.status) queryParams.append('status', params.status as string);
     if (params?.mentorId) queryParams.append('mentorId', params.mentorId);
     if (params?.district) queryParams.append('district', params.district);

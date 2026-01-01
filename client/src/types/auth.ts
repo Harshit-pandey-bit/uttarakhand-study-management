@@ -53,3 +53,14 @@ export interface SchoolAdminFields extends CommonFields {
   designation: string;
   responsibilities?: string[];
 }
+// types/school.ts or extend within auth.ts
+
+export interface School {
+  name: string;
+  code: string;
+  type: string;
+  location: string;
+  district: string;
+  principal_name: string;
+  total_students: number;
+}

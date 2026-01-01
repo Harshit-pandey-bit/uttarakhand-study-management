@@ -15,6 +15,8 @@ import {
   GraduationCap,
   Mail,
   AlertCircle,
+  Eye,
+  School,
 } from 'lucide-react';
 import Link from 'next/link';
 import heiAdminAPI from '@/lib/api/hei-admin-client';
@@ -32,7 +34,7 @@ export default function MentorsPage() {
     hasNext: false,
     hasPrev: false,
   });
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +49,7 @@ export default function MentorsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await heiAdminAPI.getMentors(
         {
           status: statusFilter || undefined,
@@ -106,13 +108,16 @@ export default function MentorsPage() {
     }
   };
 
-  const getStatusBadge = (status: MentorStatus) => {
-    switch (status) {
-      case MentorStatus.ACTIVE:
+  const getStatusBadge = (status: MentorStatus | string) => {
+    // Normalize status to lowercase string for comparison
+    const statusStr = (status || 'active').toString().toLowerCase();
+
+    switch (statusStr) {
+      case 'active':
         return <Badge variant="default" className="bg-green-600">Active</Badge>;
-      case MentorStatus.AWAY:
+      case 'away':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Away</Badge>;
-      case MentorStatus.INACTIVE:
+      case 'inactive':
         return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
@@ -280,7 +285,8 @@ export default function MentorsPage() {
             <div className="text-center py-12">
               <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No mentors found</h3>
-              <p className="text-gray-600">Try adjusting your filters or search query</p>
+              <p className="text-gray-600 mb-2">No registered HEI mentors are available in the system.</p>
+              <p className="text-sm text-gray-500">Mentors appear here once they register with the 'hei_mentor' role.</p>
               {!error && (
                 <Button className="mt-4" onClick={loadMentors}>
                   Retry Loading
@@ -328,23 +334,32 @@ export default function MentorsPage() {
                         </div>
                       </div>
 
-                      {mentor.assignedSchools && mentor.assignedSchools.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-xs font-medium text-gray-600 mb-2">Assigned Schools:</p>
+                      {/* Assigned Schools Section */}
+                      {mentor.assignedSchools && mentor.assignedSchools.length > 0 ? (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <School className="h-4 w-4 text-blue-600" />
+                            <p className="text-xs font-medium text-blue-700">Assigned Schools ({mentor.assignedSchools.length}):</p>
+                          </div>
                           <div className="flex flex-wrap gap-2">
                             {mentor.assignedSchools.map((school) => (
-                              <Badge key={school.schoolId} variant="outline" className="text-xs">
+                              <Badge key={school.schoolId} variant="outline" className="text-xs bg-white border-blue-200 text-blue-700">
                                 {school.schoolName}
                               </Badge>
                             ))}
                           </div>
+                        </div>
+                      ) : (
+                        <div className="mt-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                          <p className="text-xs text-gray-500 italic">No schools assigned yet</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   <Link href={`/dashboard/hei-admin/mentors/${mentor.id}`}>
-                    <Button variant="outline" size="sm" className="flex-shrink-0">
+                    <Button variant="default" size="sm" className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white">
+                      <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
                   </Link>

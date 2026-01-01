@@ -209,11 +209,11 @@ export class SchoolAdminRegisterDto extends BaseRegisterDto {
 }
 
 // Union type for all registration DTOs
-export type RegisterDto = 
-  | StudentRegisterDto 
-  | TeacherRegisterDto 
-  | HeiMentorRegisterDto 
-  | HeiAdminRegisterDto 
+export type RegisterDto =
+  | StudentRegisterDto
+  | TeacherRegisterDto
+  | HeiMentorRegisterDto
+  | HeiAdminRegisterDto
   | SchoolAdminRegisterDto;
 
 // Response DTOs
@@ -238,3 +238,38 @@ export class RegistrationResponseDto {
     role: UserRole;
   };
 }
+
+// Create School DTO for adding new schools during registration
+export class CreateSchoolDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  code: string;
+
+  @IsString()
+  @IsOptional()
+  type?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  location: string;
+
+  @IsString()
+  @IsNotEmpty()
+  district: string;
+
+  @IsString()
+  @IsOptional()
+  principal_name?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  total_students?: number;
+}
+
