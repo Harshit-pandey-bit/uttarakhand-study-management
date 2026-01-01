@@ -1204,7 +1204,7 @@ export default function RegisterPage() {
               {/* Enhanced Login Link */}
               <div className="mt-8 text-center">
                 <p className="text-gray-600">
-                  Already have an account?{' '}
+                  Already have an account??{' '}
                   <Link
                     href="/auth/login"
                     className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-all duration-300 hover:scale-105 inline-block"
@@ -1219,4 +1219,5 @@ export default function RegisterPage() {
       </div>
     </div>
   );
+
 }
