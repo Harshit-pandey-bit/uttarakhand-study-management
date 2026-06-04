@@ -1,0 +1,11 @@
+// server/src/auth/roles.decorator.ts
+
+import { SetMetadata } from '@nestjs/common';
+
+export const ROLES_KEY = 'roles';
+
+/**
+ * Restrict a route to specific user roles.
+ * Usage: @Roles('STUDENT', 'TEACHER')
+ */
+export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);

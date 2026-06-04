@@ -1,358 +1,224 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { apiClient } from '@/lib/api/client';
+import { MentoringSession } from '@/types/api';
+import {
+  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Users, 
-  BookOpen, 
-  Calendar, 
-  MessageSquare, 
-  TrendingUp, 
-  AlertCircle,
-  School,
-  Target,
-  Clock
+import {
+  Video, Calendar, Loader2, CheckCircle, AlertCircle,
+  ExternalLink, Users, ClipboardList, Clock, X,
 } from 'lucide-react';
-import heiMentorAPI from '@/lib/api/hei-mentor-client';
-import type { HEIMentorDashboardData, HEIMentorDashboardStats } from '@/types/hei-mentor';
 
-// Define default stats object with proper typing
-const defaultStats: HEIMentorDashboardStats = {
-  assignedStudents: 0,
-  studentsActiveThisWeek: 0,
-  studentsCompletedHollandTest: 0,
-  studentsNeedingAttention: 0,
-  pendingSubmissions: 0,
-  ungradedAssignments: 0,
-  upcomingSessionsThisWeek: 0,
-  studentsWithCareerPlans: 0,
-  averageStudentProgress: 0,
-};
+// ── Toast Notification ────────────────────────────────
 
-export default function HEIMentorDashboard() {
-  const [dashboardData, setDashboardData] = useState<HEIMentorDashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="fixed top-6 right-6 z-50 animate-in fade-in slide-in-from-top-3 duration-300">
+      <div className="flex items-center gap-3 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg max-w-md">
+        <CheckCircle size={20} className="flex-shrink-0" />
+        <p className="text-sm font-medium flex-1">{message}</p>
+        <button onClick={onClose} className="p-1 hover:bg-emerald-700 rounded-md transition-colors">
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+// ── Schedule Session Form ─────────────────────────────
 
-  const fetchDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+function ScheduleSessionSection() {
+  const [studentId, setStudentId] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<MentoringSession | null>(null);
+  const [showToast, setShowToast] = useState(false);
 
-      const response = await heiMentorAPI.getDashboard();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setResult(null);
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
+    const res = await apiClient.scheduleSession({
+      student_id: studentId,
+      scheduled_time: new Date(scheduledTime).toISOString(),
+    });
 
-      if (response.data) {
-        setDashboardData(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
-    } finally {
-      setIsLoading(false);
+    setLoading(false);
+
+    if (res.error) {
+      setError(res.error);
+    } else if (res.data) {
+      setResult(res.data);
+      setShowToast(true);
+      // Auto-dismiss toast after 5s
+      setTimeout(() => setShowToast(false), 5000);
+      // Reset form
+      setStudentId('');
+      setScheduledTime('');
     }
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-500 mb-4">Unable to load your dashboard data.</p>
-          <Button onClick={fetchDashboardData} variant="outline">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // No data state
-  if (!dashboardData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">No Data Available</h2>
-          <p className="text-gray-500">Dashboard data is not available at the moment.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Safe destructuring with typed defaults
-  const { 
-    mentor, 
-    stats = defaultStats,  // Now properly typed!
-    upcomingSessions = [], 
-    recentActivity = [], 
-    assignedSchools = [], 
-    pendingActions = [] 
-  } = dashboardData;
+  // Get minimum date-time (now)
+  const minDateTime = new Date().toISOString().slice(0, 16);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center space-x-6">
-            <Avatar className="h-12 w-12 border-2 border-white/20">
-              <AvatarImage src={mentor?.user?.profile_picture} />
-              <AvatarFallback className="bg-white/10 text-white font-bold">
-                {mentor?.user?.full_name?.split(' ').map(n => n[0]).join('') || 'HM'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl font-bold">
-                Welcome back, {mentor?.user?.full_name || 'HEI Mentor'}!
-              </h1>
-              <p className="text-blue-100">
-                {mentor?.profile?.designation || 'Mentor'}, {mentor?.profile?.department || 'Department'}
-              </p>
-              <p className="text-blue-200 text-sm">
-                {mentor?.hei?.name || 'Higher Education Institution'}
-              </p>
-            </div>
-          </div>
+    <>
+      {showToast && (
+        <Toast
+          message="🎉 Session scheduled successfully! Google Meet link generated."
+          onClose={() => setShowToast(false)}
+        />
+      )}
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{assignedSchools?.length || 0}</div>
-              <div className="text-blue-200 text-sm">Schools</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats.assignedStudents}</div>
-              <div className="text-blue-200 text-sm">Assigned Students</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats.studentsActiveThisWeek}</div>
-              <div className="text-blue-200 text-sm">Active This Week</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats.upcomingSessionsThisWeek}</div>
-              <div className="text-blue-200 text-sm">Sessions This Week</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Dashboard Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Left Column - Stats & Actions */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Need Attention</p>
-                      <p className="text-2xl font-bold text-red-600">
-                        {stats.studentsNeedingAttention}
-                      </p>
-                      <p className="text-xs text-gray-500">Students falling behind</p>
-                    </div>
-                    <AlertCircle className="h-8 w-8 text-red-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Career Tests Completed</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {stats.studentsCompletedHollandTest}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        out of {stats.assignedStudents} students
-                      </p>
-                    </div>
-                    <Target className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Pending Actions</p>
-                      <p className="text-2xl font-bold text-orange-600">
-                        {stats.ungradedAssignments + stats.pendingSubmissions}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {stats.ungradedAssignments} to grade, {stats.pendingSubmissions} submissions
-                      </p>
-                    </div>
-                    <Clock className="h-8 w-8 text-orange-600" />
-                  </div>
-                </CardContent>
-              </Card>
+      <Card className="border-purple-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="text-purple-600" size={22} />
+            Schedule Mentoring Session
+          </CardTitle>
+          <CardDescription>
+            Schedule a session with a student — a Google Meet link is generated automatically
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="student-id">Student ID (UUID) *</Label>
+              <Input
+                id="student-id"
+                placeholder="e.g., a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                required
+                pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                title="Enter a valid UUID"
+              />
+              <p className="text-xs text-gray-400">The student&apos;s account UUID from the platform</p>
             </div>
 
-            {/* Upcoming Sessions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Upcoming Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {upcomingSessions && upcomingSessions.length > 0 ? (
-                  <div className="space-y-4">
-                    {upcomingSessions.slice(0, 3).map((session, index) => (
-                      <div key={session?.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <h4 className="font-semibold">{session?.title || 'Session'}</h4>
-                          <p className="text-sm text-gray-600">{session?.subject || 'Subject'}</p>
-                          <p className="text-xs text-gray-500">
-                            {session?.participants?.length || 0} participants
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {session?.session_date ? new Date(session.session_date).toLocaleDateString('en-IN') : 'Date TBD'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {session?.session_date ? new Date(session.session_date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Time TBD'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No upcoming sessions</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="space-y-2">
+              <Label htmlFor="datetime">Session Date & Time *</Label>
+              <Input
+                id="datetime"
+                type="datetime-local"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                required
+                min={minDateTime}
+              />
+            </div>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button className="h-auto p-4 flex flex-col items-center space-y-2">
-                    <Calendar className="h-6 w-6" />
-                    <span>Schedule Session</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-                    <BookOpen className="h-6 w-6" />
-                    <span>Create Assignment</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-                    <MessageSquare className="h-6 w-6" />
-                    <span>Open Chat</span>
-                  </Button>
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 text-sm p-3 bg-red-50 rounded-lg">
+                <AlertCircle size={16} /> {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading || !studentId.trim() || !scheduledTime}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              {loading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Video size={16} className="mr-2" />}
+              {loading ? 'Scheduling...' : 'Schedule Session & Generate Meet Link'}
+            </Button>
+          </form>
+        </CardContent>
+
+        {/* Result Card */}
+        {result && (
+          <CardFooter>
+            <div className="w-full p-4 bg-purple-50 rounded-xl border border-purple-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-purple-900 flex items-center gap-2">
+                  <CheckCircle size={18} className="text-emerald-600" />
+                  Session Scheduled
+                </h4>
+                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                  {result.status}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500">Session Time</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(result.scheduled_time).toLocaleString('en-IN', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div>
+                  <p className="text-gray-500">Student ID</p>
+                  <p className="font-mono text-xs text-gray-700 truncate">{result.student_id}</p>
+                </div>
+              </div>
 
-          {/* Right Column - Schools & Activity */}
-          <div className="space-y-6">
+              {result.google_meet_link ? (
+                <a
+                  href={result.google_meet_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Video size={16} />
+                  Join Google Meet
+                  <ExternalLink size={14} />
+                </a>
+              ) : (
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <Clock size={14} />
+                  Meet link not available — Google Calendar credentials not configured.
+                </p>
+              )}
+            </div>
+          </CardFooter>
+        )}
+      </Card>
+    </>
+  );
+}
 
-            {/* Assigned Schools */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <School className="h-5 w-5 mr-2" />
-                  Assigned Schools
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {assignedSchools && assignedSchools.length > 0 ? (
-                  <div className="space-y-3">
-                    {assignedSchools.slice(0, 4).map((school, index) => (
-                      <div key={school?.id || index} className="p-3 border rounded-lg hover:bg-gray-50">
-                        <h4 className="font-semibold text-sm">{school?.name || 'School Name'}</h4>
-                        <p className="text-xs text-gray-500">{school?.district || 'District'}</p>
-                        <div className="mt-1 flex justify-between text-xs">
-                          <span>{school?.studentsAssigned || 0} students</span>
-                          <span>{school?.averageProgress || 0}% avg progress</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <School className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No assigned schools</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+// ── Main Mentor Dashboard ─────────────────────────────
 
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentActivity && recentActivity.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentActivity.slice(0, 5).map((activity, index) => (
-                      <div key={activity?.id || index} className="flex items-start space-x-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity?.title || 'Activity'}</p>
-                          <p className="text-xs text-gray-500">{activity?.description || 'Description'}</p>
-                          <p className="text-xs text-gray-400">
-                            {activity?.timestamp ? new Date(activity.timestamp).toLocaleString('en-IN') : 'Recently'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-gray-500">
-                    <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No recent activity</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+export default function HeiMentorDashboard() {
+  const { user } = useAuth();
+  const name = user?.user_metadata?.full_name ?? 'Mentor';
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      {/* Welcome Banner */}
+      <div className="bg-gradient-to-r from-purple-700 to-fuchsia-600 rounded-2xl p-6 lg:p-8 text-white">
+        <h1 className="text-2xl font-bold">Welcome, {name}! 🎓</h1>
+        <p className="text-purple-100 mt-1">
+          Schedule mentoring sessions, create assignments, and guide students to success.
+        </p>
+        <div className="flex gap-3 mt-4">
+          <Badge className="bg-white/20 text-white hover:bg-white/30 border-0">
+            <Video size={14} className="mr-1" /> Sessions
+          </Badge>
+          <Badge className="bg-white/20 text-white hover:bg-white/30 border-0">
+            <ClipboardList size={14} className="mr-1" /> Assignments
+          </Badge>
+          <Badge className="bg-white/20 text-white hover:bg-white/30 border-0">
+            <Users size={14} className="mr-1" /> Mentees
+          </Badge>
         </div>
       </div>
+
+      {/* Schedule Session */}
+      <ScheduleSessionSection />
     </div>
   );
 }

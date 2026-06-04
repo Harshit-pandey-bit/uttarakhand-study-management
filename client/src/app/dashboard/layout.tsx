@@ -10,29 +10,23 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth';
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const router = useRouter();
 
-  // Check if user is authenticated - only runs inside dashboard
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      console.log('🚫 No authenticated user found, redirecting to login...');
       router.push('/auth/login');
     }
   }, [user, loading, router]);
 
-  // Detect mobile/desktop and set initial sidebar state
+  // Responsive sidebar
   useEffect(() => {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
+      setSidebarOpen(!mobile);
     };
-    
     checkDevice();
     window.addEventListener('resize', checkDevice);
     return () => window.removeEventListener('resize', checkDevice);
@@ -41,8 +35,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Checking authentication...</span>
+        <div className="flex items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <span className="text-gray-600">Checking authentication...</span>
+        </div>
       </div>
     );
   }
@@ -50,20 +46,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Redirecting to login...</p>
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-        </div>
+        <p className="text-gray-600">Redirecting to login...</p>
       </div>
     );
   }
+
+  const userRole = role ?? 'STUDENT';
 
   return (
     <div className="h-screen bg-gray-50 overflow-hidden">
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
-        <DashboardHeader 
-          user={user} 
+        <DashboardHeader
+          user={user}
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           isMobile={isMobile}
         />
@@ -71,10 +66,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Layout Container */}
       <div className="flex h-full pt-16">
-        
-        {/* Sidebar - Desktop: relative positioning, Mobile: fixed overlay */}
+        {/* Sidebar */}
         <div className={`${
-          isMobile 
+          isMobile
             ? `fixed inset-y-0 left-0 z-40 w-72 transform transition-transform duration-300 ease-in-out ${
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full'
               } bg-white shadow-lg pt-16`
@@ -82,14 +76,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 sidebarOpen ? 'w-72' : 'w-0 overflow-hidden'
               }`
         }`}>
-          <DashboardSidebar 
-            userRole={user.role}
+          <DashboardSidebar
+            userRole={userRole}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
           />
         </div>
 
-        {/* Main Content - Takes remaining space and scrolls independently */}
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-gray-50">
           <div className={`p-4 lg:p-6 min-h-full ${isMobile ? 'pb-24' : ''}`}>
             {children}
@@ -100,14 +94,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200">
-          <MobileNavigation userRole={user.role} />
+          <MobileNavigation userRole={userRole} />
         </div>
       )}
 
       {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -122,9 +116,7 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthProvider>
-      <DashboardContent>
-        {children}
-      </DashboardContent>
+      <DashboardContent>{children}</DashboardContent>
     </AuthProvider>
   );
 }

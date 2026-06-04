@@ -2,33 +2,33 @@
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { apiClient } from '@/lib/api/client';
-import { UserProfile } from '@/types/api';
+import { UserProfile, UserRole } from '@/types/api';
 
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
+  role: UserRole | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
-// ✅ Correct namespace/type usage
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Derive the role from user_metadata
+  const role: UserRole | null = user?.user_metadata?.role ?? null;
+
+  // Check auth on mount by calling the backend /auth/profile
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await apiClient.checkAuth();
-        if (response.data) {
-          setUser(response.data);
+        const response = await apiClient.getProfile();
+        if (response.data?.user) {
+          setUser(response.data.user);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -44,13 +44,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       const loginResponse = await apiClient.login({ email, password });
-      
-      if (loginResponse.data?.user) {
-        const profileResponse = await apiClient.getProfile();
-        if (profileResponse.data) {
-          setUser(profileResponse.data);
-          return true;
-        }
+
+      if (loginResponse.error || !loginResponse.data) {
+        console.error('Login error:', loginResponse.error);
+        return false;
+      }
+
+      // Use user data directly from login response
+      if (loginResponse.data.user) {
+        setUser(loginResponse.data.user);
+        return true;
+      }
+
+      // Fallback: try profile endpoint
+      const profileResponse = await apiClient.getProfile();
+      if (profileResponse.data?.user) {
+        setUser(profileResponse.data.user);
+        return true;
       }
       return false;
     } catch (error) {
@@ -74,8 +84,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshUser = async (): Promise<void> => {
     try {
       const response = await apiClient.getProfile();
-      if (response.data) {
-        setUser(response.data);
+      if (response.data?.user) {
+        setUser(response.data.user);
       } else {
         setUser(null);
       }
@@ -85,15 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider 
-      value={{
-        user,
-        loading,
-        login,
-        logout,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, role, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

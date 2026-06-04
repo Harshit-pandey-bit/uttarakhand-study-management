@@ -1,90 +1,106 @@
 // server/src/assignments/assignments.controller.ts
-// ✅ HEI-MENTOR FOCUSED CONTROLLER
 
 import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
   Body,
   Param,
-  Query,
+  Req,
   UseGuards,
-  Request,
-  HttpCode,
-  HttpStatus,
-  ValidationPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   ParseUUIDPipe,
-  Logger,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-  ApiBody,
-} from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { AssignmentsService } from './assignments.service';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { createSecureUploadOptions } from './upload-security';
 
-@ApiTags('HEI-Mentor Assignments')
-@Controller('assignments/hei-mentor')
-@UseGuards(AuthGuard('jwt'))
-@ApiBearerAuth()
+@ApiTags('Assignments')
+@Controller('assignments')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AssignmentsController {
-  private readonly logger = new Logger(AssignmentsController.name);
-
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
+  /** List assignments — teachers see their own, students see all */
   @Get()
-  @ApiOperation({ summary: 'Get mentor assignments' })
-  async getMentorAssignments(@Request() req, @Query() filters) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.getMentorAssignments(mentorId, filters);
+  @ApiOperation({ summary: 'List assignments' })
+  @ApiResponse({ status: 200, description: 'List of assignments' })
+  async listAssignments(@Req() req: Request) {
+    const user = req.user as any;
+    const role = user.user_metadata?.role;
+
+    if (role === 'TEACHER' || role === 'HEI_MENTOR') {
+      return this.assignmentsService.getMyAssignments(user.sub);
+    }
+    return this.assignmentsService.getAllAssignments();
   }
 
+  /** List submissions by the current student */
+  @Get('my-submissions')
+  @Roles('STUDENT')
+  @ApiOperation({ summary: 'List my submissions (student)' })
+  @ApiResponse({ status: 200, description: 'List of submissions' })
+  async mySubmissions(@Req() req: Request) {
+    const user = req.user as any;
+    return this.assignmentsService.getMySubmissions(user.sub);
+  }
+
+  /** List submissions for a specific assignment (teacher view) */
+  @Get(':id/submissions')
+  @Roles('TEACHER', 'HEI_MENTOR')
+  @ApiOperation({ summary: 'List submissions for an assignment' })
+  @ApiResponse({ status: 200, description: 'List of submissions' })
+  async getSubmissions(@Param('id', ParseUUIDPipe) id: string) {
+    return this.assignmentsService.getSubmissionsByAssignment(id);
+  }
+
+  /** Create a new assignment (TEACHER or HEI_MENTOR). */
   @Post()
-  @ApiOperation({ summary: 'Create new assignment' })
-  async createAssignment(@Request() req, @Body() createData) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.createMentorAssignment(mentorId, createData);
+  @Roles('TEACHER', 'HEI_MENTOR')
+  @ApiOperation({ summary: 'Create a new assignment with NCERT references' })
+  @ApiResponse({ status: 201, description: 'Assignment created' })
+  @ApiResponse({ status: 403, description: 'Only TEACHER or HEI_MENTOR roles allowed' })
+  async createAssignment(
+    @Body() dto: CreateAssignmentDto,
+    @Req() req: Request,
+  ) {
+    const user = req.user as any;
+    return this.assignmentsService.createAssignment(user.sub, dto);
   }
 
-  @Get(':assignmentId/submissions')
-  @ApiOperation({ summary: 'Get assignment submissions' })
-  async getAssignmentSubmissions(@Request() req, @Param('assignmentId') assignmentId: string, @Query() filters) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.getAssignmentSubmissions(mentorId, assignmentId, filters);
-  }
-
-  @Put('submissions/:submissionId/grade')
-  @ApiOperation({ summary: 'Grade assignment submission' })
-  async gradeSubmission(@Request() req, @Param('submissionId') submissionId: string, @Body() gradeData) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.gradeSubmission(mentorId, submissionId, gradeData);
-  }
-
-  @Get('stats')
-  @ApiOperation({ summary: 'Get mentor assignment statistics' })
-  async getMentorStats(@Request() req) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.getMentorAssignmentStats(mentorId);
-  }
-
-  @Put(':assignmentId')
-  @ApiOperation({ summary: 'Update assignment' })
-  async updateAssignment(@Request() req, @Param('assignmentId') assignmentId: string, @Body() updateData) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.updateMentorAssignment(mentorId, assignmentId, updateData);
-  }
-
-  @Delete(':assignmentId')
-  @ApiOperation({ summary: 'Delete assignment' })
-  async deleteAssignment(@Request() req, @Param('assignmentId') assignmentId: string) {
-    const mentorId = req.user?.sub || req.user?.id;
-    return this.assignmentsService.deleteMentorAssignment(mentorId, assignmentId);
+  /** Submit homework for an assignment (STUDENT). */
+  @Post(':id/submit')
+  @Roles('STUDENT')
+  @UseInterceptors(FileInterceptor('file', createSecureUploadOptions()))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({ summary: 'Submit homework file for an assignment' })
+  @ApiResponse({ status: 201, description: 'Submission saved' })
+  async submitAssignment(
+    @Param('id', ParseUUIDPipe) assignmentId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const user = req.user as any;
+    return this.assignmentsService.submitAssignment(assignmentId, user.sub, file.path);
   }
 }

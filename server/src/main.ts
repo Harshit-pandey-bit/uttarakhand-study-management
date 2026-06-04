@@ -6,28 +6,40 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
+import { existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
+  // ── Ensure uploads directory exists at boot ──────────
+  const uploadsDir = join(process.cwd(), 'uploads', 'submissions');
+  if (!existsSync(uploadsDir)) {
+    mkdirSync(uploadsDir, { recursive: true });
+    console.log(`📁 Created uploads directory: ${uploadsDir}`);
+  }
+
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  // ── Global Validation ─────────────────────────────────
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
+  // ── Cookie Parser (reads access_token from httpOnly cookies) ──
   app.use(cookieParser());
 
-  // CORS configuration - FIXED for production
+  // ── CORS ───────────────────────────────────────────────
   const isProduction = configService.get('NODE_ENV') === 'production';
-  
+
   app.enableCors({
-    origin: isProduction 
+    origin: isProduction
       ? [
-          'https://uttarakhand-gsmp.vercel.app', // ✅ Your production URL
-          /\.vercel\.app$/, // ✅ Fixed regex - allows all Vercel preview deployments
+          'https://uttarakhand-gsmp.vercel.app',
+          /\.vercel\.app$/,
         ]
       : [
           'http://localhost:3000',
@@ -35,35 +47,34 @@ async function bootstrap() {
         ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-    credentials: true, // ✅ Critical for cookie-based auth
-    exposedHeaders: ['Set-Cookie'], // ✅ Allow Set-Cookie header to be read
+    credentials: true,
+    exposedHeaders: ['Set-Cookie'],
   });
 
-  // Global prefix
+  // ── Global Prefix ─────────────────────────────────────
   app.setGlobalPrefix('api');
 
-  // Swagger setup for development only
+  // ── Swagger (dev only) ────────────────────────────────
   if (!isProduction) {
     const config = new DocumentBuilder()
-      .setTitle('Government School Mentoring API')
-      .setDescription('API for HEI-Rural School Mentoring Platform')
-      .setVersion('1.0')
-      .addBearerAuth()
+      .setTitle('UK-GSMP API')
+      .setDescription('Uttarakhand Government School Mentoring Platform')
+      .setVersion('2.0')
+      .addCookieAuth('access_token')
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  // CRITICAL: Bind to 0.0.0.0 and use PORT from environment
+  // ── Start Server ──────────────────────────────────────
   const port = configService.get('PORT') || 10000;
   await app.listen(port, '0.0.0.0');
 
   if (!isProduction) {
-    console.log(`🚀 Government School Mentoring API running on: http://localhost:${port}`);
-    console.log(`📖 Swagger docs available at: http://localhost:${port}/api/docs`);
+    console.log(`🚀 UK-GSMP API running on: http://localhost:${port}`);
+    console.log(`📖 Swagger docs at: http://localhost:${port}/api/docs`);
   } else {
     console.log(`🚀 API running in production on port ${port}`);
-    console.log(`🌐 CORS enabled for: https://uttarakhand-gsmp.vercel.app`);
   }
 }
 

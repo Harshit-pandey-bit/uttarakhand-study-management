@@ -1,460 +1,111 @@
+'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-  // Student Icons
-  Home,
-  GraduationCap,
+  LayoutDashboard,
+  ClipboardList,
   BookOpen,
   Users,
-  Microscope,
-  FolderOpen,
-  Trophy,
-  User,
-  
-  // Teacher Icons
-  Presentation,
-  Brain,
-  UserCheck,
-  Award,
-  Settings,
-  Bell,
-  
-  // HEI Mentor Icons
-  School,
-  Calendar,
-  FileText,
-  BarChart3,
-  
-  // Admin Icons
-  Building2,
-  UsersIcon,
-  Target,
-  TrendingUp,
-  
-  // Shared Icons
+  Video,
+  GraduationCap,
   X,
-  ChevronRight,
-  Circle,
 } from 'lucide-react';
 import { UserRole } from '@/types/api';
 
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+const NAV_BY_ROLE: Record<string, NavItem[]> = {
+  STUDENT: [
+    { label: 'Dashboard', href: '/dashboard/student', icon: <LayoutDashboard size={20} /> },
+    { label: 'Career Assessment', href: '/dashboard/student/assessment', icon: <GraduationCap size={20} /> },
+    { label: 'My Assignments', href: '/dashboard/student/assignments', icon: <BookOpen size={20} /> },
+    { label: 'Mentoring Sessions', href: '/dashboard/student/mentoring', icon: <Video size={20} /> },
+  ],
+  TEACHER: [
+    { label: 'Dashboard', href: '/dashboard/teacher', icon: <LayoutDashboard size={20} /> },
+    { label: 'Assignments', href: '/dashboard/teacher/assignments', icon: <ClipboardList size={20} /> },
+    { label: 'Students', href: '/dashboard/teacher/students', icon: <Users size={20} /> },
+  ],
+  HEI_MENTOR: [
+    { label: 'Dashboard', href: '/dashboard/hei-mentor', icon: <LayoutDashboard size={20} /> },
+    { label: 'Schedule Session', href: '/dashboard/hei-mentor/schedule', icon: <Video size={20} /> },
+    { label: 'Assignments', href: '/dashboard/hei-mentor/assignments', icon: <ClipboardList size={20} /> },
+    { label: 'My Mentees', href: '/dashboard/hei-mentor/mentees', icon: <Users size={20} /> },
+  ],
+  SCHOOL_ADMIN: [
+    { label: 'Dashboard', href: '/dashboard/school-admin', icon: <LayoutDashboard size={20} /> },
+    { label: 'Teachers', href: '/dashboard/school-admin/teachers', icon: <Users size={20} /> },
+    { label: 'Students', href: '/dashboard/school-admin/students', icon: <GraduationCap size={20} /> },
+  ],
+  HEI_ADMIN: [
+    { label: 'Dashboard', href: '/dashboard/hei-admin', icon: <LayoutDashboard size={20} /> },
+    { label: 'Mentors', href: '/dashboard/hei-admin/mentors', icon: <Users size={20} /> },
+  ],
+};
+
 interface DashboardSidebarProps {
-  userRole: UserRole;
+  userRole: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface NavigationItem {
-  icon: any;
-  label: string;
-  route: string;
-  badge?: string;
-  children?: NavigationItem[];
-}
-
 export function DashboardSidebar({ userRole, isOpen, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const navItems = NAV_BY_ROLE[userRole] ?? NAV_BY_ROLE.STUDENT;
 
-  const getNavigationItems = (role: UserRole): NavigationItem[] => {
-    switch (role) {
-      case 'student':
-        return [
-          {
-            icon: Home,
-            label: 'Dashboard',
-            route: '/dashboard/student',
-          },
-          {
-            icon: GraduationCap,
-            label: 'Career Guidance',
-            route: '/dashboard/student/career-guidance',
-            children: [
-              { icon: GraduationCap, label: 'Career Hub', route: '/dashboard/student/career-guidance' },
-              { icon: GraduationCap, label: 'Holland Assessment', route: '/dashboard/student/career-guidance/holland-assessment/take-test' },
-              { icon: GraduationCap, label: 'Dream Explorer', route: '/dashboard/student/career-guidance/dream-explorer' },
-              { icon: GraduationCap, label: 'Career Map', route: '/dashboard/student/career-guidance/career-map' },
-            ]
-          },
-        
-          {
-            icon: Users,
-            label: 'Mentoring',
-            route: '/dashboard/student/mentoring',
-            children: [
-              { icon: Users, label: 'Sessions', route: '/dashboard/student/mentoring/sessions' },
-              { icon: Users, label: 'Doubt Clearing', route: '/dashboard/student/mentoring/chat' },
-            ]
-          },
-          {
-            icon: FolderOpen,
-            label: 'Projects',
-            route: '/dashboard/student/projects/active',
-            children: [
-              { icon: FolderOpen, label: 'Active Projects', route: '/dashboard/student/projects/active' },
-              { icon: FolderOpen, label: 'Showcase', route: '/dashboard/student/projects/showcase' },
-            ]
-          },
-          {
-            icon: Microscope,
-            label: 'STEM Tools',
-            route: '/dashboard/student/stem-tools',
-          },
-          {
-            icon: Trophy,
-            label: 'Portfolio',
-            route: '/dashboard/student/portfolio',
-          },
-        ];
-
-    case 'teacher': 
-return [
-  {
-    icon: Home,
-    label: 'Dashboard',
-    route: '/dashboard/teacher',
-  },
-  {
-    icon: Brain,
-    label: 'AI Assistant',
-    route: '/dashboard/teacher/ai-assistant',
-    badge: 'New',
-    children: [
-      { icon: BookOpen, label: 'NCERT Generator', route: '/dashboard/teacher/ai-assistant/ncert-generator' },
-      { icon: FileText, label: 'Assignment Creator', route: '/dashboard/teacher/ai-assistant/assignment-creator' },
-    ]
-  },
-  {
-    icon: Award,
-    label: 'Professional Development',
-    route: '/dashboard/teacher/cpd',
-    children: [
-      { icon: Award, label: 'DIKSHA', route: '/dashboard/teacher/cpd/diksha' },
-      { icon: Award, label: 'NISHTHA', route: '/dashboard/teacher/cpd/nishtha' },
-      { icon: GraduationCap, label: 'Swayam', route: '/dashboard/teacher/cpd/swayam' },
-    ]
-  },
-  {
-    icon: Presentation,
-    label: 'Assessments',
-    route: '/dashboard/teacher/assessments',
-    children: [
-      { icon: Brain, label: 'Formative Tools', route: '/dashboard/teacher/assessments/formative-tools' },
-      { icon: BarChart3, label: 'Summative Tracking', route: '/dashboard/teacher/assessments/summative-tracking' },
-    ]
-  },
-  {
-    icon: Users,
-    label: 'HEI Coordination',
-    route: '/dashboard/teacher/virtual-collaboration/hei-coordination',
-    children: [
-      { icon: Calendar, label: 'Schedule Sessions', route: '/dashboard/teacher/virtual-collaboration/hei-coordination' },
-      { icon: Bell, label: 'Announcements', route: '/dashboard/teacher/virtual-collaboration/hei-coordination/announcements' },
-    ]
-  },
-];
-
-
-      case 'hei_mentor':
-        return [
-          {
-            icon: Home,
-            label: 'Dashboard',
-            route: '/dashboard/hei-mentor',
-          },
-          {
-            icon: User,
-            label: 'Profile',
-            route: '/dashboard/hei-mentor/profile',
-          },
-          {
-            icon: Users,
-            label: 'Mentoring',
-            route: '/dashboard/hei-mentor/mentoring/sessions',
-            children: [
-              {
-                icon: Calendar,
-                label: 'Sessions',
-                route: '/dashboard/hei-mentor/mentoring/sessions'
-              },
-              {
-                icon: Users,
-                label: 'Students',
-                route: '/dashboard/hei-mentor/mentoring/students'
-              },
-              {
-                icon: Users,
-                label: 'Chat',
-                route: '/dashboard/hei-mentor/mentoring/chat'
-              }
-            ]
-          },
-        ];
-
-
-      // Add this to the existing dashboard-sidebar.tsx under hei_admin case:
-
-case 'hei_admin':
-  return [
-    {
-      icon: Home,
-      label: 'Dashboard',
-      route: '/dashboard/hei-admin',
-    },
-    {
-      icon: UsersIcon,
-      label: 'Mentors',
-      route: '/dashboard/hei-admin/mentors',
-      children: [
-        { 
-          icon: UsersIcon, 
-          label: 'All Mentors', 
-          route: '/dashboard/hei-admin/mentors' 
-        },
-        { 
-          icon: UserCheck, 
-          label: 'Assign Mentors', 
-          route: '/dashboard/hei-admin/mentors/assign' 
-        },
-      ]
-    },
-    {
-      icon: Building2,
-      label: 'Partnerships',
-      route: '/dashboard/hei-admin/partnerships',
-    },
-    {
-      icon: Bell,
-      label: 'Announcements',
-      route: '/dashboard/hei-admin/announcements',
-      badge: 'New',
-    },
-  ];
-
-
-      case 'school_admin':
-        return [
-          {
-            icon: Home,
-            label: 'Dashboard',
-            route: '/dashboard/school-admin',
-          },
-          {
-            icon: UsersIcon,
-            label: 'Teachers',
-            route: '/dashboard/school-admin/teachers',
-            children: [
-              { icon: Award, label: 'CPD Tracking', route: '/dashboard/school-admin/teachers/cpd-tracking' },
-            ]
-          },
-          {
-            icon: UserCheck,
-            label: 'Students',
-            route: '/dashboard/school-admin/students',
-            children: [
-              { icon: BarChart3, label: 'Progress', route: '/dashboard/school-admin/students/progress' },
-            ]
-          },
-          {
-            icon: Building2,
-            label: 'HEI Partnerships',
-            route: '/dashboard/school-admin/hei-partnerships',
-            
-            
-          },
-          
-        ];
-
-      default:
-        return [];
-    }
-  };
-
-  const navigationItems = getNavigationItems(userRole);
-
-  const isActiveRoute = (route: string) => {
-    return pathname === route || pathname.startsWith(route + '/');
-  };
-
-  const getRoleColor = (role: UserRole) => {
-    const colors = {
-      student: 'from-indigo-500 to-purple-500',
-      teacher: 'from-purple-500 to-pink-500',
-      'hei_mentor': 'from-teal-500 to-cyan-500',
-      'hei_admin': 'from-orange-500 to-red-500',
-      'school_admin': 'from-rose-500 to-pink-500',
-    };
-    return colors[role] || 'from-gray-500 to-gray-600';
-  };
-
-  const getRoleLabel = (role: UserRole) => {
-    const labels = {
-      student: 'Student Portal',
-      teacher: 'Teacher Portal',
-      'hei_mentor': 'HEI Mentor Portal',
-      'hei_admin': 'HEI Admin Portal',
-      'school_admin': 'School Admin Portal',
-    };
-    return labels[role] || role;
-  };
+  if (!isOpen) return null;
 
   return (
-    <div className="h-full w-full bg-white/95 backdrop-blur-xl border-r border-gray-100/50 shadow-2xl shadow-black/5 flex flex-col">
-      {/* Decorative gradient border */}
-      <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${getRoleColor(userRole)}`} />
-
+    <aside className="h-full bg-white border-r border-gray-200 flex flex-col">
       {/* Header */}
-      <div className="relative p-6 border-b border-gray-100/50 flex-shrink-0">
-        {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-transparent" />
-        
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {/* Role indicator with gradient */}
-            <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${getRoleColor(userRole)} shadow-lg`}>
-              <div className="w-full h-full rounded-full bg-gradient-to-br from-white/30 to-transparent" />
-            </div>
-            
-            {/* Role label */}
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-900">
-                {getRoleLabel(userRole)}
-              </span>
-              <span className="text-xs text-gray-500">UK-GSMP Dashboard</span>
-            </div>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+            <GraduationCap size={18} className="text-white" />
           </div>
-          
-          {/* Close button with hover effect */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="md:hidden p-2 rounded-xl hover:bg-gray-100/80 transition-all duration-200 group"
-          >
-            <X className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
-          </Button>
+          <span className="font-semibold text-gray-900 text-sm">UK-GSMP</span>
         </div>
+        <button
+          onClick={onClose}
+          className="md:hidden p-1 rounded-md hover:bg-gray-100 transition-colors"
+        >
+          <X size={18} className="text-gray-500" />
+        </button>
       </div>
 
-      {/* Navigation with HIDDEN SCROLLBAR */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-scroll scrollbar-hide" style={{
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none'
-      }}>
-        <style jsx>{`
-          nav::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-        
-        {navigationItems.map((item, index) => {
-          const hasChildren = item.children && item.children.length > 0;
-          const isParentActive = isActiveRoute(item.route);
-          
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
           return (
-            <div key={index} className="group">
-              <Link
-                href={item.route}
-                className={`relative flex items-center justify-between p-4 rounded-2xl transition-all duration-300 group/item ${
-                  isParentActive && !hasChildren
-                    ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-700 shadow-lg shadow-blue-500/10 border border-blue-100'
-                    : 'text-gray-700 hover:bg-gray-50/80 hover:shadow-md hover:shadow-gray-500/5'
-                }`}
-                onClick={() => window.innerWidth < 768 && onClose()}
-              >
-                {/* Active indicator */}
-                {isParentActive && !hasChildren && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-r-full" />
-                )}
-
-                <div className="flex items-center space-x-4">
-                  {/* Icon with enhanced styling */}
-                  <div className={`relative p-2 rounded-xl transition-all duration-300 ${
-                    isParentActive && !hasChildren
-                      ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/25'
-                      : 'bg-gray-100/80 text-gray-600 group-hover/item:bg-gray-200/80 group-hover/item:scale-105'
-                  }`}>
-                    <item.icon className="h-5 w-5 transition-transform duration-200" />
-                    {/* Shine effect for active state */}
-                    {isParentActive && !hasChildren && (
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/20 via-white/10 to-transparent" />
-                    )}
-                  </div>
-                  
-                  {/* Label */}
-                  <span className={`font-medium transition-colors duration-200 ${
-                    isParentActive && !hasChildren ? 'text-blue-700' : 'text-gray-700'
-                  }`}>
-                    {item.label}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  {/* Badge with enhanced styling */}
-                  {item.badge && (
-                    <Badge className={`text-xs px-2 py-1 rounded-lg font-medium ${
-                      item.badge === 'New' 
-                        ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-white shadow-md shadow-emerald-500/25'
-                        : item.badge === 'Live'
-                        ? 'bg-gradient-to-r from-red-400 to-pink-400 text-white shadow-md shadow-red-500/25 animate-pulse'
-                        : 'bg-gradient-to-r from-blue-400 to-purple-400 text-white shadow-md shadow-blue-500/25'
-                    }`}>
-                      {item.badge}
-                    </Badge>
-                  )}
-                  
-                  {/* Expand indicator */}
-                  {hasChildren && (
-                    <ChevronRight className={`h-4 w-4 text-gray-400 transition-all duration-300 ${
-                      isParentActive ? 'rotate-90 text-blue-500' : 'group-hover:text-gray-600'
-                    }`} />
-                  )}
-                </div>
-              </Link>
-
-              {/* Enhanced Sub-navigation */}
-              {hasChildren && isParentActive && (
-                <div className="mt-2 ml-6 space-y-1 animate-in slide-in-from-left-2 duration-300">
-                  {item.children?.map((child, childIndex) => (
-                    <Link
-                      key={childIndex}
-                      href={child.route}
-                      className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group/child ${
-                        pathname === child.route
-                          ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 border border-blue-100/50'
-                          : 'text-gray-600 hover:bg-gray-50/60 hover:text-gray-900'
-                      }`}
-                      onClick={() => window.innerWidth < 768 && onClose()}
-                    >
-                      {/* Sub-item indicator */}
-                      <div className={`transition-all duration-200 ${
-                        pathname === child.route 
-                          ? 'w-2 h-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full shadow-md shadow-blue-500/25' 
-                          : 'w-1.5 h-1.5 bg-gray-300 rounded-full group-hover/child:bg-gray-400'
-                      }`} />
-                      
-                      <span className={`text-sm font-medium transition-colors ${
-                        pathname === child.route ? 'text-blue-600' : 'text-gray-600'
-                      }`}>
-                        {child.label}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? 'bg-blue-50 text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              <span className={isActive ? 'text-blue-600' : 'text-gray-400'}>{item.icon}</span>
+              {item.label}
+            </Link>
           );
         })}
       </nav>
 
-      {/* Enhanced Footer */}
-      <div className="p-4 border-t border-gray-100/50 bg-gradient-to-r from-gray-50/30 to-transparent flex-shrink-0">
-        <div className="text-center">
-          <div className="text-xs text-gray-400 font-medium">UK-GSMP Platform</div>
-          <div className="text-xs text-gray-300 mt-1">v2.0.1</div>
-        </div>
+      {/* Footer */}
+      <div className="px-4 py-3 border-t border-gray-100">
+        <p className="text-xs text-gray-400 text-center">
+          Uttarakhand GSMP v2.0
+        </p>
       </div>
-    </div>
+    </aside>
   );
 }
