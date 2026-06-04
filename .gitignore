@@ -1,0 +1,19 @@
+# =========================================================
+# Root .gitignore — UK-GSMP
+# =========================================================
+
+# Environment variable files (NEVER commit secrets)
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Node
+node_modules/
